@@ -110,3 +110,29 @@ def analyze_first_source_body(data:bytes,verified:dict):
                 "next_32_hex":data[end:end+32].hex(" ")}
     except Exception as exc:
         return {"status":"failure","reason":str(exc)}
+
+
+def inspect_sequential_source_files(data:bytes,verified:dict):
+    """Walk original source bodies until the first unsupported H1 asset type."""
+    start=verified["start_offset"]
+    count=verified["verified_records"]
+    cursor=verified["end_offset"]
+    records=[]
+    for index in range(count):
+        kind=struct.unpack_from("<I",data,start+16*index)[0]
+        if kind not in (48,49):
+            return {"status":"stopped_at_other_asset_type","decoded_source_files":len(records),
+                    "next_type":kind,"next_index":index,"next_decoded_offset":cursor,
+                    "verified_files":records}
+        try:
+            end,decoded=read_source_payload(data,kind,cursor)
+            if end<=cursor:
+                raise ValueError("source decoder did not advance")
+            records.append({"record_index":index,"decoded_start":cursor,"decoded_end":end,**decoded})
+            cursor=end
+        except Exception as exc:
+            return {"status":"failed","decoded_source_files":len(records),
+                    "failed_type":kind,"failed_index":index,"failed_offset":cursor,
+                    "reason":str(exc),"verified_files":records}
+    return {"status":"all_source_files_decoded","decoded_source_files":len(records),
+            "verified_files":records,"next_decoded_offset":cursor}
