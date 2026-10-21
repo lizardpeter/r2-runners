@@ -20,6 +20,23 @@
 
 ## Fortnite 5.41: actual Athena assets for the Rust-test importer
 
+### New full original Athena source and renderer-dependency workflows — October 21, 2026
+
+The [full Athena world/environment source workflow](.github/workflows/fortnite541-world-environment.yml) partitions authentic source entries across two GitHub Actions runners per asset family; [run 39641166847](https://github.com/lizardpeter/r2-runners/actions/runs/39641166847) passed all fourteen shards. Its source-proven original payloads cover **41 POI UWorlds, 37 streamed UWorlds, 179 building UWorlds, 7 background/landscape UWorlds, 262 terrain-related packages, 1,163 vegetation-related packages and 80 sky/cloud/fog/weather-related packages**. The seven source families include 264 parsed original map headers; tree/grass/foliage source recovery alone preserved **2,553 exact cooked source files (517,211,715 original bytes)**. Each file's original directory structure, authenticated retail PAK entry SHA-1, and SHA-256 artifact inventory are retained. Asset-family selections are based on exact **authenticated PAK indexed paths**, never guessed individual asset filenames or a metadata-only handoff.
+
+The separate [original lighting/material/shader source workflow](.github/workflows/fortnite541-materials-shaders.yml) partitions original **light, material, and shader archive** file sources across four shards. It preserves all original binary files. Its source parser [`scripts/fortnite541_shader_index_decode.py`](scripts/fortnite541_shader_index_decode.py) runs a **complete** 37-byte UE4 FShaderCode library index walk and verifies every Zlib-compressed shader's actual uncompressed length, exact table offsets, original record hash uniqueness, shader stage, and structural DXBC chunk bounds. [Shader run 39643365398](https://github.com/lizardpeter/r2-runners/actions/runs/39643365398) passed both original SM5 and both original SM4 libraries: **176,214 source shader records structurally decoded**, including **96,496 FortniteGame SM5 records**. This is not the same as executable Vulkan translation or UE4 uniform-resource binding.
+
+The original source hashes for the four accepted shader archives are:
+
+| Exact original `FortniteGame/Content/` asset | Payload bytes | Retail entry SHA-1 |
+| --- | ---: | --- |
+| `ShaderArchive-FortniteGame-PCD3D_SM5.ushaderbytecode` | 138,986,223 | `937132b7eddced473e1826a66f78be57bf6b1ef3` |
+| `ShaderArchive-Global-PCD3D_SM5.ushaderbytecode` | 2,256,607 | `2a37a2159116d4030e59747d53c1c3b1f6d2fe79` |
+| `ShaderArchive-FortniteGame-PCD3D_SM4.ushaderbytecode` | 106,773,481 | `35edcfdf3475c405d7f8a65fb40ed462cd7d2184` |
+| `ShaderArchive-Global-PCD3D_SM4.ushaderbytecode` | 837,988 | `f1d09aef1274f9e89255940e014bdd4a73fa7124` |
+
+**Actual Rust-test integration:** [source-native world/actor registry PR #557](https://github.com/lizardpeter/Rust-test/pull/557) and [standalone authenticated SM5 original shader execution PR #559](https://github.com/lizardpeter/Rust-test/pull/559) were merged. The private importer may now load a verified original full shader archive from the loose source directory even without the original 4.8GB game PAK. Original material shader selection and actual per-material compile success still depend on source UE4 shader-map/material/texture binding contracts; exact sky, lighting, fog, world-scale foliage instancing, and POI rendered parity are not established from asset retrieval alone.
+
 The [Fortnite 5.41 R2 source lab](.github/workflows/fortnite541-retail-lab.yml) selects `poi`, `terrain`, `foliage`, `sky`, or `all`.
 
 It uses the pinned public `Fortnite-reverse` parser to retrieve genuine retail-cooked packages and source-verify their PAK entries. For example, `poi` targets real REC, Warehouses, and Pueblo streamed building UWorlds and their nested source assets rather than an invented stand-in mesh. Each selected family publishes:
