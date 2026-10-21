@@ -1,0 +1,140 @@
+name: Fortnite 5.41 authenticated R2 source lab
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fortnite541-retail-lab.yml"
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: "Original 5.41 source family (all runs independently)"
+        type: choice
+        required: true
+        default: poi
+        options: [poi, terrain, foliage, sky, all]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: r2-fortnite541-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+env:
+  FORTNITE_REVERSE_REF: 0742a8de70e692d9a994d50480fbce27905f0156
+
+jobs:
+  # The Fortnite decoder is PUBLIC, pinned and isolated. Never checkout the
+  # private Rust-test engine on a public runner, and never upload game files.
+  poi-native-source:
+    if: github.event_name == 'push' || inputs.scope == 'poi' || inputs.scope == 'all'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - name: Checkout authenticated public source parser
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: ${{ env.FORTNITE_REVERSE_REF }}
+          persist-credentials: false
+      - name: Compile and test public source parser
+        run: |
+          set -euo pipefail
+          cargo test --locked --manifest-path crates/fortnite_541/Cargo.toml --all-targets
+          cargo build --locked --release --manifest-path crates/fortnite_541/Cargo.toml --bin athena_poi_actor_frontier
+      - name: Download only SHA1-authenticated original REC, Warehouses and Pueblo world dependencies
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/fortnite541-poi-report"
+          python3 crates/fortnite_541/tools/fetch_remote_541_dependencies.py --scope poi \
+            --destination "$RUNNER_TEMP/fortnite541-poi" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/source-download.log"
+      - name: Audit nested original 3x3, 5x5, 7x12 building world actors
+        run: |
+          set -euo pipefail
+          ./crates/fortnite_541/target/release/athena_poi_actor_frontier \
+            "$RUNNER_TEMP/fortnite541-poi" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/native-actor-frontier.log"
+          python3 crates/fortnite_541/tools/report_public_asset_probe.py \
+            --scope poi --source-root "$RUNNER_TEMP/fortnite541-poi" \
+            --output "$RUNNER_TEMP/fortnite541-poi-report/source-inventory.json"
+      - name: Remove all retail game bytes
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/fortnite541-poi"
+      - name: Publish metadata logs only, never source bytes or private code
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-poi-source-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-poi-report/
+          if-no-files-found: warn
+          retention-days: 7
+
+  other-native-sources:
+    if: github.event_name == 'workflow_dispatch' && (inputs.scope == 'terrain' || inputs.scope == 'foliage' || inputs.scope == 'sky' || inputs.scope == 'all')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 85
+    strategy:
+      fail-fast: false
+      matrix:
+        scope: [terrain, foliage, sky]
+    steps:
+      - name: Filter requested source family
+        id: selected
+        env:
+          SCOPE: ${{ inputs.scope }}
+          FAMILY: ${{ matrix.scope }}
+        run: |
+          if [[ "$SCOPE" == all || "$SCOPE" == "$FAMILY" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.selected.outputs.run == 'true'
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: ${{ env.FORTNITE_REVERSE_REF }}
+          persist-credentials: false
+      - name: Authenticate source packages and run family-specific probe
+        if: steps.selected.outputs.run == 'true'
+        env:
+          FAMILY: ${{ matrix.scope }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/fortnite541-$FAMILY-report"
+          root="$RUNNER_TEMP/fortnite541-$FAMILY"
+          report="$RUNNER_TEMP/fortnite541-$FAMILY-report"
+          manifest=crates/fortnite_541/Cargo.toml
+          if [[ "$FAMILY" == terrain ]]; then
+            python3 crates/fortnite_541/tools/fetch_athena_541.py \
+              --all-landscape --with-terrain-materials --destination "$root" \
+              2>&1 | tee "$report/download.log"
+            cargo run --locked --release --manifest-path "$manifest" --bin athena_surface_probe -- "$root" | tee "$report/geometry.log"
+            cargo run --locked --release --manifest-path "$manifest" --bin athena_material_graph_probe -- "$root" | tee "$report/material.log"
+          else
+            python3 crates/fortnite_541/tools/fetch_remote_541_dependencies.py \
+              --scope "$FAMILY" --destination "$root" 2>&1 | tee "$report/download.log"
+            if [[ "$FAMILY" == foliage ]]; then
+              cargo run --locked --release --manifest-path "$manifest" --bin athena_foliage_material_probe -- "$root" | tee "$report/foliage-material.log"
+              cargo run --locked --release --manifest-path "$manifest" --bin athena_foliage_alpha_probe -- "$root" | tee "$report/foliage-alpha.log"
+            else
+              cargo run --locked --release --manifest-path "$manifest" --bin athena_remote_source_probe -- "$root" | tee "$report/sky-todm.log"
+            fi
+          fi
+          python3 crates/fortnite_541/tools/report_public_asset_probe.py \
+            --scope "$FAMILY" --source-root "$root" --output "$report/source-inventory.json"
+      - name: Delete original source packages
+        if: always()
+        env:
+          FAMILY: ${{ matrix.scope }}
+        run: rm -rf "$RUNNER_TEMP/fortnite541-$FAMILY"
+      - name: Upload sanitized reports only
+        if: always() && steps.selected.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-${{ matrix.scope }}-source-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-${{ matrix.scope }}-report/
+          if-no-files-found: warn
+          retention-days: 7
