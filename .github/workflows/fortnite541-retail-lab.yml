@@ -7,6 +7,7 @@ on:
       - ".github/workflows/fortnite541-retail-lab.yml"
       - "scripts/fortnite541_dependency_handoff.py"
       - "scripts/fortnite541_blueprint_mesh_closure.py"
+      - "scripts/fortnite541_material_dependency_closure.py"
   workflow_dispatch:
     inputs:
       scope:
@@ -87,6 +88,14 @@ jobs:
             --source-root "$RUNNER_TEMP/fortnite541-poi" \
             --report-dir "$RUNNER_TEMP/fortnite541-poi-report" \
             2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/blueprint-mesh-download.log"
+      - name: Recover actual material and texture source files behind LOD0 mesh surfaces
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 r2-workbench/scripts/fortnite541_material_dependency_closure.py \
+            --source-root "$RUNNER_TEMP/fortnite541-poi" \
+            --report-dir "$RUNNER_TEMP/fortnite541-poi-report" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/material-texture-download.log"
       - name: Write exact-source byte inventory, even if parser failed
         if: always()
         shell: bash
