@@ -25,8 +25,8 @@ env:
   FORTNITE_REVERSE_REF: 0742a8de70e692d9a994d50480fbce27905f0156
 
 jobs:
-  # The Fortnite decoder is PUBLIC, pinned and isolated. Never checkout the
-  # private Rust-test engine on a public runner, and never upload game files.
+  # Public, pinned source parser; private Rust-test is never checked out.
+  # The entire verified original file set MUST be delivered as an artifact.
   poi-native-source:
     if: github.event_name == 'push' || inputs.scope == 'poi' || inputs.scope == 'all'
     runs-on: ubuntu-24.04
@@ -59,17 +59,45 @@ jobs:
           python3 crates/fortnite_541/tools/report_public_asset_probe.py \
             --scope poi --source-root "$RUNNER_TEMP/fortnite541-poi" \
             --output "$RUNNER_TEMP/fortnite541-poi-report/source-inventory.json"
-      - name: Remove all retail game bytes
+      - name: Write exact-source byte inventory, even if parser failed
         if: always()
-        run: rm -rf "$RUNNER_TEMP/fortnite541-poi"
-      - name: Publish metadata logs only, never source bytes or private code
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os
+          root = Path(os.environ["RUNNER_TEMP"]) / "fortnite541-poi"
+          report = Path(os.environ["RUNNER_TEMP"]) / "fortnite541-poi-report"
+          report.mkdir(parents=True, exist_ok=True)
+          files = []
+          for path in sorted(root.rglob("*")) if root.exists() else []:
+              if not path.is_file():
+                  continue
+              digest = hashlib.sha256()
+              with path.open("rb") as fp:
+                  for block in iter(lambda: fp.read(1024 * 1024), b""):
+                      digest.update(block)
+              files.append({"path": path.relative_to(root).as_posix(), "bytes": path.stat().st_size, "sha256": digest.hexdigest()})
+          (report / "exact-source-files.json").write_text(json.dumps({"status": "file_inventory_not_a_completeness_guarantee", "files": files}, indent=2) + "\n")
+          print(f"Exact downloaded original files available for artifact handoff: {len(files)}")
+          PY
+      - name: Deliver original source files with their exact paths and bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-poi-exact-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-poi/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+      - name: Deliver companion validation diagnostics and file checksums
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: fortnite541-poi-source-report-${{ github.run_id }}
           path: ${{ runner.temp }}/fortnite541-poi-report/
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 90
 
   other-native-sources:
     if: github.event_name == 'workflow_dispatch' && (inputs.scope == 'terrain' || inputs.scope == 'foliage' || inputs.scope == 'sky' || inputs.scope == 'all')
@@ -125,16 +153,44 @@ jobs:
           fi
           python3 crates/fortnite_541/tools/report_public_asset_probe.py \
             --scope "$FAMILY" --source-root "$root" --output "$report/source-inventory.json"
-      - name: Delete original source packages
-        if: always()
+      - name: Inventory exact original file bytes and SHA-256
+        if: always() && steps.selected.outputs.run == 'true'
         env:
           FAMILY: ${{ matrix.scope }}
-        run: rm -rf "$RUNNER_TEMP/fortnite541-$FAMILY"
-      - name: Upload sanitized reports only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, os
+          family = os.environ["FAMILY"]
+          root = Path(os.environ["RUNNER_TEMP"]) / f"fortnite541-{family}"
+          report = Path(os.environ["RUNNER_TEMP"]) / f"fortnite541-{family}-report"
+          report.mkdir(parents=True, exist_ok=True)
+          files = []
+          for path in sorted(root.rglob("*")) if root.exists() else []:
+              if not path.is_file():
+                  continue
+              digest = hashlib.sha256()
+              with path.open("rb") as fp:
+                  for block in iter(lambda: fp.read(1024 * 1024), b""):
+                      digest.update(block)
+              files.append({"path": path.relative_to(root).as_posix(), "bytes": path.stat().st_size, "sha256": digest.hexdigest()})
+          (report / "exact-source-files.json").write_text(json.dumps({"status": "file_inventory_not_a_completeness_guarantee", "files": files}, indent=2) + "\n")
+          print(f"Exact {family} source files available for artifact handoff: {len(files)}")
+          PY
+      - name: Deliver all acquired source files unchanged
+        if: always() && steps.selected.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-${{ matrix.scope }}-exact-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-${{ matrix.scope }}/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+      - name: Deliver companion source reports and checksums
         if: always() && steps.selected.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fortnite541-${{ matrix.scope }}-source-report-${{ github.run_id }}
           path: ${{ runner.temp }}/fortnite541-${{ matrix.scope }}-report/
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 90
