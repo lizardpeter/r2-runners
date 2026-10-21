@@ -1,0 +1,30 @@
+name: BO3 first world universal XModel placement join
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_world_xmodel_join.py
+      - .github/workflows/bo3-world-xmodel-join.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  world-model-identity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Match source BO3 world script model names to original validated T7 XModel structures
+        env:
+          BO3_WORLD_ZONE: core_frontend.ff
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-world-model-join
+          BO3_MAX_DECODED: '1073741824'
+        run: python3 scripts/bo3_world_xmodel_join.py
+      - name: Keep only source metadata proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-world-model-identity
+          path: ${{ runner.temp }}/bo3-world-model-join/*.json
+          retention-days: 7
+          if-no-files-found: warn
