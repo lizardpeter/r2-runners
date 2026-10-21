@@ -1,0 +1,31 @@
+name: BO3 base XPAK full index survey
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-base-index.yml"
+      - "scripts/bo3_base_index.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  base-index:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read full authentic 15 GB BO3 base.xpak hash index via exact source ranges
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-base
+        run: python3 scripts/bo3_base_index.py
+      - name: Keep metadata, not source game bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-base-xpak-real-index
+          path: ${{ runner.temp }}/bo3-base/*.json
+          retention-days: 7
+          if-no-files-found: warn
