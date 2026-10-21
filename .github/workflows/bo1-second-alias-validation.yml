@@ -1,0 +1,43 @@
+name: BO1 real client first-two texture alias replay
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-second-alias-validation.yml"
+      - "scripts/bo1_second_alias_verify.py"
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Existing BO1 exact-client-binary transfer run (refresh before artifact retention expires)"
+        required: true
+        default: "39637661371"
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  original-client-image-aliases:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout the exact source verification code
+        uses: actions/checkout@v4
+      - name: Retrieve ACTUAL original BO1 client map FastFiles, not JSON
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.source_run_id || '39637661371' }}
+          name: bo1-complete-client-${{ inputs.source_run_id || '39637661371' }}-part-02
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/bo1-source
+      - name: Replay source virtual first and second material pointer fields
+        run: |
+          python3 scripts/bo1_second_alias_verify.py --source-root "$RUNNER_TEMP/bo1-source/original-bo1"
+      - name: Record successful original-byte alias identity validation
+        if: success()
+        run: |
+          echo '### BO1 original client pointer-field replay' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Validated the exact original map FastFile binaries, including their SHA-256 and 205 first/second-material packed image aliases.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'The 205 mappings are *original image identities*, not proof of client IWI pixel availability or faithful Shader Model 3 rendering.' >> "$GITHUB_STEP_SUMMARY"
