@@ -44,7 +44,7 @@ jobs:
           targets=[
             "packages/fortress_sky/skydome/materialinstances/skydomebasic01/"+stem+"_m_skydome_inst_basic01"
             for stem in stems
-          ]
+          ] + ["timeofday/todm/br/todm_br"]
           sources=[]
           for p in targets:
               for ext in (".uasset",".uexp"):
