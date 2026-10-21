@@ -134,9 +134,11 @@ def parse_directory(data:bytearray)->dict:
         if end < 0:
             return {**info,"status":"script_string_not_null_terminated","string_index":idx}
         value=bytes(data[cursor:end])
-        if not value or any(c < 32 or c>=127 for c in value):
+        if any(c < 32 or c>=127 for c in value):
             return {**info,"status":"non_printable_script_string","string_index":idx,
-                    "string_start":string_start}
+                    "string_start":string_start,"cursor":cursor,
+                    "first_strings":strings[:5],
+                    "offending_string_bytes_hex":value[:64].hex()}
         strings.append(value.decode("ascii"))
         cursor=end+1
     candidate=align8(cursor)
