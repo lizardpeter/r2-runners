@@ -52,6 +52,43 @@ mip (**4,712 source mip levels total**). These checks prove metadata/byte
 decoding and dependency closure in THIS corpus, not original VCS shader
 execution or visual parity for arbitrary CS2 maps.
 
+### Original Source 2 environmental particle graph source
+
+The [environmental VPCF workflow](.github/workflows/cs2-original-environment-vpcf.yml)
+selects only indexed environmental smoke, steam, smokestack, fire, blinking
+beacon, and related compiled particle systems from Valve's original
+CS2 base-game `pak01_dir.vpk`. [Verified original-source run 39677309592](https://github.com/lizardpeter/r2-runners/actions/runs/39677309592)
+downloaded and independently CRC-verified **776 compiled VPCF graphs
+(2,524,696 original bytes)**, retaining their unmodified
+`cs2-base-resources/particles/.../*.vpcf_c` paths. The independent
+KV3 operator audit decoded all 776, including 11 legacy KV3 v3
+uncompressed stubs. Source assets include:
+
+- `particles/ambient_fx/ambient_smokestack.vpcf_c`, its
+  `ambient_smokestack_noise` variant, and two-slot source sprite samplers
+- `particles/maps/cs_italy/italy_smokestack*.vpcf_c` and its
+  authenticated child-system references
+- Engine-smoke/steam/fog particle graphs and flashing beacon/particle
+  light effects
+
+The separate [source smokestack VTEX workflow](.github/workflows/cs2-original-smoke-vtex.yml)
+resolved real `m_vecTexturesInput[].m_hTexture` references. [Run
+39679199613](https://github.com/lizardpeter/r2-runners/actions/runs/39679199613)
+extracted and CRC-verified all three required original compiled textures:
+
+- `materials/particle/vistasmokev1/vistasmokev1_emods.vtex_c`
+- `materials/particle/smoke1/smoke1.vtex_c`
+- `materials/particle/particle_smokegrenade.vtex_c`
+
+**Install source artifact contents beside the existing original CS2
+source-overlay root** (`cs2-base-resources/particles/...` and
+`cs2-base-resources/materials/particle/...`), where the importer already
+checks original external resources. These source paths and hashes
+certify real file recovery; they do **not** certify that every VPCF
+control point, child system, operator, source sprite-channel permutation
+or shader is executable in Rust-test. Full scene placement still
+requires matching original map VENTS/VMAP entity references.
+
 ## Fortnite 5.41: actual Athena assets for the Rust-test importer
 
 ### New full original Athena source and renderer-dependency workflows — October 21, 2026
