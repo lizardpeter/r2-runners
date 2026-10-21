@@ -55,8 +55,10 @@ def survey(z):
     first=candidates[0] if candidates else None
     if first is None or first["offset"]!=table_end:
         raise ValueError("First real inline mesh body does not begin at original asset-table end")
-    if len(candidates)!=roots:
-        raise ValueError(f"Found {len(candidates)} valid mesh header bodies but first source table contains {roots} inline mesh roots")
+    if len(candidates)<roots:
+        raise ValueError(f"Found {len(candidates)} mesh headers but need at least {roots} leading inline roots")
+    all_header_count=len(candidates)
+    candidates=candidates[:roots]
     # Every original mesh name from these source structs must be unique, and
     # bodies remain sequential with a strictly positive bounded read region.
     if len({x["name"] for x in candidates})!=len(candidates):
@@ -85,7 +87,9 @@ def survey(z):
         "asset_table_start":at,
         "asset_table_end":table_end,
         "initial_inline_mesh_roots":roots,
-        "structurally_valid_mesh_bodies":len(candidates),
+        "structurally_valid_mesh_bodies":all_header_count,
+        "initial_mesh_bodies_assigned":len(candidates),
+        "remaining_mesh_header_candidates_unassigned":all_header_count-len(candidates),
         "first_root_body_exactly_after_table":True,
         "surface_count_total":surfaces_total,
         "source_order_digest_sha256":hashlib.sha256(
