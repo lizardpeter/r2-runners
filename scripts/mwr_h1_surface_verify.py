@@ -6,6 +6,7 @@ same source byte phase. This is not yet proof of where index bytes live.
 """
 import hashlib
 import struct
+from collections import Counter
 from mwr_h1_world_vertex_verify import extract_source_window
 from mwr_h1_surface_probe import plausible_surface, STRIDE
 
@@ -50,6 +51,9 @@ def verify_source_surface_array(ff_path,ff_header,stream_class,report,world):
     max_vertex=0
     tri_counts=[]
     source_samples=[]
+    material_refs=Counter()
+    material_triangles=Counter()
+    tag_prefixes=Counter()
     for i in range(target):
         at=i*STRIDE
         first=struct.unpack_from("<I",array,at+4)[0]
@@ -60,6 +64,10 @@ def verify_source_surface_array(ff_path,ff_header,stream_class,report,world):
         max_vertex=max(max_vertex,first+vcount)
         total_indices+=tri*3
         tri_counts.append(tri)
+        material_ref=struct.unpack_from("<Q",array,at+24)[0]
+        material_refs[material_ref]+=1
+        material_triangles[material_ref]+=tri
+        tag_prefixes[material_ref>>32]+=1
         if i in (0,1,2,target//4,target//2,(3*target)//4,target-3,target-2,target-1):
             source_samples.append({
                 "source_surface_record":i,"original_first_vertex":first,
@@ -83,5 +91,19 @@ def verify_source_surface_array(ff_path,ff_header,stream_class,report,world):
         "triangle_counts_min":min(tri_counts),
         "triangle_counts_max":max(tri_counts),
         "source_samples":source_samples,
+        "material_source_reference_census":{
+            "source_surface_material_tags_distinct":len(material_refs),
+            "source_surface_null_material_ref_count":material_refs.get(0,0),
+            "source_material_pointer_prefix_histogram":{
+                f"{prefix:08x}":count for prefix,count in tag_prefixes.most_common()
+            },
+            "top_surface_material_refs":[
+                {"source_pointer_tag":f"{ptr:016x}",
+                 "authored_surface_count":count,
+                 "authored_triangle_count":material_triangles[ptr]}
+                for ptr,count in material_refs.most_common(24)
+            ],
+            "NOTE":"Tagged pointers are original source references, not resolved material names or textures."
+        },
         "note":"Actual source index-buffer byte address still needs independent cross-reference."
     }
