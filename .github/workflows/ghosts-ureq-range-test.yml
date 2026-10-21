@@ -1,0 +1,62 @@
+name: Ghosts Rust ureq runtime PAK range test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ghosts-ureq-range-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rust-original-mip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - name: Rustls/ureq transport test against exact original Ghosts PAK
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/iw6_http_probe/src"
+          cd "$RUNNER_TEMP/iw6_http_probe"
+          cat > Cargo.toml <<'TOML'
+          [package]
+          name = "iw6_http_probe"
+          version = "0.1.0"
+          edition = "2021"
+          [dependencies]
+          ureq = { version = "2.12", default-features = false, features = ["tls"] }
+          flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+          sha2 = "0.10"
+          TOML
+          cat > src/main.rs <<'RUST'
+          use std::io::Read;
+          use sha2::{Digest,Sha256};
+          fn main()->Result<(),Box<dyn std::error::Error>>{
+              let start=88778934u64;
+              let end=88788527u64;
+              let range=format!("bytes={start}-{}",end-1);
+              let response=ureq::AgentBuilder::new()
+                  .timeout(std::time::Duration::from_secs(60)).build()
+                  .get("https://r2.houseofkublai.com/ghosts/DUMP/imagefile1.pak")
+                  .set("Range",&range).set("Accept-Encoding","identity")
+                  .call()?;
+              assert_eq!(response.status(),206);
+              let prefix=format!("bytes {start}-{}/",end-1);
+              assert!(response.header("Content-Range").unwrap_or("").starts_with(&prefix));
+              let mut packed=Vec::new();
+              response.into_reader().take(end-start+1).read_to_end(&mut packed)?;
+              assert_eq!(packed.len(),(end-start) as usize);
+              let mut decoded=Vec::new();
+              flate2::read::ZlibDecoder::new(&packed[..]).take(16385)
+                  .read_to_end(&mut decoded)?;
+              assert_eq!(decoded.len(),16384);
+              let digest=format!("{:x}",Sha256::digest(&decoded));
+              assert_eq!(digest,"8ba33fa05cede87f1e41b629632e25d00c5b78908c2b6dd62a7040445317d2dd");
+              println!("Ghosts runtime ureq original BC3 source span verified: {} compressed bytes, 16384 decoded, SHA-256 {}",packed.len(),digest);
+              Ok(())
+          }
+          RUST
+          cargo run --release --quiet
