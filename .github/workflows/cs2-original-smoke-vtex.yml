@@ -1,0 +1,89 @@
+name: CS2 original VPCF smokestack sprite VTEX handoff
+
+on:
+  push:
+    branches:
+      - work/cs2-original-smokestack-vtex-20261021
+    paths:
+      - "scripts/cs2_original_smoke_vtex.py"
+      - ".github/workflows/cs2-original-smoke-vtex.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-smoke-sprite-vtex:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Set up public Steam source handoff
+        shell: pwsh
+        run: |
+          $root=Join-Path $env:RUNNER_TEMP 'cs2-original-smoke-vtex'
+          $tool=Join-Path $root 'steamre'
+          New-Item -ItemType Directory -Force $tool | Out-Null
+          $zip=Join-Path $root 'DepotDownloader.zip'
+          Invoke-WebRequest -Uri 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-windows-x64.zip' -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $tool -Force
+          $exe=Join-Path $tool 'DepotDownloader.exe'
+          if (-not (Test-Path -LiteralPath $exe)) { throw 'SteamRE downloader unavailable' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_VTEX_SOURCE=$root"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_VTEX_DOWNLOADER=$exe"
+
+      - name: Download actual CS2 VPK index
+        shell: pwsh
+        run: |
+          $root=$env:CS2_VTEX_SOURCE
+          $filelist=Join-Path $root 'index-list.txt'
+          'game/csgo/pak01_dir.vpk' | Set-Content -LiteralPath $filelist -Encoding ascii
+          & $env:CS2_VTEX_DOWNLOADER -app 730 -depot 2347770 -filelist $filelist -dir $root -max-downloads 4
+          if ($LASTEXITCODE -ne 0) { throw 'Steam Source2 index download failed' }
+
+      - name: Resolve original smokestack sprite sources
+        shell: pwsh
+        run: |
+          $root=$env:CS2_VTEX_SOURCE
+          python scripts/cs2_original_smoke_vtex.py plan --index (Join-Path $root 'game/csgo/pak01_dir.vpk') --output $root
+          if ($LASTEXITCODE -ne 0) { throw 'Original smoke sprite source plan failed' }
+
+      - name: Download only original VPK segments referenced by the smoke sprites
+        shell: pwsh
+        run: |
+          $root=$env:CS2_VTEX_SOURCE
+          $list=Join-Path $root 'smoke-vtex-segments.txt'
+          $segments=@(Get-Content -LiteralPath $list | Where-Object { $_.Trim() })
+          if ($segments.Count -gt 0) {
+            & $env:CS2_VTEX_DOWNLOADER -app 730 -depot 2347770 -filelist $list -dir $root -max-downloads 4
+            if ($LASTEXITCODE -ne 0) { throw 'Original VTEX physical VPK download failed' }
+          }
+
+      - name: Extract exact original VPCF smoke VTEX bytes
+        shell: pwsh
+        run: |
+          $root=$env:CS2_VTEX_SOURCE
+          python scripts/cs2_original_smoke_vtex.py extract --index (Join-Path $root 'game/csgo/pak01_dir.vpk') --source-root $root --output (Join-Path $root 'extracted-original-smoke')
+          if ($LASTEXITCODE -ne 0) { throw 'Original smoke VTEX VPK CRC verification failed' }
+
+      - name: Publish original smokestack sprite sources and SHA256 manifests
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-original-smokestack-vtex
+          path: ${{ runner.temp }}/cs2-original-smoke-vtex/extracted-original-smoke/**
+          if-no-files-found: error
+          compression-level: 1
+          retention-days: 7
+
+      - name: Preserve original unresolved source keys
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-smokestack-source-plan
+          path: ${{ runner.temp }}/cs2-original-smoke-vtex/smoke-vtex-plan.json
+          if-no-files-found: warn
+          retention-days: 7
