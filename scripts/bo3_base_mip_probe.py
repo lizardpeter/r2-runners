@@ -20,6 +20,15 @@ ZONE="core_frontend_patch.ff"
 ZONE_BYTES=72319872
 URL="https://r2.houseofkublai.com/bo3/DUMP/zone/"+ZONE
 
+def gpu_mip_bytes(width:int,height:int,fmt:int)->int|None:
+    if fmt in (24,28,29):return width*height*4
+    if fmt==49:return width*height*2
+    if fmt in (61,62):return width*height
+    if fmt in (71,72,80,81):unit=8
+    elif fmt in (74,75,77,78,83,84,95,96,98,99):unit=16
+    else:return None
+    return ((width+3)//4)*((height+3)//4)*unit
+
 def main():
     out=Path(os.environ.get("BO3_REPORT_DIR","reports/bo3"));out.mkdir(parents=True,exist_ok=True)
     base_meta,base_entries=read_base_index()
@@ -45,15 +54,17 @@ def main():
             original=range_read(KEY,base_meta["data_offset"]+offset,size,EXPECTED_BYTES)
             result=probe_entry(io.BytesIO(original),{"data_start":0},
                                {"relative_offset":0,"packed_bytes":size})
+            expected=gpu_mip_bytes(item["width"],item["height"],item["format"])
             results.append({
                 "name":item["name"],"format":item["format"],
                 "mip_width":item["width"],"mip_height":item["height"],
                 "original_mip_hash":f"0x{key:016x}",
                 "packed_source_bytes":size,
-                "declared_mip_bytes":item["source_bytes"],
+                "source_mip_size_word":item["source_bytes"],
+                "expected_exact_texel_bytes":expected,
                 "stream_decoder_state":result["state"],
                 "decoded_bytes":result.get("decoded_bytes"),
-                "source_length_matches":result.get("decoded_bytes")==item["source_bytes"]
+                "source_length_matches":result.get("decoded_bytes")==expected
                                         if result["state"]=="decoded" else False,
                 "unresolved_codec":result.get("codec"),
                 "payload_sha256":result.get("decoded_sha256"),
