@@ -136,8 +136,10 @@ def probe_entry(f,meta,entry):
             elif method==3:
                 plain=decompress_lz4_block(block)
             else:
-                return {"state":"codec_not_yet_supported","codec":method,"flags":dict(flags),
-                        "decoded_bytes_before_codec":len(output)}
+                return {"state":"codec_not_yet_supported","codec":method,
+                        "raw_command_word":word,"source_chunk_header_offset":chunk_offset,
+                        "command_source_offset":cursor,"command_length":block_size,
+                        "flags":dict(flags),"decoded_bytes_before_codec":len(output)}
             if len(output)+len(plain)>MAX_ENTRY_DECODED:
                 raise ValueError("KAPI streamed entry exceeds decoded byte budget")
             output.extend(plain)
@@ -169,11 +171,17 @@ def main():
             flags=Counter()
             status=Counter()
             first=[]
+            unknowns=[]
             with local.open("rb") as f:
                 for i,entry in enumerate(entries):
                     r=probe_entry(f,meta,entry)
                     status[r["state"]]+=1
                     flags.update(r.get("commands",r.get("flags",{})))
+                    if r["state"]=="codec_not_yet_supported" and len(unknowns)<15:
+                        unknowns.append({"hash_key":f"0x{entry['key']:016x}",
+                                         "packed_bytes":entry["packed_bytes"],
+                                         **{k:r[k] for k in ("codec","raw_command_word","source_chunk_header_offset",
+                                                             "command_source_offset","command_length","decoded_bytes_before_codec")}})
                     if i<8:first.append({"hash_key":f"0x{entry['key']:016x}",
                                          "packed_bytes":entry["packed_bytes"],
                                          "state":r["state"],
@@ -183,7 +191,7 @@ def main():
                     "source_hash_keys_unique":len({x["key"] for x in entries})==len(entries),
                     "entry_state_counts":dict(status),"command_counts":dict(flags),
                     "entry_size_flags":dict(Counter(x["size_flags"] for x in entries)),
-                    "first_eight_entries":first}
+                    "first_eight_entries":first,"unresolved_command_evidence":unknowns}
             reports.append(report)
             print(json.dumps(report,sort_keys=True),flush=True)
     (root/"bo3_t7_xpak_index.json").write_text(json.dumps(reports,indent=2)+"\n",encoding="utf-8")
