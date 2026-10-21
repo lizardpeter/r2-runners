@@ -1,0 +1,31 @@
+name: BO3 source XModelLod child layout validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-xmodel-lod-walk.yml"
+      - "scripts/bo3_xmodel_lod_walk.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-lod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe true BO3 XModelLod child records and material ownership
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-lod-layout
+        run: python3 scripts/bo3_xmodel_lod_walk.py
+      - name: Save source structure evidence without raw game assets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-lod-parent-structure-evidence
+          path: ${{ runner.temp }}/bo3-lod-layout/*.json
+          if-no-files-found: warn
+          retention-days: 7
