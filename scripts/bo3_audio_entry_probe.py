@@ -48,9 +48,17 @@ def inspect_bank(name):
     span=entries*stride
     if table<608 or table+span>SIZES[name] :
         raise ValueError(f"Original SAB table bounds fail {name}: entries={entries}, stride={stride}, table={table}, end={table+span}, name_offset={name_table}, size={SIZES[name]}")
+    # Original T7 SAB file header +0x10 declares half the fixed-size
+    # name slot width; the retail name table is width*2 bytes per entry.
+    name_stride=struct.unpack_from("<I",head,0x10)[0]*2
+    if name_stride not in (128,256):
+        raise ValueError(f"Unexpected BO3 T7 sound name slot width {name_stride}")
+    if entries and name_table+entries*name_stride>SIZES[name]:
+        raise ValueError(f"Original SAB name table outside source: {name}")
     out={
       "bank":name,"file_bytes":SIZES[name],"v15_records_declared":entries,
       "record_bytes":stride,"entry_table_offset":table,
+      "original_source_name_stride":name_stride,
       "entry_table_end":table+span,"names_table_offset":name_table,
       "table_in_original_source_bounds":True,
       "name_table_overlap_bytes":max(0,table+span-name_table) if name_table else 0,
@@ -70,6 +78,24 @@ def inspect_bank(name):
             other=original_range(name,alternative_table,min(3,entries)*stride)
             out["secondary_0x30_record_samples"]=[record_sample(other[i*stride:(i+1)*stride]) for i in range(min(3,entries))]
     if entries:
+        names_src=original_range(name,name_table,entries*name_stride)
+        names=[]
+        for ordinal in range(entries):
+            record=names_src[ordinal*name_stride:(ordinal+1)*name_stride]
+            end=record.find(b"\\0")
+            if end<0:
+                raise ValueError(f"Original T7 sound entry {ordinal} name unterminated")
+            text=record[:end]
+            if any(c<32 or c>=127 for c in text):
+                raise ValueError(f"Original T7 sound entry {ordinal} name not source ASCII")
+            names.append(text.decode("ascii"))
+        out["source_sound_names_count"]=len(names)
+        out["source_name_table_sha256"]=hashlib.sha256(names_src).hexdigest()
+        out["source_sound_names_first_twelve"]=names[:12]
+        out["source_sound_name_nonempty"]=sum(bool(x) for x in names)
+        out["source_sound_name_sample_categories"]={
+            "path_style":sum(("\\\\" in x or "/" in x) for x in names),
+            "flac_suffix":sum(x.lower().endswith(".flac") for x in names)}
         original=original_range(name,table,span)
         physical_bounds=0
         playable_audio=0
@@ -116,6 +142,7 @@ def main():
         "zero_entry_banks":sum(x["v15_records_declared"]==0 for x in records),
         "source_audio_records_declared":sum(x["v15_records_declared"] for x in records),
         "source_entries_with_bounded_payloads":sum(x.get("full_source_audio_entry_bound_count",0) for x in records),
+        "original_named_sound_entries":sum(x.get("source_sound_name_nonempty",0) for x in records),
         "source_audio_entries_with_plausible_metadata":sum(x.get("source_audio_entries_with_plausible_metadata",0) for x in records),
         "sampled_first_audio_payload_flac_headers":sum(e["is_fLaC"] for x in records for e in x.get("first_source_payload_flac_samples",[])),
         "note":"Original source entry byte ranges/FLAC signatures verified; full decoded PCM playback and sound alias ownership remain separate.",
