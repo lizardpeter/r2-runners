@@ -1,0 +1,38 @@
+name: BO3 material and XModel source structure probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-struct-probe.yml"
+      - "scripts/bo3_struct_probe.py"
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Retail archive survey target"
+        type: choice
+        options: [small, models]
+        required: true
+        default: small
+
+permissions:
+  contents: read
+jobs:
+  bo3-layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify exact T7 material/model loader field layouts on original source
+        env:
+          BO3_STRUCT_PRESET: ${{ inputs.preset || 'small' }}
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-model-research
+        run: python3 scripts/bo3_struct_probe.py
+      - name: Persist fingerprints and structured diagnostics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-material-model-source-layouts
+          path: ${{ runner.temp }}/bo3-model-research/*.json
+          if-no-files-found: warn
+          retention-days: 7
