@@ -94,11 +94,33 @@ def survey(zone:bytes,source:str):
             "source_names_digest":hashlib.sha256("\n".join(sorted(x["name"] for x in valid)).encode()).hexdigest(),
             "all_offsets_digest":hashlib.sha256("\n".join(str(x["source_offset"]) for x in valid).encode()).hexdigest(),
         }
+    # Validate whether model/material tagged references point to an XAsset
+    # table header in this same original zone. A miss can mean a *source
+    # block-slot* reference or an earlier zone dependency, never permission
+    # to invent a name association.
+    typed_headers={}
+    table=directory.get("asset_table",{})
+    table_start=table.get("table_offset")
+    record_count=directory.get("asset_count",0)
+    if isinstance(table_start,int) and isinstance(record_count,int):
+        for row in range(min(record_count,2_000_000)):
+            ty,ref=struct.unpack_from("<QQ",zone,table_start+16*row)
+            typed_headers.setdefault(ty,set()).add(ref)
+    xmodels=[x for x in candidates["xmodel"]["preview"]]
+    model_known=sum(int(x["mesh_pointer"],16) in typed_headers.get(5,set()) for x in xmodels)
+    mats=[x for x in candidates["material"]["preview"]]
+    tech_known=sum(int(x["technique_ptr"],16) in typed_headers.get(8,set()) for x in mats)
+    direct_links={"sampled_local_models":len(xmodels),
+        "mesh_pointer_exact_xasset_header_matches":model_known,
+        "sampled_materials":len(mats),
+        "technique_pointer_exact_xasset_header_matches":tech_known,
+        "note":"zero means not a direct XAsset header reference; block-slot mapping is still required"}
     return {"original_source":source,"decoded_zone_bytes":len(zone),
             "directory_asset_count":directory.get("asset_count"),
             "directory_status":directory.get("status"),
             "directory_type_counts":types,
-            "authored_struct_candidates":candidates}
+            "authored_struct_candidates":candidates,
+            "direct_xasset_pointer_join":direct_links}
 
 def main():
     mode=os.environ.get("BO3_STRUCT_PRESET","small")
