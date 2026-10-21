@@ -180,16 +180,42 @@ def inspect_path_nodes(data: bytes) -> dict:
             raise ValueError("unrecognized source tree axis")
     if len(unique_leaves)!=node_count or leaf_ref_count!=node_count:
         raise ValueError("original tree leaf lists do not partition all PathData nodes")
-    tree_base=min((p-1 for p in edges),default=0)
-    targets=[]
-    for p in edges:
-        offset=p-1-tree_base
-        if offset<0 or offset%24!=0 or offset//24>=tree_count:
-            raise ValueError("original tree child packed address is out of range")
-        targets.append(offset//24)
-    missing_roots=sorted(set(range(tree_count))-set(targets))
-    if len(targets)!=tree_count-1 or len(set(targets))!=tree_count-1 or len(missing_roots)!=1:
-        raise ValueError("spatial tree does not form unique authored-parent topology")
+    # A min-child-pointer heuristic is WRONG: root record 0 has no parent.
+    # Derive the original VIRTUAL base by requiring ONE connected directed
+    # tree over every fixed 24-byte record, not merely range-valid pointers.
+    # On the authenticated Point of Contact file there are two plausible
+    # aligned bases; only the real one yields a reachable root.
+    tree_offsets=[p-1 for p in edges]
+    candidates=[]
+    if tree_count:
+        lo=max(tree_offsets)-(tree_count-1)*24 if tree_offsets else 0
+        hi=min(tree_offsets) if tree_offsets else 0
+        for candidate in range(lo,hi+1,24):
+            if any(p<candidate or (p-candidate)%24 or (p-candidate)//24>=tree_count
+                   for p in tree_offsets):
+                continue
+            targets=[(p-candidate)//24 for p in tree_offsets]
+            roots=set(range(tree_count))-set(targets)
+            if len(roots)!=1 or len(targets)!=tree_count-1 or len(set(targets))!=len(targets):
+                continue
+            root=next(iter(roots))
+            visited=set()
+            stack=[root]
+            while stack:
+                index=stack.pop()
+                if index in visited:
+                    break
+                visited.add(index)
+                axis,split,a,b=trees[index]
+                if axis>=0:
+                    stack.append((((a & 0xffffffff)-1-candidate)//24))
+                    stack.append((((b & 0xffffffff)-1-candidate)//24))
+            if len(visited)==tree_count:
+                candidates.append((candidate,root))
+    if len(candidates)!=1:
+        raise ValueError(f"original spatial tree has {len(candidates)} fully connected base hypotheses")
+    tree_base,verified_root=candidates[0]
+    missing_roots=[verified_root]
     for offset,size,field in (
         (80,exposure_bytes,"exposure"),
         (96,nopeek_bytes,"no-peek"),
