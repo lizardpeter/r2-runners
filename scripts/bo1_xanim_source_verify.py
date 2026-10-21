@@ -182,6 +182,135 @@ def verify_original_static_delta_translations(zone:bytes,entries:list[dict]):
           "quat axis interpretation remain unresolved.")
     return recovered
 
+def verify_original_animated_delta_source(zone:bytes,entries:list[dict]):
+    """Exact T5 source XAnimPartTrans/XAnimDeltaPartQuat inline-array layout.
+
+    The crucial fix: XAnimPartTrans.frames.indices and
+    XAnimDeltaPartQuat.frames.indices are VARIABLE-SIZE INLINED arrays.
+    They are NOT second virtual pointers. Prove the full original source
+    records against a separate verified next XAnimParts header.
+    """
+    known={entry["source_header_offset"] for entry in entries}
+    real=0;animated_trans=0;animated_quat=0
+    trans_small=trans_large=0
+    unresolved=0;records=[]
+    for item in entries:
+        ptr=item["source_array_pointers"]
+        if ptr[9]!=0xffffffff:continue
+        h=item["source_header_offset"]
+        cursor=(h+104+len(item["name"])+1
+            +2*len(item["source_script_indices"])
+            +8*len(item["source_notetrack_events"]))
+        trans,quat=struct.unpack_from("<II",zone,cursor)
+        cursor+=8
+        if trans!=0xffffffff and quat!=0xffffffff:continue
+        result={"name":item["name"],"header_offset":h,
+                "source_delta_pointer_pair":[trans,quat],
+                "source_quantized_root_translation":None,
+                "source_signed_root_quat2":None}
+        good=True
+        for typ,pointer in (("trans",trans),("quat",quat)):
+            if pointer==0:continue
+            if pointer!=0xffffffff:
+                good=False;break
+            offset=cursor
+            size=struct.unpack_from("<H",zone,cursor)[0]
+            if size==0:
+                cursor+=16 if typ=="trans" else 8
+                continue
+            if size>4095:
+                good=False;break
+            count=size+1
+            small=zone[cursor+2] if typ=="trans" else 0
+            if typ=="trans":
+                if small not in (0,1) or struct.unpack_from("<I",zone,cursor+28)[0]!=0xffffffff:
+                    good=False;break
+                mins=struct.unpack_from("<3f",zone,cursor+4)
+                scales=struct.unpack_from("<3f",zone,cursor+16)
+                if not all(math.isfinite(v) for v in mins+scales):
+                    good=False;break
+                cursor+=32
+            else:
+                if struct.unpack_from("<I",zone,cursor+4)[0]!=0xffffffff:
+                    good=False;break
+                cursor+=8
+            width=1 if item["numframes"]<256 else 2
+            fmt="<"+("B" if width==1 else "H")*count
+            indices=list(struct.unpack_from(fmt,zone,cursor))
+            cursor+=count*width
+            if max(indices)>item["numframes"] or indices!=sorted(indices):
+                good=False;break
+            if typ=="trans":
+                nbytes=count*(3 if small else 6)
+                frames=zone[cursor:cursor+nbytes]
+                cursor+=nbytes
+                values=[list(frames[i:i+3]) if small
+                         else list(struct.unpack_from("<3H",frames,i))
+                        for i in range(0,nbytes,3 if small else 6)]
+                result["source_quantized_root_translation"]={
+                    "original_struct_offset":offset,
+                    "source_min_xyz":mins,"source_scale_xyz":scales,
+                    "source_frame_numbers":indices,
+                    "original_small_encoding":bool(small),
+                    "source_quantized_xyz":values,
+                    "original_frame_bytes_sha256":hashlib.sha256(frames).hexdigest(),
+                }
+            else:
+                nbytes=count*4
+                frames=zone[cursor:cursor+nbytes]
+                cursor+=nbytes
+                result["source_signed_root_quat2"]={
+                    "original_struct_offset":offset,
+                    "source_frame_numbers":indices,
+                    "original_signed_quat_pairs":[list(struct.unpack_from("<2h",frames,i))
+                                                  for i in range(0,nbytes,4)],
+                    "original_frame_bytes_sha256":hashlib.sha256(frames).hexdigest(),
+                }
+        if not good:
+            unresolved+=1
+            continue
+        counts=struct.unpack_from("<5H",zone,h+4)
+        shortcount=u32(zone,h+40);indexcount=u32(zone,h+44)
+        sizes=[counts[0],counts[1]*2,counts[2]*4,shortcount*2,
+               counts[3],counts[4]*4,indexcount*(1 if item["numframes"]<256 else 2)]
+        ranges=[]
+        for pointer,amount in zip(ptr[1:8],sizes):
+            if pointer==0 and amount==0:
+                ranges.append([cursor,0])
+            elif pointer==0xffffffff and amount<=64*1024*1024:
+                ranges.append([cursor,amount]);cursor+=amount
+            else:
+                good=False;break
+        if not good or cursor not in known:
+            unresolved+=1
+            continue
+        result["original_other_channel_ranges"]=ranges
+        result["exact_next_header_offset"]=cursor
+        records.append(result);real+=1
+        if result["source_quantized_root_translation"]:
+            animated_trans+=1
+            if result["source_quantized_root_translation"]["original_small_encoding"]:
+                trans_small+=1
+            else:trans_large+=1
+        if result["source_signed_root_quat2"]:
+            animated_quat+=1
+    if (real,animated_trans,animated_quat,unresolved)!=(365,265,96,18):
+        raise ValueError("Original animated delta closure differs: "
+                         f"{real} complete, {animated_trans} trans, {animated_quat} quat, "
+                         f"{unresolved} partial")
+    sample=next(x for x in records if x["name"]=="p_handheldradio_idle")
+    expected=sample["source_quantized_root_translation"]
+    if sample["header_offset"]!=0x4ae8e2 or expected["source_frame_numbers"]!=[0,17,133] or \
+       expected["source_quantized_xyz"]!=[[251,255,0],[0,19,0],[0,19,0]] or \
+       sample["exact_next_header_offset"]!=0x4b6e7f:
+        raise ValueError("Authentic p_handheldradio_idle compact root track bytes differ")
+    print(f"PASS original BO1 nested root deltas: {real} fully source-closed clips, "
+          f"{animated_trans} animated translated XYZ tracks ({trans_small} small, "
+          f"{trans_large} large), {animated_quat} animated signed XQuat2 tracks; "
+          f"{unresolved} still unclosed. The inline original frame indices are "
+          "NOT wrongly treated as virtual pointers.")
+    return records
+
 def verify(path:Path,out:Path):
     original=path.read_bytes()
     zone=source_zone(original)
@@ -283,7 +412,11 @@ def verify(path:Path,out:Path):
         raise ValueError("Original bombplant XAnim sound/end notetrack IDs differ")
     decoded_streams,decoded_bytes,stream_limitations=verify_original_compressed_payloads(zone,entries)
     static_root_deltas=verify_original_static_delta_translations(zone,entries)
+    nested_delta_clips=verify_original_animated_delta_source(zone,entries)
     result={
+        "original_fully_closed_nested_delta_clips":len(nested_delta_clips),
+        "original_animated_delta_clip_evidence":nested_delta_clips,
+        "original_total_source_closed_animation_streams":decoded_streams+len(nested_delta_clips),
         "original_constant_root_translations":static_root_deltas,
         "original_static_root_vector_count":len(static_root_deltas),
         "original_source_compressed_streams_decoded":decoded_streams,
