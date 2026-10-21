@@ -55,7 +55,8 @@ def scan_table_candidates(data: bytes, count: int, limit: int = 12) -> list[dict
         else:
             pass
         observed = sum(types.values())
-        if observed >= 32 and markers >= observed//2 and filled >= observed//5:
+        min_records = min(count, 24)
+        if observed >= min_records and markers >= (observed+1)//2 and filled >= max(1,observed//5):
             return {"offset": at, "first_records": observed, "tagged_ptr_count": markers,
                     "nonzero_types": filled, "type_histogram":dict(types.most_common(12))}
         return None
@@ -91,6 +92,6 @@ def inspect_prefix(data: bytes) -> dict:
         result["sample_words_following_pointer_vector"]=[
             f"{u64(data,p):016x}" for p in range(104+script_count*8,
                                                   min(len(data)-8,104+script_count*8+64),8)]
-    result["sample_8byte_words_at_104"]=[f"{u64(data,p):016x}" for p in range(104, min(len(data)-8,232),8)]
+    result["sample_8byte_words_at_104"]=[f"{u64(data,p):016x}" for p in range(104, min(len(data)-8,360),8)]
     result["xasset_16byte_table_candidate_runs"]=scan_table_candidates(data, asset_count)
     return result
