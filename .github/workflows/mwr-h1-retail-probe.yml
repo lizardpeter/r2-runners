@@ -14,6 +14,7 @@ on:
       - "scripts/mwr_h1_surface_probe.py"
       - "scripts/mwr_h1_surface_verify.py"
       - "scripts/mwr_h1_index_surface_verify.py"
+      - "tests/test_mwr_h1_index_source.py"
       - "tests/test_mwr_h1_index_surface_verify.py"
       - "tests/test_mwr_h1_*.py"
       - "scripts/mwr_h1_asset_runs.py"
@@ -45,6 +46,8 @@ jobs:
         run: python3 -m pip install --quiet lz4
       - name: Check H1 vertex-stride and fractional-binormal invariants
         run: python3 -m unittest discover -s tests -p test_mwr_h1_world_vertex_probe.py
+      - name: Test H1 source triangle indexing
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_index_source.py
       - name: Fetch exact original H1 FastFiles and inspect headers and LZ4 framing
         shell: bash
         env:
