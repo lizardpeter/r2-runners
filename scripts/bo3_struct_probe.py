@@ -30,7 +30,7 @@ LAYOUTS={
 }
 MARKER=b"\xff"*8
 PTRS={0,0xffffffffffffffff,0xfffffffffffffffe}
-def tagged(p):return p in PTRS or (p>>60)<=8 or (p>>56)==0x50
+def tagged(p):return p in PTRS or (p>>56) in (0x50,0x60)
 def printable(zone,offset,maxlen=196):
     if offset>=len(zone):return None
     end=zone.find(b"\0",offset,min(len(zone),offset+maxlen))
@@ -63,7 +63,7 @@ def survey(zone:bytes,source:str):
                 technique_ptr=struct.unpack_from("<Q",zone,p+0x278)[0]
                 tex_ptr=struct.unpack_from("<Q",zone,p+0x280)[0]
                 material_ptr=struct.unpack_from("<Q",zone,p+0x298)[0]
-                if tex_count>96 or not all(tagged(q) for q in (technique_ptr,tex_ptr,material_ptr)):
+                if tex_count>48 or not all(tagged(q) for q in (technique_ptr,tex_ptr,material_ptr)):
                     continue
                 props.update({"tex_count":tex_count,"technique_ptr":hex(technique_ptr),
                     "textures_ptr":hex(tex_ptr),"owning_material_ptr":hex(material_ptr),
@@ -76,7 +76,7 @@ def survey(zone:bytes,source:str):
                 lod_count=zone[p+8]
                 meshptr=struct.unpack_from("<Q",zone,p+0x110)[0]
                 model_ptr=struct.unpack_from("<Q",zone,p+0x128)[0]
-                if not tagged(meshptr) or not tagged(model_ptr):continue
+                if lod_count>80 or not tagged(meshptr) or not tagged(model_ptr):continue
                 props.update({"lod_byte":lod_count,"mesh_pointer":hex(meshptr),
                               "physics_pointer":hex(model_ptr)})
             if label=="xmodelmesh":
