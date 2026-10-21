@@ -1,0 +1,37 @@
+name: BO1 actual retail XAnimParts and original bone names
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-original-xanim.yml"
+      - "scripts/bo1_xanim_source_verify.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  real-original-animation-header-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch complete ORIGINAL common_mp.ff FastFile bytes from proven original source artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39635725690
+          name: bo1-exact-source-39635725690
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/bo1-original
+      - name: Verify actual original animation headers and script-string bone names
+        run: |
+          python3 scripts/bo1_xanim_source_verify.py \
+            --original-ff "$RUNNER_TEMP/bo1-original/zone/Common/common_mp.ff" \
+            --report "$RUNNER_TEMP/bo1-source-animations.json"
+      - name: Preserve source animation indices and bone names (full original FF remains available in source artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-skeleton-animation-identities-${{ github.run_id }}
+          path: ${{ runner.temp }}/bo1-source-animations.json
+          retention-days: 90
