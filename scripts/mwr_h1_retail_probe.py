@@ -110,7 +110,7 @@ def scan_lz4_first_block(file: Path, potential_stream: int) -> dict:
         packed = sample[offset+8:offset+8+compressed]
         try:
             raw = lz4.block.decompress(packed, uncompressed_size=decompressed)
-        except (ValueError, RuntimeError, OverflowError):
+        except Exception:  # Native lz4.block.LZ4BlockError is not a RuntimeError
             continue
         if len(raw)==decompressed:
             results.append({
