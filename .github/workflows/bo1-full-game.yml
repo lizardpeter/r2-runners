@@ -32,11 +32,20 @@ jobs:
           python3 scripts/bo1_full_game_range.py \
             --preset "$BO1_PRESET" \
             --output-dir "$RUNNER_TEMP/bo1-full-game"
-      - name: Upload JSON only; never redistribute original game files
+      - name: Preserve original extracted client FastFiles and IWD archives
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-files-${{ github.run_id }}
+          path: ${{ runner.temp }}/bo1-full-game/original-bo1/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve supplemental source provenance
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bo1-full-game-source-report
-          path: ${{ runner.temp }}/bo1-full-game/report/*.json
+          name: bo1-full-game-source-provenance-${{ github.run_id }}
+          path: ${{ runner.temp }}/bo1-full-game/report/
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 90
