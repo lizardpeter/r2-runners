@@ -13,6 +13,7 @@ from urllib.parse import quote
 from r2_download import download
 from bo3_zone_decode import parse_zlib_zone
 from bo3_xpak_decode import parse_index,probe_entry
+from bo3_base_index import read_base_index
 BASE="https://r2.houseofkublai.com/bo3/DUMP/zone/"
 FILES={
     "core_ui.ff":25129024,
@@ -140,6 +141,11 @@ def main():
             meta,entries=parse_index(target)
             xpaks[name]={"original_sha256":digest,"hash_count":len(entries)}
             hashes.update(x["key"] for x in entries)
+        base_meta,base_entries=read_base_index()
+        xpaks["base.xpak"]={"original_index_sha256":base_meta["hash_index_sha256"],
+                            "hash_count":base_meta["hash_count"],"original_file_bytes":base_meta["file_bytes"]}
+        hashes.update(base_entries.keys())
+        print(f"Original base.xpak index added {len(base_entries)} authenticated source hash keys",flush=True)
         for name in FF_PRESETS[preset]:
             p=tmp/name
             n,digest,_=download(BASE+quote(name),p)
