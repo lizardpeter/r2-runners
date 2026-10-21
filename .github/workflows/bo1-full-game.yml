@@ -16,6 +16,16 @@ on:
         required: true
         default: both
         options: [nuketown, firingrange, both, all_multiplayer]
+      iwd_start:
+        description: "First complete original client IWD to retrieve (0-56)"
+        required: true
+        type: number
+        default: 0
+      iwd_count:
+        description: "How many original complete IWDs to retrieve (0 means all if disk permits)"
+        required: true
+        type: number
+        default: 4
 
 permissions:
   contents: read
@@ -31,9 +41,13 @@ jobs:
       - name: Read original BO1 ZIP64 central directory over verified R2 byte ranges
         env:
           BO1_PRESET: ${{ inputs.preset || 'both' }}
+          BO1_IWD_START: ${{ inputs.iwd_start || 0 }}
+          BO1_IWD_COUNT: ${{ inputs.iwd_count || 4 }}
         run: |
           python3 scripts/bo1_full_game_range.py \
             --preset "$BO1_PRESET" \
+            --iwd-start "$BO1_IWD_START" \
+            --iwd-count "$BO1_IWD_COUNT" \
             --output-dir "$RUNNER_TEMP/bo1-full-game"
       - name: Preserve original extracted client FastFiles and IWD archives
         if: success()
