@@ -139,7 +139,19 @@ def verify_original_static_delta_translations(zone:bytes,entries:list[dict]):
         xyz=list(struct.unpack_from("<3f",zone,trans_at+4))
         if not all(math.isfinite(v) and abs(v)<100000 for v in xyz):
             raise ValueError(f"Original {entry['name']} nonfinite/out of source bounds delta frame0")
+        # The original source-following static XAnimPartTrans is 16 bytes.
+        # If a following quaternion exists, the next XAnimDeltaPartQuat
+        # size==0 contains the genuine signed XQuat2 frame0 at offset +4.
+        quat_pair=None
+        quat_struct=None
+        if quat==0xffffffff:
+            quat_struct=trans_at+16
+            quat_size=struct.unpack_from("<H",zone,quat_struct)[0]
+            if quat_size==0:
+                quat_pair=list(struct.unpack_from("<2h",zone,quat_struct+4))
         recovered.append({
+            "original_static_root_quat2":quat_pair,
+            "source_static_quat_struct_at":quat_struct if quat_pair is not None else None,
             "name":entry["name"],
             "source_xanim_offset":entry["source_header_offset"],
             "source_delta_at":offset,
@@ -159,9 +171,15 @@ def verify_original_static_delta_translations(zone:bytes,entries:list[dict]):
             (-14.1801138,2.6242592,-55.41215))
     ):
         raise ValueError("Original MG42 aim source root motion vec3 changed")
-    print("PASS 52 exact original XAnimPartTrans size=0 frame0 root vectors "
-          "validated against authentic source float bytes (nested animated "
-          "delta translations and quaternions remain unresolved).")
+    recovered_quats=sum(x["original_static_root_quat2"] is not None for x in recovered)
+    if recovered_quats!=45:
+        raise ValueError(f"Original static source XQuat2 count changed: {recovered_quats}")
+    if known["original_static_root_quat2"]!=[-12539,30273] or known["source_static_quat_struct_at"]!=0xdf3d1f:
+        raise ValueError("Original MG42 aim source signed XQuat2 bits changed")
+    print("PASS 52 exact original XAnimPartTrans size=0 frame0 root vectors, "
+          "45 original signed source XQuat2 frame0 pairs, verified against "
+          "authentic T5 compressed source bytes. Animated root tracks and "
+          "quat axis interpretation remain unresolved.")
     return recovered
 
 def verify(path:Path,out:Path):
