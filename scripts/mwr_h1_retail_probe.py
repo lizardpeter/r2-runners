@@ -186,7 +186,7 @@ def decode_lz4_zone(file: Path, header: dict) -> dict:
             if len(raw) != raw_size or decoded + raw_size > expected_bytes:
                 raise ValueError(f"block {count} decoded length mismatch")
             if not leading:
-                leading=raw[:64]
+                leading=raw[:144]
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -199,7 +199,9 @@ def decode_lz4_zone(file: Path, header: dict) -> dict:
             "block_count":count,
             "logical_stream_bytes_used":stream.logical,
             "decoded_sha256":digest.hexdigest(),
-            "decoded_header_first64_hex":leading.hex(" "),
+            "decoded_header_first144_hex":leading.hex(" "),
+            "xfile_header_u64":list(struct.unpack("<9Q",leading[:72])) if len(leading)>=72 else [],
+            "xfile_payload_len_matches":(struct.unpack_from("<Q",leading,0)[0]+72==decoded) if len(leading)>=72 else False,
         }
 
 def main()->int:
