@@ -1,0 +1,49 @@
+name: BO1 genuine weapon-to-animation source graph
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-original-weapon-animation-link.yml"
+      - "scripts/bo1_weapon_animation_link_verify.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  exact-original-weapon-clip-provenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download ACTUAL original BO1 iw_00.iwd and common_mp.ff, not a report
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39635725690
+          name: bo1-exact-source-39635725690
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/original
+      - name: Independently decode authentic original source WEAPONFILE relationships
+        run: |
+          python3 scripts/bo1_weapon_source_verify.py \
+            --iwd "$RUNNER_TEMP/original/main/iw_00.iwd" \
+            --report "$RUNNER_TEMP/weapon-source.json"
+      - name: Independently decode authentic XAnimParts names, skeleton and raw compressed channels
+        run: |
+          python3 scripts/bo1_xanim_source_verify.py \
+            --original-ff "$RUNNER_TEMP/original/zone/Common/common_mp.ff" \
+            --report "$RUNNER_TEMP/xanim-source.json"
+      - name: Prove actual weapon-field-to-original-animation identity matches
+        run: |
+          python3 scripts/bo1_weapon_animation_link_verify.py \
+            --weapon-report "$RUNNER_TEMP/weapon-source.json" \
+            --animation-report "$RUNNER_TEMP/xanim-source.json" \
+            --out "$RUNNER_TEMP/source-weapon-animation-links.json"
+      - name: Preserve exact original source dependency proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-real-weapon-animation-identity-proof-${{ github.run_id }}
+          path: ${{ runner.temp }}/source-weapon-animation-links.json
+          retention-days: 90
