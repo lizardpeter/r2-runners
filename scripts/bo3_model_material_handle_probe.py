@@ -66,7 +66,7 @@ def main():
   for i,m in enumerate(models):
    n=m["source_header"]+0x188+len(m["model"])+1
    next_model=models[i+1]["source_header"] if i+1<len(models) else len(z)
-   lods=candidates(z,n,min(n+128,next_model))
+   lods=candidates(z,n,min(n+128+0x78,next_model))
    valid=[x for x in lods if
        x["surface_base"]==0 and x["original_flags"]==0 and
        x["near"]<=x["far"] and
