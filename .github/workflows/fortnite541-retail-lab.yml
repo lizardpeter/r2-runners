@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/fortnite541-retail-lab.yml"
       - "scripts/fortnite541_dependency_handoff.py"
+      - "scripts/fortnite541_blueprint_mesh_closure.py"
   workflow_dispatch:
     inputs:
       scope:
@@ -77,6 +78,15 @@ jobs:
             --destination "$RUNNER_TEMP/fortnite541-poi" \
             --report-dir "$RUNNER_TEMP/fortnite541-poi-report" \
             2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/architecture-dependency-download.log"
+      - name: Recover original imported StaticMeshes from verified architectural Blueprint headers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 r2-workbench/scripts/fortnite541_blueprint_mesh_closure.py --self-test
+          python3 r2-workbench/scripts/fortnite541_blueprint_mesh_closure.py \
+            --source-root "$RUNNER_TEMP/fortnite541-poi" \
+            --report-dir "$RUNNER_TEMP/fortnite541-poi-report" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/blueprint-mesh-download.log"
       - name: Write exact-source byte inventory, even if parser failed
         if: always()
         shell: bash
