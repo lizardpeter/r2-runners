@@ -33,8 +33,10 @@ def scan_table_candidates(data: bytes, count: int, limit: int = 12) -> list[dict
     candidates = []
     if not (1 <= count <= 1_000_000):
         return candidates
-    stop = len(data) - 16 * 32
-    if stop < DIRECTORY_BYTES:
+    if count < 32:
+        return candidates
+    stop = len(data) - 16 * min(96, count)
+    if stop < 104:
         return candidates
 
     def evaluate(at: int):
