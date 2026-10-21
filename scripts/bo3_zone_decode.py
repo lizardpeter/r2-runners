@@ -128,18 +128,17 @@ def parse_directory(data:bytearray)->dict:
     if string_start >= len(data):
         return {**info,"status":"script_string_start_out_of_bounds"}
     strings=[]
+    non_text=0
     cursor=string_start
     for idx in range(string_count):
         end=data.find(b"\0",cursor, cursor+4096)
         if end < 0:
             return {**info,"status":"script_string_not_null_terminated","string_index":idx}
         value=bytes(data[cursor:end])
-        if any(c < 32 or c>=127 for c in value):
-            return {**info,"status":"non_printable_script_string","string_index":idx,
-                    "string_start":string_start,"cursor":cursor,
-                    "first_strings":strings[:5],
-                    "offending_string_bytes_hex":value[:64].hex()}
-        strings.append(value.decode("ascii"))
+        # T7 script-string storage includes non-text byte values and empty
+        # records. Preserve exact bytes; these are not necessarily names.
+        if any(c<32 or c>=127 for c in value):non_text+=1
+        strings.append(value.decode("ascii","backslashreplace"))
         cursor=end+1
     candidate=align8(cursor)
     # Inspect exactly the *record layout* used by T7, with header u64 + type
@@ -191,7 +190,7 @@ def parse_directory(data:bytearray)->dict:
               best["recognized_inline_markers"]==asset_count)
     return {**info,
             "status":"t7_asset_table_layout_verified" if credible else "asset_table_layout_not_verified",
-            "script_strings_parsed":len(strings),
+            "script_strings_parsed":len(strings),"non_text_script_strings":non_text,
             "script_string_examples":strings[:8],
             "string_start":string_start,"string_end":cursor,"aligned_table_candidate":candidate,
             "asset_table":best,
