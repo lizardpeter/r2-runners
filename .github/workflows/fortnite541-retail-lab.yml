@@ -56,9 +56,9 @@ jobs:
           ./crates/fortnite_541/target/release/athena_poi_actor_frontier \
             "$RUNNER_TEMP/fortnite541-poi" \
             2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/native-actor-frontier.log"
-          python3 crates/fortnite_541/tools/report_public_asset_probe.py \
-            --scope poi --source-root "$RUNNER_TEMP/fortnite541-poi" \
-            --output "$RUNNER_TEMP/fortnite541-poi-report/source-inventory.json"
+          # The public inventory CLI currently supports terrain/sky/foliage only.
+          # The exact POI file census is generated below for every file,
+          # including after a partially failed source decode.
       - name: Write exact-source byte inventory, even if parser failed
         if: always()
         shell: bash
