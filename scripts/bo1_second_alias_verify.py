@@ -122,7 +122,7 @@ def verify_original_shader_material_sampler_names(zone:bytes,materials:list[dict
                     raise ValueError(f"source sampler {name} original first/last bytes do not match")
                 root=name.rstrip("0123456789")
                 number=name[len(root):]
-                ctab_name=f"{root}Sampler{number}".encode()+b"\\0"
+                ctab_name=f"{root}Sampler{number}".encode()+bytes([0])
                 if ctab_name not in zone:
                     raise ValueError(f"original SM3 CTAB sampler {ctab_name!r} not found in source")
                 mapped+=1
