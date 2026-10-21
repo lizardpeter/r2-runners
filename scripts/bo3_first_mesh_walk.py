@@ -6,7 +6,7 @@ script strings, or retail binary payloads leave the runner. First root body
 must start EXACTLY at the end of the validated original XAsset directory.
 """
 from __future__ import annotations
-import hashlib,json,os,struct,sys
+import hashlib,json,math,os,struct,sys
 from collections import Counter
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -97,6 +97,65 @@ def nearby_mesh_info_fields(z,name_end,interval_end):
         })
     return out
 
+def decode_authentic_rigid_geometry(zone,source_info,surface):
+    """Decode *actual retail* T7 float3 / f16 UV / u16 triangles in memory."""
+    buffer_start=source_info.get("original_inline_buffer_offset")
+    if buffer_start is None:return {"status":"inline_buffer_unresolved"}
+    data=memoryview(zone)[buffer_start:source_info["original_inline_buffer_end"]]
+    vc,face_count=surface["source_vertices"],surface["authored_triangles"]
+    vertex_base,index_base=surface["vertex_base"],surface["index_base"]
+    mesh_verts=source_info["vertex_count"]
+    mesh_indices=source_info["face_count"]
+    if vertex_base+vc>mesh_verts or index_base+3*face_count>mesh_indices:
+        return {"status":"source_ranges_outside_mesh"}
+    p_off=source_info["position_stream_offset"]+vertex_base*12
+    a_off=source_info["uv_stream_offset"]+vertex_base*16
+    i_off=source_info["face_stream_offset"]+index_base*2
+    if (p_off+vc*12>len(data) or a_off+vc*16>len(data) or
+            i_off+face_count*6>len(data)):
+        return {"status":"source_byte_ranges_exceeded"}
+    positions=[]
+    uvs=[]
+    for n in range(vc):
+        p=struct.unpack_from("<fff",data,p_off+12*n)
+        uv=struct.unpack_from("<ee",data,a_off+16*n+4)
+        if any(not math.isfinite(x) for x in p+uv):
+            return {"status":"nonfinite_original_position_or_uv"}
+        if any(abs(x)>1000000 for x in p):
+            return {"status":"original_position_unreasonably_large"}
+        positions.append(p)
+        uvs.append(uv)
+    indices=struct.unpack_from("<"+str(face_count*3)+"H",data,i_off)
+    if any(i>=vc for i in indices):
+        return {"status":"retail_index_references_nonlocal_vertex",
+                "bad_indices":sum(i>=vc for i in indices)}
+    nondegenerate=0
+    for i in range(face_count):
+        a,b,c=(positions[k] for k in indices[i*3:i*3+3])
+        ab=[b[j]-a[j] for j in range(3)]
+        ac=[c[j]-a[j] for j in range(3)]
+        n=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],
+           ab[0]*ac[1]-ab[1]*ac[0]]
+        if sum(q*q for q in n)>1e-12:nondegenerate+=1
+    return {
+        "status":"original_rigid_surface_decoded",
+        "vertices":vc,
+        "authored_triangles":face_count,
+        "valid_indices":len(indices),
+        "nondegenerate_triangles":nondegenerate,
+        "source_position_min":[min(p[j] for p in positions) for j in range(3)],
+        "source_position_max":[max(p[j] for p in positions) for j in range(3)],
+        "source_uv_min":[min(p[j] for p in uvs) for j in range(2)],
+        "source_uv_max":[max(p[j] for p in uvs) for j in range(2)],
+        "unique_vertex_colors":len({bytes(data[a_off+16*n:a_off+16*n+4]) for n in range(vc)}),
+        "vertex_position_bytes_sha256":hashlib.sha256(
+            bytes(data[p_off:p_off+vc*12])
+        ).hexdigest(),
+        "triangle_index_bytes_sha256":hashlib.sha256(
+            bytes(data[i_off:i_off+face_count*6])
+        ).hexdigest(),
+    }
+
 def survey(z):
     d=parse_directory(bytearray(z))
     if d["status"]!="t7_asset_table_layout_verified":
@@ -150,6 +209,14 @@ def survey(z):
                     z,inline_end,min(next_at,inline_end+768),
                     x["surface_count"],info["vertex_count"],info["face_count"]
                 )
+                # Admission requires a source XSurface at the exact buffer
+                # boundary, not an approximate hit hundreds of bytes later.
+                exact=[surf for surf in info["surface_records_after_buffer"]
+                       if surf["original_offset"]==inline_end]
+                if x["surface_count"]==1 and len(exact)==1:
+                    info["decoded_retail_surface"]=decode_authentic_rigid_geometry(
+                        z,info,exact[0]
+                    )
         records.append({
             "candidate_source_mesh_info":stream_candidates,
             "early_mesh_info_field_probes":nearby_mesh_info_fields(z,name_end,next_at) if k<4 else [],
@@ -176,6 +243,10 @@ def survey(z):
         "surface_count_total":surfaces_total,
         "leading_meshes_with_plausible_stream_structs":sum(bool(x["candidate_source_mesh_info"]) for x in records),
         "leading_meshes_with_bounded_inline_mesh_buffers":sum(any("original_inline_buffer_offset" in c for c in x["candidate_source_mesh_info"]) for x in records),
+        "verified_actual_retail_surface_decodes":sum(c.get("decoded_retail_surface",{}).get("status")=="original_rigid_surface_decoded" for x in records for c in x["candidate_source_mesh_info"]),
+        "verified_actual_retail_vertices":sum(c.get("decoded_retail_surface",{}).get("vertices",0) for x in records for c in x["candidate_source_mesh_info"]),
+        "verified_actual_retail_triangles":sum(c.get("decoded_retail_surface",{}).get("authored_triangles",0) for x in records for c in x["candidate_source_mesh_info"]),
+
         "source_order_digest_sha256":hashlib.sha256(
             "\n".join(x["model_name"] for x in records).encode()).hexdigest(),
         "first_15_mesh_placements":records[:15],
