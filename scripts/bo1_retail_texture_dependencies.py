@@ -190,8 +190,12 @@ def scan_original_client(zip_file:Path,output_dir:Path):
     status=Counter()
     for logical,owners in requests.items():
         status[("absent","unique","ambiguous")[min(len(candidates[logical]),2)]]+=1
+    complete_digest=hashlib.sha256()
+    with zip_file.open("rb") as original_archive:
+        for block in iter(lambda: original_archive.read(8*1024*1024),b""):
+            complete_digest.update(block)
     audit={
-        "original_complete_client_sha256":hashlib.sha256(zip_file.read_bytes()).hexdigest(),
+        "original_complete_client_sha256":complete_digest.hexdigest(),
         "map_fastfiles":findings,
         "source_direct_image_names":len(requests),
         "original_iwd_archives_scanned":archives_scanned,
