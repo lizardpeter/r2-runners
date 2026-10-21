@@ -258,7 +258,7 @@ def main()->int:
             "file_count":len(files),"source_files":objects}
     args.report.parent.mkdir(parents=True,exist_ok=True)
     args.report.write_text(json.dumps(report,indent=2)+"\n")
-    return 1 if any("ERROR" in v for v in objects.values()) else 0
+    return 1 if any("ERROR" in v or (args.full_decode and v.get("whole_zone_decode",{}).get("status") != "full_zone_decoded") for v in objects.values()) else 0
 
 if __name__=="__main__":
     sys.exit(main())
