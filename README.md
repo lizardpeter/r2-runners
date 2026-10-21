@@ -244,3 +244,29 @@ XAsset types, so their actual contents must be reconstructed from weapon,
 table, model, image, material and UI dependencies. No original resource is
 marked playable simply because its source XAsset row or reference was
 indexed. Rust-test full cargo and in-game playability still need validation.
+
+
+## BO1 actual original skeletal animations and authored gameplay notetracks
+
+[Exact original retail common_mp XAnimParts verification
+#39684609393](https://github.com/lizardpeter/r2-runners/actions/runs/39684609393)
+**PASSED**. It downloaded the complete **original `common_mp.ff` source binary**
+from an earlier exact-file artifact and independently decoded **2,666**
+original 104-byte `XAnimParts` headers from **3,355** source class-4
+animation XAsset rows, with accurate source names, frame counts, rates,
+loop/delta flags, original virtual source pointers, and original bone
+partition counts. The source script-string dictionary resolves
+**2,661 named bone tables** and **176,793 individual original joint-name
+references** without bad script indices.
+
+The same authentic file contains **5,735 authored normalized-time
+`XAnimNotifyInfo` events**, including **1,797 `sndnt#...` sound cue
+notetracks**, **1,028 `rmbnt#...` reload events**, **2,666 `end`
+markers**, 242 other named events and two original script IDs whose name is
+empty (the raw IDs are retained).
+
+The Rust-test `xanim_source` importer can recover these T5 source fields
+without writing placeholder animations. Original data-array compression,
+quaternion tracks, translations, bone-pose playback and SndBank samples
+are still **not** decoded. Other original animation XAsset rows and
+other FastFiles need the same source-grounded treatment.
