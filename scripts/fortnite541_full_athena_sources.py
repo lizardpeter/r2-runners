@@ -31,8 +31,11 @@ OBJECT_FRAGMENTS={
     "atmosphere":("/sky/","/skydome/","/fog/","/atmosphere/","/cloud/","/weather/","/storm/",
                   "/timeofday/","/lighting/"),
     "terrain":("/landscape/","/terrain/","/biome/","/biomes/"),
+    "lighting":("/lights/","/light/","/lighting/","/lightmaps/","/lightprobes/","/lightgrid/","/lightmass/"),
+    "materials":("/materials/","/material/","/materialinstances/","/mastermaterials/"),
 }
 EXTENSIONS=(".umap",".uasset",".uexp",".ubulk")
+SHADER_FILES=(".ushaderbytecode",".ushaderlibrary",".ushadercache",".usf",".ush",".bin",".metallib")
 
 def original_relative(internal:str)->str:
     path=internal.replace("\\","/").lstrip("/")
@@ -50,6 +53,9 @@ def original_relative(internal:str)->str:
 
 def package_family(relative:str,family:str)->bool:
     lower=relative.lower()
+    if family=="shaders":
+        return (lower.endswith(SHADER_FILES) and
+                ("shader" in lower or "pcd3d_sm5" in lower))
     if family in WORLD_ROOTS:
         return lower.endswith(".umap") and any(
             lower.startswith(root) for root in WORLD_ROOTS[family]
@@ -81,6 +87,19 @@ def build_plan(index:dict[str,list[tuple]],family:str,shard:int,shards:int):
     planned=[]
     stem_ext=".umap" if family in WORLD_ROOTS else ".uasset"
     for base in matched:
+        if family=="shaders":
+            # Compiled UE4 shader archive binaries are complete PAK entries,
+            # not UE4 UObject .uasset/.uexp pairs. Preserve their exact bytes.
+            stem=base
+            if shards_for_source(stem,shards)!=shard:
+                continue
+            report["original_package_stems_in_shard"]+=1
+            chosen,error=choose(index.get(base,[]),base)
+            if error:
+                report["unresolved"].append({"source":base,"reason":error})
+            else:
+                planned.append((base,chosen))
+            continue
         stem=base[:-len(stem_ext)]
         if shards_for_source(stem,shards)!=shard:
             continue
@@ -120,6 +139,13 @@ def test_logic():
     assert choose([entry,entry],"x")[1] is None
     bad=("pakchunk1",entry[1],(100,20,20,0,b"\xbb"*20,0))
     assert choose([entry,bad],"x")[1]=="conflicting_authentic_source_payloads"
+    assert package_family("Materials/Surface/MI_Wall.uasset","materials")
+    assert package_family("Athena/Lighting/Point/L.uasset","lighting")
+    assert package_family("Engine/GlobalShaderCache-PCD3D_SM5.bin","shaders")
+    assert not package_family("Weapons/Rifle.bin","shaders")
+    shader_idx={"globalshadercache-pcd3d_sm5.bin":[entry]}
+    binaries,binary_report=build_plan(shader_idx,"shaders",0,1)
+    assert len(binaries)==1 and binary_report["planned_original_files"]==1
     print("FORTNITE541_FULL_ATHENA_INDEX_PLAN_TEST_PASS",flush=True)
 
 def run(family:str,shard:int,shards:int,destination:Path,reports:Path):
@@ -171,7 +197,7 @@ def run(family:str,shard:int,shards:int,destination:Path,reports:Path):
 
 if __name__=="__main__":
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--family",choices=tuple(WORLD_ROOTS)+tuple(OBJECT_FRAGMENTS))
+    p.add_argument("--family",choices=tuple(WORLD_ROOTS)+tuple(OBJECT_FRAGMENTS)+("shaders",))
     p.add_argument("--shard",type=int,default=0)
     p.add_argument("--shards",type=int,default=1)
     p.add_argument("--destination",type=Path)
