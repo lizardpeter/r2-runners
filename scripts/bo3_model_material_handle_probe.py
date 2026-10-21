@@ -78,12 +78,38 @@ def main():
        x["surface_ref"]=="0xffffffffffffffff" and
        x["mesh_ref"]=="0xffffffffffffffff"]
    if len(valid)!=1:raise ValueError("First T7 LOD ambiguous for "+m["model"])
+   child=probe(z,n,valid[0],next_model)
+   material_pointer_proofs=[]
+   for candidate in child["first_candidate_records"]:
+    if candidate["3x8_record"][:2]!=["inline","inline"]:
+     continue
+    at=candidate["source_offset"]
+    count=valid[0]["count"]
+    if at+16+count*8>next_model:continue
+    ptrs=[struct.unpack_from("<Q",z,at+16+u*8)[0] for u in range(count)]
+    rows=[]
+    for ptr in ptrs:
+     if (ptr>>56)!=0x50:break
+     logical=(ptr&0x00ffffffffffffff)-1
+     if logical%16 or logical//16>=row_count:break
+     ty,marker=struct.unpack_from("<QQ",z,base+logical)
+     rows.append({"model_material_pointer":f"0x{ptr:016x}",
+                  "asset_row_index":logical//16,
+                  "typed_asset_kind":ty,"asset_header_ref":f"0x{marker:016x}"})
+    if len(rows)==count:
+     material_pointer_proofs.append({
+       "source_array_offset":at+16,
+       "declared_surface_count":count,
+       "all_source_asset_rows_are_materials":all(r["typed_asset_kind"]==6 for r in rows),
+       "original_asset_row_joins":rows,
+     })
    result.append({
      "model":m["model"],
      "source_model_header":m["source_header"],
      "first_lod_surface_count":valid[0]["count"],
      "material_owner_ptr":m["material_handle_source_pointer"],
-     "child":probe(z,n,valid[0],next_model),
+     "source_model_material_array_candidates":material_pointer_proofs,
+     "child":child,
    })
   report={"zone":ZONE,"original_sha256":sha,"total_models":len(result),
           "typed_source_material_xasset_pointers":material_ref_counts,
