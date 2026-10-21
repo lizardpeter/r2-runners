@@ -22,8 +22,7 @@ ALLOWED_SUFFIXES={
     "zone/english/mp_dome.ff",
     "zone/english/mp_hardhat.ff",
 }
-MAX_ZONE_BYTES=512*1024*1024
-MAX_TOTAL_BYTES=850*1024*1024
+RETRIEVE_ATTEMPTS=4
 
 def buffered_http(http, report):
     while True:
@@ -43,61 +42,72 @@ def extract(dst, max_files):
         "errors":[],
     }
     selected=0
-    total=0
+    report["attempts"]=[]
     headers={"User-Agent":"IW5-original-ff-source-extractor/1.0",
              "Accept-Encoding":"identity"}
-    with urlopen(Request(URL,headers=headers),timeout=300) as response:
-        length=int(response.headers.get("Content-Length","0"))
-        if length!=ARCHIVE_SIZE:
-            raise ValueError(f"original R2 archive size changed: {length}")
+    for attempt in range(1,RETRIEVE_ATTEMPTS+1):
+        if selected>=max_files:
+            break
+        attempt_record={"number":attempt,"start_bytes":report["downloaded_outer_bytes"],
+                        "completed_original_files":[]}
+        report["attempts"].append(attempt_record)
+        print(f"Starting original ZIP stream attempt {attempt}/{RETRIEVE_ATTEMPTS}",flush=True)
         try:
-            for raw_name, size, chunks in stream_unzip(buffered_http(response,report)):
-                name=raw_name.decode("utf-8","replace").replace("\\","/")
-                if name.startswith("/") or ".." in name.split("/"):
-                    raise ValueError("unsafe source archive member")
-                normalized=name.lower().removeprefix("pluto_iw5_full_game/")
-                if not normalized.endswith(".ff"):
-                    for _ in chunks:
-                        pass
-                    continue
-                report["source_ff_member_names"].append(normalized)
-                if normalized not in ALLOWED_SUFFIXES or selected>=max_files:
-                    for _ in chunks:
-                        pass
-                    continue
-                if size is not None and size>MAX_ZONE_BYTES:
-                    report["errors"].append(f"original source zone too large: {name}")
-                    for _ in chunks:
-                        pass
-                    continue
-                output_name=Path(normalized).name
-                path=dst/output_name
-                sha=hashlib.sha256()
-                n=0
-                with path.open("wb") as target:
-                    for block in chunks:
-                        n+=len(block)
-                        if n>MAX_ZONE_BYTES or total+n>MAX_TOTAL_BYTES:
-                            raise ValueError("source zone exceeds bounded artifact budget")
-                        sha.update(block)
-                        target.write(block)
-                if n<21 or (lambda p: p.open("rb").read(4))(path)!=b"IWff":
-                    path.unlink(missing_ok=True)
-                    raise ValueError(f"original source FF header invalid: {name}")
-                total+=n
-                selected+=1
-                report["source_ff_files"].append({
-                    "original_member":name,
-                    "artifact_filename":output_name,
-                    "source_bytes":n,
-                    "original_sha256":sha.hexdigest(),
-                    "header_verified":True,
-                })
-                print("RECOVERED ORIGINAL",name,n,"bytes",flush=True)
-                if selected>=max_files:
-                    break
+            with urlopen(Request(URL,headers=headers),timeout=300) as response:
+                length=int(response.headers.get("Content-Length","0"))
+                if length!=ARCHIVE_SIZE:
+                    raise ValueError(f"original R2 archive size changed: {length}")
+                for raw_name, size, chunks in stream_unzip(buffered_http(response,report)):
+                    name=raw_name.decode("utf-8","replace").replace("\\","/")
+                    if name.startswith("/") or ".." in name.split("/"):
+                        raise ValueError("unsafe source archive member")
+                    normalized=name.lower().removeprefix("pluto_iw5_full_game/")
+                    if not normalized.endswith(".ff"):
+                        for _ in chunks:pass
+                        continue
+                    if normalized not in report["source_ff_member_names"]:
+                        report["source_ff_member_names"].append(normalized)
+                    if normalized not in ALLOWED_SUFFIXES or selected>=max_files:
+                        for _ in chunks:pass
+                        continue
+                    output_name=Path(normalized).name
+                    path=dst/output_name
+                    sha=hashlib.sha256()
+                    count=0
+                    partial=path.with_suffix(path.suffix+".partial")
+                    try:
+                        with partial.open("wb") as target:
+                            for block in chunks:
+                                count+=len(block)
+                                sha.update(block)
+                                target.write(block)
+                        if size is not None and count!=size:
+                            raise ValueError("original FF source ZIP advertised size mismatch")
+                        with partial.open("rb") as source:
+                            if source.read(4)!=b"IWff":
+                                raise ValueError("original source FF magic invalid")
+                        partial.replace(path)
+                    finally:
+                        partial.unlink(missing_ok=True)
+                    selected+=1
+                    report["source_ff_files"].append({
+                        "original_member":name,
+                        "artifact_filename":output_name,
+                        "source_bytes":count,
+                        "original_sha256":sha.hexdigest(),
+                        "header_verified":True,
+                    })
+                    attempt_record["completed_original_files"].append(name)
+                    print(f"RECOVERED complete original {name}: {count} bytes SHA256={sha.hexdigest()}",
+                          flush=True)
+                    if selected>=max_files:break
         except Exception as exc:
-            report["errors"].append(str(exc)[:350])
+            attempt_record["transport_error"]=f"{type(exc).__name__}: {exc}"[:450]
+            print("Source ZIP stream interrupted:",attempt_record["transport_error"],flush=True)
+        attempt_record["downloaded_outer_bytes"]=(
+            report["downloaded_outer_bytes"]-attempt_record["start_bytes"])
+        print("Original archive bytes streamed in attempt",
+              attempt,attempt_record["downloaded_outer_bytes"],flush=True)
     (dst/"iw5_full_source_zone_status.json").write_text(json.dumps(report,indent=2)+"\n")
     print(json.dumps(report,indent=2),flush=True)
     if selected==0:
