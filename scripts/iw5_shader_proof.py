@@ -94,11 +94,21 @@ def inspect(buf):
     bindcount=collections.Counter()
     bindings_unique=set()
     no_ctab=[]
+    truncated_at_end=[]
     for match in RETAIL_NAMES.finditer(buf):
         offset=match.end()
         version=word(buf,offset) if offset+4<=len(buf) else None
         if version not in D3D9_VERSIONS: continue
-        end=shader_end(buf,offset)
+        try:
+            end=shader_end(buf,offset)
+        except ValueError:
+            # The artifact is an authenticated *prefix* of a much larger
+            # signed multiplayer FastFile. A bytecode program clipped by
+            # its final authenticated source block is not counted as full.
+            if len(buf)-offset<8192:
+                truncated_at_end.append(match.group(1).decode("ascii"))
+                continue
+            raise
         program=buf[offset:end]
         if word(program,len(program)-4)!=0xffff:
             raise ValueError("missing retail D3D9 END token")
@@ -121,6 +131,7 @@ def inspect(buf):
             "total_ctab_bindings":sum(bindcount.values()),
             "unique_name_register_mappings":len(bindings_unique),
             "no_ctab_names":no_ctab,
+            "source_prefix_truncated_shaders":truncated_at_end,
             "top_source_bindings":[{
                 "stage":k[0],"name":k[1],"register_set":k[2],
                 "register":k[3],"shader_count":v
@@ -134,6 +145,8 @@ def main(samples,path):
     data["sha256_source_blocks"]=checks
     if checks!=29 or data["source_shaders"]!=1021:
         raise ValueError("IW5 original shader bytecode sample count mismatch")
+    if len(data["source_prefix_truncated_shaders"])!=1:
+        raise ValueError("IW5 original signed shader source truncation boundary changed")
     if data["stage_counts"]!={"pixel":768,"vertex":253}:
         raise ValueError("IW5 original source shader stage counts mismatch")
     if data["total_ctab_bindings"]!=15626 or data["unique_name_register_mappings"]!=110:
