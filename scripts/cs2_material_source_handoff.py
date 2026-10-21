@@ -28,7 +28,7 @@ VPK_MAX_STRING_BYTES = 4096
 TARGETS = (
     "materials/default/default_ao_tga_559f1ac6.vtex_c",
     "materials/default/default_normal_tga_7be61377.vtex_c",
-    "materials/models/de_overpass/industrial/concrete_block/ground_1_detail_psd_c1731146.vtex_c",
+    "materials/de_dust/hr_dust/hr_dust_trim_overlay_psd_92cba63e.vtex_c",
 )
 
 
