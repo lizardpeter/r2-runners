@@ -1,0 +1,35 @@
+name: Ghosts original PAK HTTP range smoke test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ghosts-pak-range-smoke.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-range:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Check original R2 imagefile PAK random-access byte ranges
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://r2.houseofkublai.com/ghosts/DUMP/imagefile1.pak"
+          headers="${RUNNER_TEMP}/r2-headers"
+          output="${RUNNER_TEMP}/r2-original-32-bytes"
+          curl --silent --show-error --fail --location --retry 2 \
+            --connect-timeout 20 --max-time 90 \
+            -H 'Accept-Encoding: identity' -H 'Range: bytes=32-63' \
+            -D "$headers" -o "$output" "$url"
+          echo "Original source range response (no retail payload printed):"
+          grep -iE '^(HTTP/|content-range:|content-length:)' "$headers" | tail -4
+          grep -Eiq '^HTTP/[^ ]+ 206' "$headers"
+          grep -Eiq '^content-range: bytes 32-63/[0-9]+' "$headers"
+          [[ "$(wc -c < "$output")" -eq 32 ]]
+          echo "Original IW6 R2 imagefile1.pak range 32-63: exact 32 bytes, 206 Partial Content, validated"
+          rm -f "$headers" "$output"
