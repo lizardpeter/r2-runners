@@ -157,6 +157,50 @@ def decode_source_script_slots(data: bytes, count: int) -> dict:
         "first_indexed_names":[{"index":i,"name":v} for i,v in list(enumerate(names))[:15]],
     }
 
+
+
+def probe_xasset_array_after_strings(data: bytes, asset_count: int, script_end: int) -> list[dict]:
+    """Evidence only: H1 XAsset is a 16-byte (u32 type, pad, u64 header) pair.
+
+    The game may serialize XGlobals data before this array, so a failed
+    nearby search is not proof that the array is absent. Record bounded,
+    source-backed candidates and never invent asset entries.
+    """
+    if not 2 <= asset_count <= 1000000:
+        return []
+    base=(script_end+7)&~7
+    out=[]
+    for start in range(max(112,base),min(len(data)-32,base+1024),8):
+        types=Counter()
+        tags=Counter()
+        invalid=None
+        examined=min(128,asset_count)
+        for i in range(examined):
+            offset=start+i*16
+            if offset+16>len(data):
+                invalid="truncated"
+                break
+            kind,pad,pointer=struct.unpack_from("<IIQ",data,offset)
+            if kind>96 or pad!=0:
+                invalid=f"invalid type/padding after {i} records"
+                break
+            types[kind]+=1
+            tags["inline" if pointer==MARKER else "null" if pointer==0 else
+                 "other_tag" if likely_pointer(pointer) else "unknown"]+=1
+        accepted=sum(types.values())
+        if accepted>=min(2,asset_count) and sum(v for k,v in types.items() if k!=0)>0:
+            out.append({
+                "offset":start,
+                "valid_consecutive_records":accepted,
+                "examined_records":examined,
+                "type_histogram":dict(types.most_common(12)),
+                "pointer_tags":dict(tags),
+                "stopped_reason":invalid,
+            })
+    out.sort(key=lambda r:(-r["valid_consecutive_records"],
+                           -r["pointer_tags"].get("inline",0),r["offset"]))
+    return out[:8]
+
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
@@ -182,5 +226,8 @@ def inspect_prefix(data: bytes) -> dict:
             f"{u64(data,p):016x}" for p in range(112+script_count*8,
                                                   min(len(data)-8,112+script_count*8+64),8)]
     result["sample_8byte_words_at_112"]=[f"{u64(data,p):016x}" for p in range(112, min(len(data)-8,360),8)]
+    end_of_strings=(result.get("decoded_indexed_script_strings") or {}).get("inline_blob_end_offset",112)
     result["xasset_16byte_table_candidate_runs"]=scan_table_candidates(data, asset_count)
+    result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
+        data,asset_count,end_of_strings)
     return result
