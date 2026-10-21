@@ -247,12 +247,17 @@ def verify_original_animated_delta_source(zone:bytes,entries:list[dict]):
                 values=[list(frames[i:i+3]) if small
                          else list(struct.unpack_from("<3H",frames,i))
                         for i in range(0,nbytes,3 if small else 6)]
+                decoded=[[mins[j]+scales[j]*frame[j] for j in range(3)]
+                         for frame in values]
+                if not all(math.isfinite(v) for frame in decoded for v in frame):
+                    raise ValueError(f"{item['name']} has nonfinite decoded source XYZ")
                 result["source_quantized_root_translation"]={
                     "original_struct_offset":offset,
                     "source_min_xyz":mins,"source_scale_xyz":scales,
                     "source_frame_numbers":indices,
                     "original_small_encoding":bool(small),
                     "source_quantized_xyz":values,
+                    "source_decoded_xyz":decoded,
                     "original_frame_bytes_sha256":hashlib.sha256(frames).hexdigest(),
                 }
             else:
@@ -302,6 +307,8 @@ def verify_original_animated_delta_source(zone:bytes,entries:list[dict]):
     expected=sample["source_quantized_root_translation"]
     if sample["header_offset"]!=0x4ae8e2 or expected["source_frame_numbers"]!=[0,17,133] or \
        expected["source_quantized_xyz"]!=[[251,255,0],[0,19,0],[0,19,0]] or \
+       abs(expected["source_decoded_xyz"][0][0]+0.00002810717)>1e-6 or \
+       abs(expected["source_decoded_xyz"][1][0]+0.096187487)>1e-6 or \
        sample["exact_next_header_offset"]!=0x4b6e7f:
         raise ValueError("Authentic p_handheldradio_idle compact root track bytes differ")
     print(f"PASS original BO1 nested root deltas: {real} fully source-closed clips, "
