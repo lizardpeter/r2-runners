@@ -123,6 +123,9 @@ def inspect_sequential_source_files(data:bytes,verified:dict):
         if kind not in (48,49):
             return {"status":"stopped_at_other_asset_type","decoded_source_files":len(records),
                     "next_type":kind,"next_index":index,"next_decoded_offset":cursor,
+                    "next_body_prefix_hex":data[cursor:cursor+240].hex(" "),
+                    "next_body_u64":[f"{u64(data,off):016x}" for off in
+                      range(cursor,min(cursor+8*22,len(data)-7),8)],
                     "verified_files":records}
         try:
             end,decoded=read_source_payload(data,kind,cursor)
