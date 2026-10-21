@@ -31,7 +31,7 @@ def f_name_package(source: str) -> str:
     """Translate only the observed UE4 FName numbered package suffix."""
     package = source.split("::", 1)[0]
     if not package.startswith("/Game/") or any(part in ("", ".", "..")
-        for part in package[6:].split("/")) or "\\\\" in package:
+        for part in package[6:].split("/")) or "\\" in package:
         raise ValueError("source package outside authenticated /Game namespace")
     def numbered(m: re.Match[str]) -> str:
         return "_" + str(int(m.group(1)) - 1)
@@ -44,7 +44,7 @@ def collect_frontier(log: str, scope: str) -> tuple[list[str], dict]:
     for line in log.splitlines():
         if line.startswith("ORIGINAL_541_POI_CLASS_FRONTIER "):
             match = re.search(
-                r" inherited_classes=(\\{.*?\\}) scene_root_classes=(\\{.*?\\})",
+                r" inherited_classes=(\{.*?\}) scene_root_classes=(\{.*?\})",
                 line,
             )
             if not match:
@@ -53,7 +53,7 @@ def collect_frontier(log: str, scope: str) -> tuple[list[str], dict]:
             classes.update(json.loads(match.group(2)))
             rows += 1
         elif line.startswith("ORIGINAL_541_POI_ACTOR_SOURCE "):
-            match = re.search(r" kind=direct_mesh source=(/Game/\\S+)", line)
+            match = re.search(r" kind=direct_mesh source=(/Game/\S+)", line)
             if match:
                 meshes[match.group(1)] += 1
     if rows < 3:
@@ -81,7 +81,7 @@ def collect_frontier(log: str, scope: str) -> tuple[list[str], dict]:
     }
 
 def normalized_content_path(index_path: str) -> str | None:
-    path = index_path.replace("\\\\", "/").lstrip("/")
+    path = index_path.replace("\\", "/").lstrip("/")
     marker = PREFIX.lower()
     lower = path.lower()
     at = lower.find(marker)
@@ -233,11 +233,11 @@ def self_test() -> None:
         'ORIGINAL_541_POI_CLASS_FRONTIER REC original_world=Athena_POI_REC_001 '
         ' inherited_classes={"/Game/Building/ActorBlueprints/Wall/Factory_Wall#4::Factory_Wall_3_C": 3, '
         '"/Game/Building/ActorBlueprints/Roof/Factory_Roof::Factory_Roof_C": 2, '
-        '"/Game/Gameplay/Trap::Trap_C": 1} scene_root_classes={}\\n'
+        '"/Game/Gameplay/Trap::Trap_C": 1} scene_root_classes={}\n'
         'ORIGINAL_541_POI_CLASS_FRONTIER Warehouses original_world=Athena_POI_Warehouses_003 '
-        ' inherited_classes={} scene_root_classes={}\\n'
+        ' inherited_classes={} scene_root_classes={}\n'
         'ORIGINAL_541_POI_CLASS_FRONTIER Pueblo original_world=Athena_POI_Pueblo_001 '
-        ' inherited_classes={} scene_root_classes={}\\n'
+        ' inherited_classes={} scene_root_classes={}\n'
         'ORIGINAL_541_POI_ACTOR_SOURCE REC class=/Script/FortniteGame::FortStaticMeshActor '
         ' actor=Original_001 kind=direct_mesh source=/Game/Props/SM_A::SM_A'
     )
@@ -248,7 +248,7 @@ def self_test() -> None:
     assert census["architectural_class_placements"] == 5
     assert f_name_package("/Game/Walls/Factory#19::Factory_18_C") == "/Game/Walls/Factory_18"
     assert normalized_content_path("/FortniteGame/Content/Props/SM_A.uasset") == "props/sm_a.uasset"
-    for invalid in ("/Engine/SM_A::SM_A", "/Game/../Trap::Trap", "/Game/A\\\\Trap"):
+    for invalid in ("/Engine/SM_A::SM_A", "/Game/../Trap::Trap", "/Game/A\\Trap"):
         try:
             f_name_package(invalid)
         except ValueError:
