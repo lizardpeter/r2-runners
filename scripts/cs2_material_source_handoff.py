@@ -164,8 +164,10 @@ def parse_vpk_index(path: Path) -> VpkIndex:
     return VpkIndex(path, version, tree_size, tree_end, entries)
 
 
-def resolve_targets(index: VpkIndex, targets: Iterable[str] = TARGETS) -> list[VpkEntry]:
+def resolve_targets_with_missing(index: VpkIndex, targets: Iterable[str] = TARGETS) -> tuple[list[VpkEntry], list[str]]:
+    """Return authenticated entries AND exact paths absent in this depot version."""
     result: list[VpkEntry] = []
+    missing: list[str] = []
     for target in targets:
         if not _safe_path(target):
             raise ValueError(f"unsafe requested target {target!r}")
@@ -174,12 +176,18 @@ def resolve_targets(index: VpkIndex, targets: Iterable[str] = TARGETS) -> list[V
             candidates = [value for name, value in index.entries.items()
                           if name.casefold() == target.casefold()]
             if len(candidates) != 1:
-                raise ValueError(
-                    f"exact original VMAT texture not found uniquely in pak01_dir.vpk: {target}"
-                )
+                missing.append(target)
+                continue
             entry = candidates[0]
         result.append(entry)
-    return result
+    return result, missing
+
+
+def resolve_targets(index: VpkIndex, targets: Iterable[str] = TARGETS) -> list[VpkEntry]:
+    entries, missing = resolve_targets_with_missing(index, targets)
+    if missing:
+        raise ValueError(f"unindexed source targets: {missing!r}")
+    return entries
 
 
 def segment_names(entries: Iterable[VpkEntry]) -> list[str]:
@@ -217,7 +225,7 @@ def _entry_bytes(index: VpkIndex, entry: VpkEntry, source_root: Path) -> bytes:
 
 def plan(index_path: Path, filelist_path: Path, report_path: Path) -> None:
     index = parse_vpk_index(index_path)
-    entries = resolve_targets(index)
+    entries, missing = resolve_targets_with_missing(index)
     segments = segment_names(entries)
     filelist_path.parent.mkdir(parents=True, exist_ok=True)
     filelist_path.write_text("".join(name + "\n" for name in segments), encoding="ascii")
@@ -227,7 +235,9 @@ def plan(index_path: Path, filelist_path: Path, report_path: Path) -> None:
         "index": str(index_path),
         "vpk_version": index.version,
         "tree_bytes": index.tree_size,
-        "target_count": len(entries),
+        "target_count": len(TARGETS),
+        "indexed_targets": len(entries),
+        "unindexed_targets": missing,
         "segment_files": segments,
         "targets": [
             {
@@ -243,18 +253,20 @@ def plan(index_path: Path, filelist_path: Path, report_path: Path) -> None:
     }
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"target_count": len(entries), "segment_files": segments}, indent=2))
+    print(json.dumps({"indexed_targets": len(entries), "unindexed_targets": missing,
+                      "segment_files": segments}, indent=2))
 
 
 def extract(index_path: Path, source_root: Path, output_dir: Path, report_path: Path) -> None:
     index = parse_vpk_index(index_path)
-    entries = resolve_targets(index)
+    entries, missing = resolve_targets_with_missing(index)
     manifest = {
         "source_app": 730,
         "source_depot": 2347770,
         "vpk_index_version": index.version,
         "vpk_tree_bytes": index.tree_size,
         "verification": "each extracted original entry must pass its VPK CRC32",
+        "unindexed_targets": missing,
         "files": [],
     }
     for entry in entries:
@@ -276,7 +288,8 @@ def extract(index_path: Path, source_root: Path, output_dir: Path, report_path: 
         })
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"verified_files": len(manifest["files"]), "report": str(report_path)}, indent=2))
+    print(json.dumps({"verified_files": len(manifest["files"]),
+                      "unindexed_targets": missing, "report": str(report_path)}, indent=2))
 
 
 def _encode_cstring(value: str) -> bytes:
