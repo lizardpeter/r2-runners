@@ -13,6 +13,7 @@ on:
       - "scripts/mwr_h1_index_candidate_probe.py"
       - "scripts/mwr_h1_surface_probe.py"
       - "scripts/mwr_h1_surface_verify.py"
+      - "scripts/mwr_h1_index_surface_verify.py"
       - "tests/test_mwr_h1_world_vertex_probe.py"
       - "scripts/mwr_h1_asset_runs.py"
       - "scripts/mwr_h1_asset_payload.py"
