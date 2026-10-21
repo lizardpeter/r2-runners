@@ -1,0 +1,113 @@
+name: Fortnite 5.41 authenticated lighting, materials and compiled shaders
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fortnite541-materials-shaders.yml"
+  workflow_dispatch:
+    inputs:
+      family:
+        description: "Retail source family; all runs the complete matrix"
+        type: choice
+        default: all
+        required: true
+        options: [all, lighting, materials, shaders]
+
+permissions:
+  contents: read
+
+jobs:
+  original-graphics-assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [lighting, materials, shaders]
+        shard: [0, 1, 2, 3]
+    steps:
+      - name: Select authenticated source family
+        id: selected
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          REQUESTED: ${{ inputs.family }}
+        run: |
+          if [[ "${{ github.event_name }}" == push || "$REQUESTED" == all || "$REQUESTED" == "$FAMILY" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Checkout public PAK cryptographic verifier
+        if: steps.selected.outputs.run == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          persist-credentials: false
+      - name: Checkout public exact-file handoff scripts
+        if: steps.selected.outputs.run == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/r2-runners
+          path: r2-workbench
+          persist-credentials: false
+      - name: Authenticate and recover complete original source shard
+        if: steps.selected.outputs.run == 'true'
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/fortnite541-graphics-$FAMILY-$SHARD"
+          report="$RUNNER_TEMP/fortnite541-graphics-$FAMILY-$SHARD-report"
+          mkdir -p "$root" "$report"
+          python3 r2-workbench/scripts/fortnite541_full_athena_sources.py \
+            --family "$FAMILY" --shard "$SHARD" --shards 4 \
+            --destination "$root" --reports "$report" \
+            2>&1 | tee "$report/retail-pak-extraction.log"
+      - name: Inventory exact binary bytes on success or partial source failure
+        if: always() && steps.selected.outputs.run == 'true'
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          family,shard=os.environ["FAMILY"],os.environ["SHARD"]
+          root=Path(os.environ["RUNNER_TEMP"])/f"fortnite541-graphics-{family}-{shard}"
+          report=Path(os.environ["RUNNER_TEMP"])/f"fortnite541-graphics-{family}-{shard}-report"
+          report.mkdir(parents=True,exist_ok=True)
+          files=[]
+          for path in sorted(root.rglob("*")) if root.exists() else []:
+              if not path.is_file():continue
+              h=hashlib.sha256()
+              with path.open("rb") as source:
+                  for block in iter(lambda:source.read(1024*1024),b""):h.update(block)
+              files.append({"path":path.relative_to(root).as_posix(),
+                            "bytes":path.stat().st_size,"sha256":h.hexdigest()})
+          (report/"original-byte-inventory.json").write_text(json.dumps(files,indent=2)+"\n")
+          print("ATHENA_GRAPHICS_AUTHENTIC_BYTES",family,shard,len(files),
+                sum(x["bytes"] for x in files),flush=True)
+          PY
+      - name: Retain every verified real shader, material or lighting source file
+        if: always() && steps.selected.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-${{ matrix.family }}-shard${{ matrix.shard }}-exact-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-graphics-${{ matrix.family }}-${{ matrix.shard }}/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+      - name: Retain original cryptographic source checks and missing-dependency reports
+        if: always() && steps.selected.outputs.run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-${{ matrix.family }}-shard${{ matrix.shard }}-source-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-graphics-${{ matrix.family }}-${{ matrix.shard }}-report/
+          if-no-files-found: warn
+          retention-days: 90
