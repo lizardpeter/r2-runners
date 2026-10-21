@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/fortnite541-retail-lab.yml"
+      - "scripts/fortnite541_dependency_handoff.py"
   workflow_dispatch:
     inputs:
       scope:
