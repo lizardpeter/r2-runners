@@ -103,12 +103,25 @@ def main():
        "all_source_asset_rows_are_materials":all(r["typed_asset_kind"]==6 for r in rows),
        "original_asset_row_joins":rows,
      })
+   first_candidate=next((c for c in child["first_candidate_records"]
+                         if c["3x8_record"][:2]==["inline","inline"]),None)
+   first_raw_handles=[]
+   if first_candidate is not None:
+    offset=first_candidate["source_offset"]+16
+    for surface in range(valid[0]["count"]):
+     word=struct.unpack_from("<Q",z,offset+surface*8)[0]
+     first_raw_handles.append({
+      "original_surface_ordinal":surface,
+      "source_pointer":f"0x{word:016x}",
+      "pointer_kind":kind(word),
+     })
    result.append({
      "model":m["model"],
      "source_model_header":m["source_header"],
      "first_lod_surface_count":valid[0]["count"],
      "material_owner_ptr":m["material_handle_source_pointer"],
      "source_model_material_array_candidates":material_pointer_proofs,
+     "first_source_owner_candidate_handles":first_raw_handles,
      "child":child,
    })
   report={"zone":ZONE,"original_sha256":sha,"total_models":len(result),
