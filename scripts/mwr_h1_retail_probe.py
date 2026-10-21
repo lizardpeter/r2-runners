@@ -18,6 +18,7 @@ from mwr_h1_asset_runs import AssetRunScanner
 from mwr_h1_image_streams import analyze_stream_table
 from mwr_h1_gfxworld_probe import GfxWorldCandidateScanner
 from mwr_h1_world_geometry_root import GfxWorldGeometryScanner
+from mwr_h1_world_vertex_probe import WorldVertexRunScanner
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -182,6 +183,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         asset_scanner = AssetRunScanner() if analyze_directory else None
         gfx_scanner = GfxWorldCandidateScanner(gfx_stem) if gfx_stem is not None else None
         geometry_scanner=GfxWorldGeometryScanner() if gfx_stem is not None else None
+        vertex_scanner=WorldVertexRunScanner() if gfx_stem is not None else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -204,6 +206,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
                 gfx_scanner.push(raw)
             if geometry_scanner is not None:
                 geometry_scanner.push(raw)
+            if vertex_scanner is not None:
+                vertex_scanner.push(raw)
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -223,6 +227,10 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         if gfx_scanner is not None:
             result["gfxworld_source_scan"]=gfx_scanner.report()
             result["gfxworld_geometry_source_root_scan"]=geometry_scanner.report()
+            roots=geometry_scanner.report()["candidates"]
+            if len(roots)==1:
+                vertex_scanner.expected_count=roots[0]["vertex_count"]
+            result["gfxworld_vertex_source_candidate_scan"]=vertex_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
             result["complete_zone_asset_run_scan"] = asset_scanner.report()
