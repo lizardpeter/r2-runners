@@ -1,0 +1,30 @@
+name: BO3 original model LOD and XPAK key linkage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-model-keys.yml"
+      - "scripts/bo3_model_keys.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+jobs:
+  original-models:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cross-check original XModel LOD stream keys against authentic base XPAK
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-models
+        run: python3 scripts/bo3_model_keys.py
+      - name: Preserve non-payload model-key verification metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-real-xmodel-lod-stream-key-evidence
+          path: ${{ runner.temp }}/bo3-models/*.json
+          if-no-files-found: warn
+          retention-days: 7
