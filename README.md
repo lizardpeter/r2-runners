@@ -144,3 +144,33 @@ expire under GitHub's artifact retention policy. To rerun later, use a fresh
 full-client binary-transfer run and provide its ID to the manual workflow
 dispatcher. The Rust-test importer is generic; the names and offsets in this
 validation test are source-specific regression fixtures, not importer rules.
+
+
+## BO1 exact original client image and shader/material source verification
+
+- [Complete BO1 original-client texture workflow](.github/workflows/bo1-client-material-textures.yml):
+  **passed** [run #39675418914](https://github.com/lizardpeter/r2-runners/actions/runs/39675418914).
+  It really downloads and authenticates the full 11.16GB original client ZIP,
+  scans **all 57 original IWD archives**, and transfers both original map
+  FastFiles plus **162 full original IWI files**, not just JSON. Every one of
+  the 162 direct named image identities from Nuketown and Firing Range was
+  found **uniquely**; no missing original direct texture images.
+- [Complete original IWI mip validation](.github/workflows/bo1-iwi-source-validation.yml):
+  **passed** [run #39677620614](https://github.com/lizardpeter/r2-runners/actions/runs/39677620614).
+  Independently validates every transferred IWI SHA-256, format, dimensions
+  and exact top-level compressed mip span: **162/162 pass** (24 BC1 and
+  138 BC3 images).
+- [Original material virtual address and sampler name verification](.github/workflows/bo1-second-alias-validation.yml):
+  **passed** [run #39677047129](https://github.com/lizardpeter/r2-runners/actions/runs/39677047129).
+  Verifies 205 original first/second-material packed image slot references
+  and independently recovers 2,590/2,600 source material sampler names from
+  BO1's exact case-folded `R_HashString`, authenticated source semantic and
+  Shader Model 3 HLSL sampler declaration strings. Ten nonstandard source
+  binding names remain unresolved.
+
+The original source images and FastFiles are persisted as actual GitHub
+Actions transfer artifacts; the JSON files are companion integrity evidence,
+not replacements for original game assets. Original generated/composite
+image names are distinct from literal IWD images and require engine image
+composition / zone loader replay. The remaining packed image aliases also
+require further T5 virtual allocation reconstruction.
