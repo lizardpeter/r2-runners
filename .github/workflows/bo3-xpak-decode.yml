@@ -1,0 +1,38 @@
+name: BO3 authentic XPAK streaming survey
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-xpak-decode.yml"
+      - "scripts/bo3_xpak_decode.py"
+  workflow_dispatch:
+    inputs:
+      preset:
+        required: true
+        type: choice
+        options: [small, extended]
+        default: small
+
+permissions:
+  contents: read
+
+jobs:
+  xpak:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate genuine T7 KAPI indices and streamed source data
+        env:
+          BO3_XPAK_PRESET: ${{ inputs.preset || 'small' }}
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-xpak
+        run: python3 scripts/bo3_xpak_decode.py
+      - name: Preserve reports only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-xpak-index-analysis
+          path: ${{ runner.temp }}/bo3-xpak/*.json
+          retention-days: 7
+          if-no-files-found: warn
