@@ -17,6 +17,7 @@ on:
       - "scripts/mwr_h1_retail_probe.py"
       - "scripts/mwr_h1_asset_directory.py"
       - "scripts/mwr_h1_image_streams.py"
+      - "scripts/mwr_h1_world_vertex_probe.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   workflow_dispatch:
     inputs:
