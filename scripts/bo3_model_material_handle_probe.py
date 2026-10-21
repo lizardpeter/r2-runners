@@ -15,6 +15,7 @@ from r2_download import download
 from bo3_zone_decode import parse_zlib_zone,parse_directory
 from bo3_model_material_fields import inspect,BASE,NAMES
 from bo3_xmodel_lod_walk import candidates
+from bo3_material_binding_probe import analyze as source_material_tables
 ZONE="en_core_common.ff"
 KNOWN_POINTERS={0,0xffffffffffffffff,0xfffffffffffffffe}
 def kind(n):
@@ -74,6 +75,13 @@ def main():
   logical_asset_table_start=((base-0x30+7)//8)*8 if dependency_count==0 else None
   type6_rows=[i for i in range(row_count)
      if struct.unpack_from("<Q",z,base+16*i)[0]==6]
+  typed_materials=source_material_tables(z)["material_source_records"]
+  if len(typed_materials)!=len(type6_rows) or len(type6_rows)!=12:
+   raise ValueError("Cannot establish one source material name per original inline XAsset row")
+  if any(m["all_arrays_count"]!=1 for m in typed_materials):
+   raise ValueError("Original T7 material source names lack unique complete texture tables")
+  typed_names={row:m["name"] for row,m in zip(type6_rows,typed_materials)}
+
   material_ref_counts={f"0x{x:016x}":material_headers.count(x) for x in set(material_headers)}
   result=[]
   for i,m in enumerate(models):
@@ -137,11 +145,25 @@ def main():
     cnt=valid[0]["count"]
     if src+16+cnt*8>next_model:continue
     handles=[struct.unpack_from("<Q",z,src+16+i*8)[0] for i in range(cnt)]
-    if all((h>>56)==0x50 and (h&0x00ffffffffffffff)>0 for h in handles):
+    typed=[]
+    for ordinal,h in enumerate(handles):
+     if (h>>56)!=0x50 or logical_asset_table_start is None:break
+     pointer_field_offset=(h&0x00ffffffffffffff)-1
+     relative=pointer_field_offset-logical_asset_table_start-8
+     if relative<0 or relative%16:break
+     row=relative//16
+     if row not in typed_names:break
+     ty,marker=struct.unpack_from("<QQ",z,base+16*row)
+     if ty!=6 or marker!=0xffffffffffffffff:break
+     typed.append({"ordinal":ordinal,"material_xasset_row":row,
+                   "material_name":typed_names[row],
+                   "source_pointer":f"0x{h:016x}"})
+    if len(typed)==cnt:
      complete_owners.append({
       "original_owner_source_offset":src,
       "first_material_token_source_offset":src+16,
       "per_surface_source_handles":[f"0x{h:016x}" for h in handles],
+      "resolved_original_material_names":typed,
      })
    result.append({
      "model":m["model"],
@@ -162,6 +184,7 @@ def main():
           "source_dependency_count":dependency_count,
           "logical_block5_asset_table_start":logical_asset_table_start,
           "source_typed_material_row_indices":type6_rows,
+          "source_typed_material_names_by_row":typed_names,
           "typed_source_material_xasset_pointers":material_ref_counts,
           "typed_source_material_xasset_count":len(material_headers),
           "data":result}
