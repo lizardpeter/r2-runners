@@ -143,43 +143,59 @@ def parse_directory(data:bytearray)->dict:
     # Inspect exactly the *record layout* used by T7, with header u64 + type
     # byte (remaining seven bytes padding). Do not infer asset body pointers.
     # Validate all entries, not one plausible-looking row.
-    def inspect_at(start:int)->dict|None:
+    def inspect_at(start:int,layout:str)->dict|None:
         end=start+asset_count*16
-        if end>len(data):
+        if start<0 or end>len(data):
             return None
-        raw=memoryview(data)[start:end]
         types=[]
-        invalid=[]
-        header_kinds=Counter()
+        headers=Counter()
+        valid_type=0
+        inline=0
+        examples=[]
         for idx in range(asset_count):
-            row=raw[idx*16:(idx+1)*16]
-            ptr=int.from_bytes(row[:8],"little")
-            typ=row[8]
-            padding=bytes(row[9:16])
+            row=data[start+idx*16:start+(idx+1)*16]
+            a,b=struct.unpack("<QQ",row)
+            typ,ptr=(a,b) if layout=="type_then_header" else (b,a)
             types.append(typ)
-            if typ>103 or padding!=b"\x00"*7:
-                if len(invalid)<4:invalid.append({"index":idx,"type":typ,"padding_hex":padding.hex(),"header":f"0x{ptr:016x}"})
-            header_kinds[f"0x{ptr:016x}"] += 1
-        plausible=sum(1 for i in range(asset_count) if types[i]<=103 and bytes(raw[i*16+9:i*16+16]) == b"\0"*7)
-        return {"table_offset":start,"candidate_records":asset_count,"plausible_records":plausible,
-                "first_record_hex":bytes(raw[:16]).hex() if asset_count else None,
+            if typ<=103:
+                valid_type+=1
+            if ptr in (0xFFFFFFFFFFFFFFFF,0,0xFFFFFFFFFFFFFFFE):
+                inline+=1
+            headers[f"0x{ptr:016x}"]+=1
+            if idx<5:
+                examples.append({"type_id":typ,"type_name":TYPE_NAMES.get(typ),
+                                 "header_marker":f"0x{ptr:016x}"})
+        # Pointer sentinel is mandatory evidence for confirming the record
+        # layout; zero-filled payload should never be mistaken for a table.
+        return {"table_offset":start,"layout":layout,"candidate_records":asset_count,
+                "known_type_records":valid_type,"recognized_inline_markers":inline,
                 "type_counts":{f"{t}:{TYPE_NAMES.get(t,'other')}":n for t,n in sorted(Counter(types).items())},
-                "pointer_pattern_counts":dict(header_kinds.most_common(8)),
-                "invalid_examples":invalid}
-    options=[(candidate+i,inspect_at(candidate+i)) for i in (0,8,16,24,32)]
-    options=[item for item in options if item[1] is not None]
-    options.sort(key=lambda x:(x[1]["plausible_records"], -abs(x[0]-candidate)),reverse=True)
+                "header_pointer_counts":dict(headers.most_common(8)),
+                "first_records":examples}
+    offsets=range(max(0,cursor-32),cursor+48)
+    options=[]
+    for off in offsets:
+        for layout in ("type_then_header","header_then_type"):
+            v=inspect_at(off,layout)
+            if v is not None:
+                options.append(v)
+    options.sort(key=lambda v:(v["known_type_records"]+v["recognized_inline_markers"],
+                               v["known_type_records"],v["recognized_inline_markers"],
+                               -abs(v["table_offset"]-cursor)),reverse=True)
     if not options:
         return {**info,"status":"asset_table_out_of_bounds","string_start":string_start,"string_end":cursor}
-    chosen_offset, best=options[0]
-    credible=asset_count>0 and best["plausible_records"]==asset_count
+    best=options[0]
+    credible=(asset_count>0 and best["known_type_records"]==asset_count and
+              best["recognized_inline_markers"]>=asset_count*0.95)
     return {**info,
-            "status":"plausible_t7_asset_table" if credible else "asset_table_not_verified",
+            "status":"t7_asset_table_layout_verified" if credible else "asset_table_layout_not_verified",
             "script_strings_parsed":len(strings),
             "script_string_examples":strings[:8],
             "string_start":string_start,"string_end":cursor,"aligned_table_candidate":candidate,
             "asset_table":best,
-            "candidate_offsets":[{"offset":k,"plausible":x["plausible_records"]} for k,x in options]}
+            "top_layout_candidates":[{k:v[k] for k in ("table_offset","layout","known_type_records","recognized_inline_markers")}
+                                     for v in options[:5]]}
+
 
 def run():
     preset=os.environ.get("BO3_ZONE_PRESET","small")
