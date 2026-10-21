@@ -88,6 +88,69 @@ def ctab_bindings(shader):
     return {"creator":string_at(creator),"target":string_at(target),
             "bindings":bindings}
 
+
+# Exact opcode and register declaration acceptance survey for IW5's 1,021
+# retail PC SM3 shader streams. All counts derive from SHA-256-authenticated
+# source bytes, not shader names or the material PBR fallback.
+IW5_RETAIL_OPS = {
+    1: 1, 2: 2, 4: 3, 5: 2, 6: 1, 7: 1, 8: 2,
+    9: 2, 11: 2, 14: 1, 15: 1, 18: 3, 19: 1,
+    32: 2, 36: 1, 66: 2, 88: 3, 91: 1, 92: 1, 95: 2,
+}
+def retail_sm3_ir_survey(shader_bytes, stage):
+    code=struct.unpack("<" + "I"*(len(shader_bytes)//4),shader_bytes)
+    opcodes=collections.Counter()
+    declaration_count=0
+    sampler_dimensions=collections.Counter()
+    defined_constants=0
+    declared_samplers=set()
+    read_samplers=set()
+    i=1
+    while i<len(code)-1:
+        raw=code[i]
+        opcode=raw & 65535
+        if opcode==0xfffe:
+            count=(raw>>16)&0x7fff
+        else:
+            count=(raw>>24)&15
+            opcodes[opcode]+=1
+        if i+1+count>len(code)-1:
+            raise ValueError("IW5 source SM3 instruction exceeds shader end")
+        args=code[i+1:i+1+count]
+        if opcode==31:
+            if count!=2:raise ValueError("D3D9 original DCL operands invalid")
+            info,register=args
+            typ=((register>>28)&7)|((register>>8)&24)
+            index=register&0x7ff
+            if typ==10:
+                dimension=(info>>27)&15
+                if dimension not in (2,3,4):
+                    raise ValueError("IW5 original source sampler dimension unsupported")
+                sampler_dimensions[{2:"2D",3:"Cube",4:"Volume"}[dimension]]+=1
+                declared_samplers.add(index)
+            declaration_count+=1
+        elif opcode==81:
+            if count!=5:
+                raise ValueError("IW5 original DEF requires 4 literal DWORDs")
+            defined_constants+=1
+        elif opcode!=0xfffe:
+            if opcode not in IW5_RETAIL_OPS or count!=IW5_RETAIL_OPS[opcode]+1:
+                raise ValueError(f"unsupported original IW5 opcode {opcode}, length {count}")
+            for index,parameter in enumerate(args):
+                if not parameter&0x80000000:
+                    raise ValueError("IW5 D3D9 parameter marker missing")
+                register_type=((parameter>>28)&7)|((parameter>>8)&24)
+                if register_type>18:
+                    raise ValueError("IW5 source D3D9 unknown register type")
+                if index!=0 and register_type==10:
+                    read_samplers.add(parameter&0x7ff)
+        i+=1+count
+    if i!=len(code)-1:
+        raise ValueError("IW5 original D3D9 source stream alignment mismatch")
+    if not read_samplers.issubset(declared_samplers):
+        raise ValueError("IW5 source shader sampled undeclared original sampler")
+    return opcodes,declaration_count,sampler_dimensions,defined_constants,read_samplers
+
 def inspect(buf):
     records=[]
     tally=collections.Counter()
@@ -95,6 +158,11 @@ def inspect(buf):
     bindings_unique=set()
     no_ctab=[]
     truncated_at_end=[]
+    all_original_opcodes=collections.Counter()
+    source_sampler_shapes=collections.Counter()
+    total_declarations=0
+    total_source_definitions=0
+    shader_sampler_use=0
     for match in RETAIL_NAMES.finditer(buf):
         offset=match.end()
         version=word(buf,offset) if offset+4<=len(buf) else None
@@ -114,6 +182,12 @@ def inspect(buf):
             raise ValueError("missing retail D3D9 END token")
         table=ctab_bindings(program)
         stage=D3D9_VERSIONS[version]
+        native_ops,dcls,shapes,defs,sampled=retail_sm3_ir_survey(program,stage)
+        all_original_opcodes.update(native_ops)
+        source_sampler_shapes.update(shapes)
+        total_declarations+=dcls
+        total_source_definitions+=defs
+        shader_sampler_use+=len(sampled)
         name=match.group(1).decode("ascii")
         if table is None:
             no_ctab.append(name)
@@ -128,6 +202,12 @@ def inspect(buf):
                         "ctab_bindings":table["bindings"] if table else []})
     return {"source_shaders":len(records),"stage_counts":dict(tally),
             "total_source_program_bytes":sum(r["bytes"] for r in records),
+            "source_instruction_count":sum(all_original_opcodes.values()),
+            "source_opcode_histogram":dict(sorted(all_original_opcodes.items())),
+            "source_declarations":total_declarations,
+            "source_declared_sampler_dimensions":dict(source_sampler_shapes),
+            "source_defined_float4_constants":total_source_definitions,
+            "source_used_sampler_registers":shader_sampler_use,
             "total_ctab_bindings":sum(bindcount.values()),
             "unique_name_register_mappings":len(bindings_unique),
             "no_ctab_names":no_ctab,
@@ -151,6 +231,12 @@ def main(samples,path):
         raise ValueError("IW5 original source shader stage counts mismatch")
     if data["total_ctab_bindings"]!=15626 or data["unique_name_register_mappings"]!=110:
         raise ValueError("IW5 retail D3D9 CTAB source binding coverage regression")
+    if data["source_instruction_count"]!=88902 or data["source_declarations"]!=13014:
+        raise ValueError("IW5 original native D3D9 instruction census regression")
+    if set(map(int,data["source_opcode_histogram"]))!=set(IW5_RETAIL_OPS)|{31,81}:
+        raise ValueError("IW5 native SM3 22-opcode source coverage changed")
+    if data["source_declared_sampler_dimensions"]!={"2D":3303,"Cube":370,"Volume":718}:
+        raise ValueError("IW5 original source sampler shape census regression")
     data["source"] = SOURCE_NAME
     path.mkdir(parents=True,exist_ok=True)
     (path/"iw5_original_shader_bindings.json").write_text(
