@@ -115,6 +115,22 @@ def main():
       "source_pointer":f"0x{word:016x}",
       "pointer_kind":kind(word),
      })
+   complete_owners=[]
+   # The only admissible contiguous first-LOD handles are a two-qword
+   # inline owner marker followed by exactly one block-5 material handle
+   # per source-authored XSurface. One missing handle rejects the group.
+   for candidate in child["first_candidate_records"]:
+    if candidate["3x8_record"][:2]!=["inline","inline"]:continue
+    src=candidate["source_offset"]
+    cnt=valid[0]["count"]
+    if src+16+cnt*8>next_model:continue
+    handles=[struct.unpack_from("<Q",z,src+16+i*8)[0] for i in range(cnt)]
+    if all((h>>56)==0x50 and (h&0x00ffffffffffffff)>0 for h in handles):
+     complete_owners.append({
+      "original_owner_source_offset":src,
+      "first_material_token_source_offset":src+16,
+      "per_surface_source_handles":[f"0x{h:016x}" for h in handles],
+     })
    result.append({
      "model":m["model"],
      "source_model_header":m["source_header"],
@@ -122,9 +138,15 @@ def main():
      "material_owner_ptr":m["material_handle_source_pointer"],
      "source_model_material_array_candidates":material_pointer_proofs,
      "first_source_owner_candidate_handles":first_raw_handles,
+     "complete_first_lod_material_handle_arrays":complete_owners,
+     "unique_complete_first_lod_handle_owner":len(complete_owners)==1,
      "child":child,
    })
   report={"zone":ZONE,"original_sha256":sha,"total_models":len(result),
+          "models_with_unique_complete_first_lod_handles":sum(m["unique_complete_first_lod_handle_owner"] for m in result),
+          "surface_tokens_in_unique_complete_owners":sum(
+             len(m["complete_first_lod_material_handle_arrays"][0]["per_surface_source_handles"])
+             for m in result if m["unique_complete_first_lod_handle_owner"]),
           "typed_source_material_xasset_pointers":material_ref_counts,
           "typed_source_material_xasset_count":len(material_headers),
           "data":result}
