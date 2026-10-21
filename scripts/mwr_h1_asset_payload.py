@@ -112,6 +112,42 @@ def analyze_first_source_body(data:bytes,verified:dict):
         return {"status":"failure","reason":str(exc)}
 
 
+
+
+def inspect_addon_map_ents_prefix(data:bytes,at:int)->dict:
+    """Read only source-verified fixed AddonMapEnts header/name/entity text.
+
+    The 0x88-byte C++ struct has nested trigger, brush and collision arrays.
+    Those arrays have NOT been relocated by this function. Consequently the
+    returned entity-text end is not claimed to be the next asset boundary.
+    """
+    size=0x88
+    if at+size>len(data):
+        raise ValueError("H1 AddonMapEnts fixed header truncated")
+    name_ptr,entity_ptr,declared=struct.unpack_from("<QQI",data,at)
+    if name_ptr!=MARKER or entity_ptr not in (0,MARKER):
+        raise ValueError("unsupported original AddonMapEnts pointer tags")
+    if declared>MAX_PAYLOAD_BYTES:
+        raise ValueError("oversized H1 AddonMapEnts source entity text")
+    name,cursor=inline_name(data,at+size)
+    entity=b""
+    if entity_ptr==MARKER:
+        entity=bounded_slice(data,cursor,declared,"H1 authored map entity bytes")
+        cursor+=declared
+    # Report nonsemantic string structure only, not interpretations of
+    # numeric entity keys (which require the H1 key-to-name dictionary).
+    return {
+        "status":"entity_text_verified_nested_payload_not_yet_followed",
+        "name":name,"declared_entity_bytes":declared,"extracted_entity_bytes":len(entity),
+        "entity_sha256":hashlib.sha256(entity).hexdigest(),
+        "worldspawn_ascii_occurrences":entity.count(b"worldspawn"),
+        "open_brace_count":entity.count(b"{"),
+        "close_brace_count":entity.count(b"}"),
+        "entity_text_end_offset":cursor,
+        "nested_trigger_and_collision_data_decoded":False,
+        "next_bytes_hex":data[cursor:cursor+64].hex(" "),
+    }
+
 def inspect_sequential_source_files(data:bytes,verified:dict):
     """Walk original source bodies until the first unsupported H1 asset type."""
     start=verified["start_offset"]
@@ -121,7 +157,9 @@ def inspect_sequential_source_files(data:bytes,verified:dict):
     for index in range(count):
         kind=struct.unpack_from("<I",data,start+16*index)[0]
         if kind not in (48,49):
+            addon=inspect_addon_map_ents_prefix(data,cursor) if kind==58 else None
             return {"status":"stopped_at_other_asset_type","decoded_source_files":len(records),
+                    "addon_map_ents_preview":addon,
                     "next_type":kind,"next_index":index,"next_decoded_offset":cursor,
                     "next_body_prefix_hex":data[cursor:cursor+240].hex(" "),
                     "next_body_u64":[f"{u64(data,off):016x}" for off in
