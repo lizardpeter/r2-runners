@@ -4,6 +4,7 @@ Operates on the original decoded-stream prefix, retained only in memory of authe
 bytes. Reports counts, candidate record layouts and short bounded samples.
 """
 from collections import Counter
+from mwr_h1_asset_payload import analyze_first_source_body
 import struct
 
 XFILE_BYTES = 72
@@ -393,6 +394,9 @@ def inspect_prefix(data: bytes) -> dict:
     result["parsed_source_gfx_globals"]=inspect_h1_gfx_globals(data,end_of_strings,asset_count)
     result["complete_xasset_directory_evidence"]=verify_full_xasset_arrays(
         data,result,result["parsed_source_gfx_globals"])
+    verified=result["complete_xasset_directory_evidence"].get("validated_tables",[])
+    if result["complete_xasset_directory_evidence"].get("status")=="fully_verified" and verified:
+        result["first_original_asset_payload"]=analyze_first_source_body(data,verified[0])
     result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
         data,asset_count,end_of_strings)
     return result
