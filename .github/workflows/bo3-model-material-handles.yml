@@ -1,0 +1,31 @@
+name: BO3 per-surface original material handle audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-model-material-handles.yml"
+      - "scripts/bo3_model_material_handle_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-material-handles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect authenticated original XModelLOD per-surface material pointer tables
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-source-material-handles
+        run: python3 scripts/bo3_model_material_handle_probe.py
+      - name: Preserve source layout diagnostics only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-source-material-handle-provenance
+          path: ${{ runner.temp }}/bo3-source-material-handles/*.json
+          if-no-files-found: warn
+          retention-days: 7
