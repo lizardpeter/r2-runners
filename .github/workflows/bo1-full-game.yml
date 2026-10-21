@@ -7,6 +7,7 @@ on:
       - ".github/workflows/bo1-full-game.yml"
       - "scripts/bo1_full_game_range.py"
       - "scripts/test_bo1_full_game_range.py"
+      - "scripts/shard_original_assets.py"
       - "scripts/bo1_probe.py"
   workflow_dispatch:
     inputs:
@@ -50,14 +51,127 @@ jobs:
             --iwd-start "$BO1_IWD_START" \
             --iwd-count "$BO1_IWD_COUNT" \
             --output-dir "$RUNNER_TEMP/bo1-full-game"
-      - name: Preserve original extracted client FastFiles and IWD archives
+      - name: Prepare byte-exact sub-512MiB original source transfer shards
+        if: success()
+        run: |
+          python3 scripts/shard_original_assets.py \
+            --source "$RUNNER_TEMP/bo1-full-game/original-bo1" \
+            --target "$RUNNER_TEMP/bo1-full-game/transfer"
+      - name: Preserve complete original client files — shard 00
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: bo1-original-client-files-${{ github.run_id }}
-          path: ${{ runner.temp }}/bo1-full-game/original-bo1/
-          if-no-files-found: error
+          name: bo1-original-client-${{ github.run_id }}-part-00
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-00/
+          if-no-files-found: ignore
           compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 01
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-01
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-01/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 02
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-02
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-02/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 03
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-03
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-03/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 04
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-04
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-04/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 05
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-05
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-05/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 06
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-06
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-06/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 07
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-07
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-07/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 08
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-08
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-08/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 09
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-09
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-09/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 10
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-10
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-10/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve complete original client files — shard 11
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-${{ github.run_id }}-part-11
+          path: ${{ runner.temp }}/bo1-full-game/transfer/part-11/
+          if-no-files-found: ignore
+          compression-level: 0
+          retention-days: 90
+      - name: Preserve original binary transfer integrity manifest
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-client-transfer-${{ github.run_id }}
+          path: ${{ runner.temp }}/bo1-full-game/transfer/transfer-manifest.json
+          if-no-files-found: error
           retention-days: 90
       - name: Preserve supplemental source provenance
         if: always()
