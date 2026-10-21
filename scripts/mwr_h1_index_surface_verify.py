@@ -1,152 +1,96 @@
-"""Resolve original H1 GfxWorld u16 index byte spans via EVERY GfxSurface.
+"""Certify H1 world indices using source-array serialization and ALL surfaces.
 
-The source world header supplies vertexCount/indexCount/surfaceCount. Two
-independently certified arrays supply exact 44-byte vertices and 40-byte
-GfxSurface records. The index buffer is ACCEPTED only if every surface's
-triCount*3 u16 indices lies in that surface's original vertexCount, and
-all source-authored baseIndex offsets cover the declared index count.
-No game-map-specific byte positions or guessed triangles are used.
+Correct byte start is not chosen by a score: the H1 GfxWorldDraw source
+serializes vertexLayerData immediately after 44-byte vertices, followed by
+u16 indices. A +6-byte (one triangle) shift passes many topology tests but
+cannot be the authored original start. Enforce the exact source-order
+adjacency, complete 3,542,247 index count and every GfxSurface local range.
 """
 import hashlib
-import re
 import struct
 from mwr_h1_world_vertex_verify import extract_source_window
 
-def parse_surface_constraints(b,at,count):
-    constraints=[]
-    expected=0
-    for i in range(count):
-        off=at+i*40
-        first=struct.unpack_from("<I",b,off+4)[0]
-        vcount,tri=struct.unpack_from("<HH",b,off+16)
-        base=struct.unpack_from("<I",b,off+20)[0]
-        constraints.append((base,tri*3,vcount,first))
-        expected+=tri*3
-    return constraints,expected
-
-def inspect_candidate_indices(data,at,constraints,limit,full=False):
-    if at<0 or at+limit*2>len(data):return None
-    # H1 indices are LOCAL to their source GfxSurface, NOT globally
-    # indexable world-vertex ordinals.
-    nondegenerate=0
-    inspected=0
-    max_local=0
-    seq=constraints if full else constraints[::max(1,len(constraints)//96)]
-    if not full:
-        seq=[*constraints[:4],*seq,*constraints[-4:]]
-    for base,n,vertex_count,_ in seq:
-        if n<=0 or vertex_count<=0:return None
-        pos=at+base*2
-        row=struct.unpack_from("<"+str(n if full else min(12,n))+"H",data,pos)
-        if any(value>=vertex_count for value in row):return None
-        if full:
-            max_local=max(max_local,max(row))
-            for i in range(0,n,3):
-                a,b,c=row[i:i+3]
-                if a!=b and b!=c and c!=a:nondegenerate+=1
-                inspected+=1
-    if full and inspected>0:
-        # Original triangle-list faces almost never repeat the SAME source
-        # vertex inside one triangle. Misaligned +2-byte candidates can
-        # satisfy local index ranges yet create hundreds of thousands of
-        # triangles with duplicate corners. This is source topology, not
-        # a map-specific offset or magic byte fingerprint.
-        if nondegenerate/inspected < 0.995:return None
-    return {"nondegenerate_triangles":nondegenerate,
-            "total_triangles_checked":inspected,
-            "maximum_local_index":max_local,
-            "nondegenerate_fraction":round(nondegenerate/inspected,8) if inspected else None}
+def validate_full_indices(data,at,surfaces,expected_index_count):
+    """Read all original u16 triangle references with no guessed vertex IDs."""
+    if at<0 or at+expected_index_count*2>len(data):
+        return {"status":"truncated_source_index_bytes"}
+    if not surfaces or surfaces[0][0]!=0:
+        return {"status":"original_surface_base_indices_do_not_begin_at_zero"}
+    total=0
+    maximal_end=0
+    degenerate=0
+    local_max=0
+    for ordinal,(base,n,vertex_count) in enumerate(surfaces):
+        if n<3 or n%3 or vertex_count<3:
+            return {"status":"invalid_source_surface_tri_count","surface":ordinal}
+        end=base+n
+        if end>expected_index_count:
+            return {"status":"source_surface_index_range_outside_buffer",
+                    "surface":ordinal}
+        maximal_end=max(maximal_end,end)
+        words=struct.unpack_from("<"+str(n)+"H",data,at+base*2)
+        if any(i>=vertex_count for i in words):
+            return {"status":"invalid_source_local_vertex_index",
+                    "surface":ordinal}
+        local_max=max(local_max,max(words))
+        for i in range(0,n,3):
+            a,b,c=words[i:i+3]
+            if a==b or b==c or c==a:degenerate+=1
+        total+=n
+    if maximal_end!=expected_index_count or total!=expected_index_count:
+        return {"status":"surface_index_count_mismatch",
+                "declared":expected_index_count,"covered":total,"max_end":maximal_end}
+    triangle_count=total//3
+    if degenerate>max(1,triangle_count//200):
+        return {"status":"source_triangle_topology_inconsistent",
+                "degenerate":degenerate,"triangles":triangle_count}
+    return {
+        "status":"complete_original_index_array_verified",
+        "authored_u16_indices_verified":expected_index_count,
+        "total_triangles_checked":triangle_count,
+        "nondegenerate_triangles":triangle_count-degenerate,
+        "maximum_local_index":local_max,
+        "nondegenerate_fraction":round(1.-degenerate/triangle_count,9),
+    }
 
 def verify_original_index_bytes(ff_file,ff_header,stream_class,world,verts,surfs):
     if verts.get("status")!="complete" or surfs.get("status")!="complete_original_surface_struct_array_verified":
         return {"status":"missing_full_verified_source_geometry"}
-    source_begin=verts["complete_source_array_end"]
-    surf_start=surfs["complete_source_surface_start"]
-    surf_end=surfs["complete_source_surface_end"]
+    vertex_end=verts["complete_source_array_end"]
+    layer_bytes=world.get("vertex_layer_bytes")
+    if not isinstance(layer_bytes,int) or layer_bytes<0:
+        return {"status":"unresolved_original_vertex_layer_size"}
+    first=vertex_end+layer_bytes
     index_count=world["index_count"]
-    byte_count=index_count*2
-    if not(source_begin+byte_count<=surf_start and surf_end-source_begin<=128*1024*1024):
-        return {"status":"source_order_does_not_contain_complete_index_array"}
-    # Retain original decompressed bytes in runner RAM ONLY (about 24MiB).
-    data=extract_source_window(ff_file,ff_header,stream_class,source_begin,surf_end)
-    surf_at=surf_start-source_begin
-    constraints,total=parse_surface_constraints(data,surf_at,world["surface_count"])
-    if total!=index_count:return {"status":"original_surface_index_sum_not_closed"}
-    # Retail first surface: 56 local vertices, 51 triangles. Match SIX u16
-    # entries below first surface's source vertexCount to seed a candidate,
-    # then validate first/last surfaces and 100 distributed surfaces.
-    base0,n0,vc0,_=constraints[0]
-    seed_limit=min(vc0,256)
-    max_start=surf_at-byte_count
-    if seed_limit<3 or max_start<0:
-        return {"status":"no_source_index_seed"}
-    bounded=bytes(data[:max_start+16])
-    # Little-endian small u16s: low byte under source vcount, high byte zero.
-    pat=re.compile(b"(?:[\\x00-\\x"+f"{seed_limit-1:02x}".encode()+b"]\\x00){6}")
-    checked=set()
-    passed=[]
-    seed_matches=0
-    stage1=0
-    stage2=0
-    for hit in pat.finditer(bounded):
-        seed_matches+=1
-        # The C regex finds non-overlapping windows. Include earlier/later
-        # local phases so the true original source starting byte is not lost.
-        for delta in range(-12,13):
-            at=hit.start()+delta-base0*2
-            if at in checked or at<0 or at>max_start:continue
-            # Precheck the FIRST twelve source indices before adding this
-            # position to the deduplication set. Otherwise many thousands
-            # of valid short low-u16 sequences exhaust the scan cap.
-            first=struct.unpack_from("<12H",data,at+base0*2)
-            if any(x>=vc0 for x in first):continue
-            checked.add(at)
-            # First 3 authentic surface records have especially tight
-            # vertexCount bounds and ordered baseIndex spans.
-            good=True
-            for base,n,vc,_ in constraints[:3]:
-                if at+(base+n)*2>len(data):
-                    good=False;break
-                row=struct.unpack_from("<"+str(n)+"H",data,at+base*2)
-                if any(x>=vc for x in row):
-                    good=False;break
-                if base==base0 and len(set(row))<min(3,vc):
-                    good=False;break
-            if not good:continue
-            stage1+=1
-            broad=inspect_candidate_indices(data,at,constraints,index_count,full=False)
-            if broad is None:continue
-            stage2+=1
-            exact=inspect_candidate_indices(data,at,constraints,index_count,full=True)
-            if exact is None:continue
-            blob=data[at:at+byte_count]
-            passed.append({
-                "decoded_index_start":source_begin+at,
-                "decoded_index_end":source_begin+at+byte_count,
-                "authored_u16_indices_verified":index_count,
-                "source_index_sha256":hashlib.sha256(blob).hexdigest(),
-                **exact
-            })
-            if len(passed)>1:
-                return {"status":"ambiguous_source_index_buffer","matches":passed[:2]}
-        if len(checked)>1_500_000:
-            return {"status":"too_many_unresolved_source_index_seeds",
-                    "seed_matches":seed_matches,"positions_checked":len(checked)}
-    complete_original_source_adjacency = source_begin + world["vertex_layer_bytes"]
-    passed_original_adjacency=[hit for hit in passed
-        if hit["decoded_index_start"]==complete_original_source_adjacency]
-    if len(passed_original_adjacency)==1:
-        passed=passed_original_adjacency
+    end=first+index_count*2
+    surface_start=surfs["complete_source_surface_start"]
+    surface_end=surfs["complete_source_surface_end"]
+    if not(vertex_end<=first<end<=surface_start<surface_end):
+        return {"status":"invalid_original_H1_draw_source_order"}
+    if surface_end-vertex_end>128*1024*1024:
+        return {"status":"H1_source_validation_window_exceeds_cap"}
+    data=extract_source_window(ff_file,ff_header,stream_class,vertex_end,surface_end)
+    offset=surface_start-vertex_end
+    original_surfaces=[]
+    for i in range(world["surface_count"]):
+        row=offset+i*40
+        vertex_count,triangles=struct.unpack_from("<HH",data,row+16)
+        base=struct.unpack_from("<I",data,row+20)[0]
+        original_surfaces.append((base,triangles*3,vertex_count))
+    index_start=first-vertex_end
+    result=validate_full_indices(data,index_start,original_surfaces,index_count)
+    if result["status"]!="complete_original_index_array_verified":
+        return {**result,"expected_serialized_index_source_start":first}
+    blob=data[index_start:index_start+index_count*2]
     return {
-        "status":"complete_original_index_array_verified" if len(passed)==1 else "index_buffer_unresolved",
-        "world_header_index_count":index_count,
-        "source_surface_total_index_count":total,
-        "source_range_scanned":[source_begin,surf_start],
-        "source_order_expected_index_start":complete_original_source_adjacency,
-        "original_vertex_layer_bytes":world["vertex_layer_bytes"],
-        "seed_regex_matches":seed_matches,
-        "candidate_positions_checked":len(checked),
-        "first_surface_three_record_checks_passed":stage1,
-        "distributed_surface_tests_passed":stage2,
-        "fully_validated_candidates":passed,
+        **result,
+        "decoded_index_start":first,
+        "decoded_index_end":end,
+        "source_index_sha256":hashlib.sha256(blob).hexdigest(),
+        "source_boundary_is_exact_vertex_end_plus_declared_layer":True,
+        "original_vertex_array_end":vertex_end,
+        "original_vertex_layer_data_bytes":layer_bytes,
+        "source_surface_array_begin":surface_start,
+        "source_surface_count_checked":len(original_surfaces),
+        "source_map_independent":True,
     }
