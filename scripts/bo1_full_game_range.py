@@ -171,6 +171,7 @@ def choose_entries(
 def run(
     preset: str, output_dir: Path,
     iwd_start: int = 0, iwd_count: int | None = 4,
+    full_download: bool = False,
 ) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     reports = output_dir / "report"
@@ -181,14 +182,17 @@ def run(
     try:
         failures = []
         source = None
-        for base in R2_BASES:
-            try:
-                source = HttpRangeObject(base + quote(BO1_ZIP_KEY, safe="/"), EXPECTED_SIZE)
-                report["source_mode"] = "bounded_http_ranges"
-                report["source_host"] = base
-                break
-            except Exception as error:
-                failures.append(f"{base}: {error}")
+        if not full_download:
+            for base in R2_BASES:
+                try:
+                    source = HttpRangeObject(base + quote(BO1_ZIP_KEY, safe="/"), EXPECTED_SIZE)
+                    report["source_mode"] = "bounded_http_ranges"
+                    report["source_host"] = base
+                    break
+                except Exception as error:
+                    failures.append(f"{base}: {error}")
+        else:
+            failures.append("HTTP Range deliberately skipped: downloading the complete original archive")
         report["range_probe_results"] = failures
         if source is None:
             # GitHub runners provide temporary storage, not a repo checkout.
@@ -265,13 +269,16 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--preset", choices=["nuketown","firingrange","both","all_multiplayer"], default="both")
     p.add_argument("--output-dir", type=Path, required=True)
+    p.add_argument("--full-download", action="store_true",
+                   help="Download the entire original 11.16GB ZIP first; avoid unreliable HTTP Range responses")
     p.add_argument("--iwd-start", type=int, default=0,
                    help="Starting archive index within the original client IWD inventory")
     p.add_argument("--iwd-count", type=int, default=4,
                    help="Complete IWD archives to extract (0 selects all remaining)")
     args=p.parse_args()
     run(args.preset,args.output_dir,args.iwd_start,
-        None if args.iwd_count == 0 else args.iwd_count)
+        None if args.iwd_count == 0 else args.iwd_count,
+        args.full_download)
 
 if __name__ == "__main__":
     try: main()
