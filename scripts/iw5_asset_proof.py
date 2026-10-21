@@ -62,7 +62,9 @@ def scan_full_original_ff(path:Path):
             if ptr==INLINE:
                 terminator=out.find(b"\0",offset,offset+8192)
                 if terminator==-1:raise ValueError("unterminated source localization")
-                vals.append(out[offset:terminator].decode("utf-8"))
+                # Latin-1 is a 1:1 byte mapping for source evidence, not
+                # a claim that the game locale uses ISO-8859-1.
+                vals.append(out[offset:terminator].decode("latin-1"))
                 offset=terminator+1
             elif (ptr & 0xf0000000) == 0x30000000:
                 vals.append(None)
