@@ -125,6 +125,83 @@ def scan_lz4_first_block(file: Path, potential_stream: int) -> dict:
     return {"status":"matching_candidate" if results else "no_candidate_yet","candidates":results}
 
 
+
+class LogicalSignedStream:
+    """Read signed H1 stream excluding 16KiB auth hash chunks every 8MiB."""
+    DATA_SPAN = 0x800000
+    HASH_SPAN = 0x4000
+
+    def __init__(self, file, origin: int):
+        self.file = file
+        self.origin = origin
+        self.logical = 0
+
+    def read(self, size: int) -> bytes:
+        chunks = []
+        remaining = size
+        while remaining:
+            group, within = divmod(self.logical, self.DATA_SPAN)
+            physical = self.origin + self.logical + group * self.HASH_SPAN
+            usable = min(remaining, self.DATA_SPAN-within)
+            self.file.seek(physical)
+            data = self.file.read(usable)
+            if len(data) != usable:
+                raise EOFError(f"signed stream truncated at logical offset {self.logical:#x}")
+            chunks.append(data)
+            self.logical += usable
+            remaining -= usable
+        return b"".join(chunks)
+
+    def align4(self) -> None:
+        padding = (-self.logical) & 3
+        if padding:
+            self.read(padding)
+
+
+def decode_lz4_zone(file: Path, header: dict) -> dict:
+    """Bounded, streaming H1 decompression; never writes decoded retail assets."""
+    import lz4.block
+    with file.open("rb") as f:
+        stream = LogicalSignedStream(f, header["candidate_stream_offset"])
+        prologue = stream.read(12)
+        expected_bytes, flags = struct.unpack("<QI",prologue)
+        if expected_bytes <= 0 or expected_bytes > 8*1024**3:
+            raise ValueError(f"implausible decoded zone size: {expected_bytes}")
+        if flags != 0x04010000:
+            raise ValueError(f"unknown H1 LZ4 stream flags {flags:#x}")
+        count = 0
+        decoded = 0
+        digest = hashlib.sha256()
+        leading = b""
+        while decoded < expected_bytes:
+            if count >= 200_000:
+                raise ValueError("H1 exceeds maximum block count")
+            compressed, raw_size = struct.unpack("<II",stream.read(8))
+            if compressed == 0 or compressed > 8*1024**2:
+                raise ValueError(f"block {count} invalid compressed length {compressed} at {stream.logical:#x}")
+            if raw_size == 0 or raw_size > 1024**2:
+                raise ValueError(f"block {count} invalid uncompressed length {raw_size}")
+            block = stream.read(compressed)
+            raw = lz4.block.decompress(block, uncompressed_size=raw_size)
+            if len(raw) != raw_size or decoded + raw_size > expected_bytes:
+                raise ValueError(f"block {count} decoded length mismatch")
+            if not leading:
+                leading=raw[:64]
+            digest.update(raw)
+            decoded += raw_size
+            count += 1
+            stream.align4()
+        if decoded != expected_bytes:
+            raise ValueError(f"partial H1 decode {decoded}/{expected_bytes}")
+        return {
+            "status":"full_zone_decoded",
+            "decoded_bytes":decoded,
+            "block_count":count,
+            "logical_stream_bytes_used":stream.logical,
+            "decoded_sha256":digest.hexdigest(),
+            "decoded_header_first64_hex":leading.hex(" "),
+        }
+
 def main()->int:
     p=argparse.ArgumentParser()
     p.add_argument("--stem",default="mp_crash_snow")
@@ -132,6 +209,7 @@ def main()->int:
     p.add_argument("--r2-prefix",default="h1/h1_full_files/zone")
     p.add_argument("--output-dir",type=Path,required=True)
     p.add_argument("--include-primary",action="store_true")
+    p.add_argument("--full-decode",action="store_true")
     p.add_argument("--report",type=Path,required=True)
     args=p.parse_args()
     stem=args.stem
@@ -153,6 +231,12 @@ def main()->int:
             # candidates, but never claim decompression success without bytes.
             if name in (f"{stem}.ff",f"{stem}_path.ff"):
                 header["lz4_probe"]=scan_lz4_first_block(local,header["candidate_stream_offset"])
+            if args.full_decode:
+                try:
+                    header["whole_zone_decode"]=decode_lz4_zone(local,header)
+                except Exception as exc:
+                    header["whole_zone_decode"]={"status":"failed","reason":str(exc)}
+                    print(f"H1 full decode not yet validated for {name}: {exc}",file=sys.stderr,flush=True)
             objects[name]=header
             print(f"{name} {header['actual_bytes']} bytes sha256={sha} "
                   f"magic={header['magic']} version={header['version']:#x} "
