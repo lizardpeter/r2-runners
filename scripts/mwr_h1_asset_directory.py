@@ -222,6 +222,73 @@ def inspect_post_script_cursor(data: bytes, script_end: int, asset_count: int) -
         "asset_count_from_root":asset_count,
     }
 
+
+
+def inspect_h1_gfx_globals(data: bytes, script_end: int, count: int) -> dict:
+    """Parse XGlobals+XGfxGlobals with source-native field widths.
+
+    The actual byte cursor is the end of inline strings: the original
+    archive does NOT insert a blanket align-to-eight boundary here.
+    H1 runtime structures identify ten count/pointer-bearing arrays.
+    """
+    at=script_end
+    if at+112>len(data):return {"status":"not_present_in_prefix"}
+    gfx_ptr=u64(data,at)
+    if gfx_ptr==0:return {"status":"no_gfx_globals","source_cursor":at}
+    if gfx_ptr!=MARKER:return {"status":"unsupported_gfx_pointer_tag","tag":f"{gfx_ptr:016x}"}
+    b=at+8
+    depth,blend=struct.unpack_from("<II",data,b)
+    ptrs=[u64(data,b+i) for i in (8,16,24,32,56,64,72,80,88,96)]
+    prim,obj,stable=struct.unpack_from("<III",data,b+40)
+    sizes=[(depth,8),(blend,12),(depth,8),(blend,8),(prim,4),(obj,4),(stable,4),
+           (prim,8),(obj,8),(stable,8)]
+    start=b+104
+    expected=sum(n*size for n,size in sizes)
+    return {
+        "status":"header_parsed",
+        "xglobals_pointer_offset":at,
+        "xgfxglobals_struct_offset":b,
+        "xgfxglobals_struct_end":start,
+        "depth_stencil_count":depth,"blend_count":blend,
+        "per_primitive_cb_count":prim,"per_object_cb_count":obj,
+        "stable_cb_count":stable,
+        "array_pointer_tags":[f"{p:016x}" for p in ptrs],
+        "all_array_pointers_are_inline":all(p==MARKER for p in ptrs),
+        "array_lengths_source_struct":sizes,
+        "candidate_arrays_total_bytes":expected,
+        "candidate_after_arrays":start+expected,
+        "after_arrays_first_192_hex":data[start+expected:start+expected+192].hex(" "),
+        "after_arrays_first_20_u64":[f"{u64(data,o):016x}" for o in range(start+expected,
+                            min(start+expected+8*20,len(data)-7),8)],
+        "candidate_asset_array_near_after_globals":probe_xasset_array_wide(
+            data, count, start+expected, 4096)
+    }
+
+
+def probe_xasset_array_wide(data: bytes, count: int, expected: int, radius: int) -> list[dict]:
+    """Search all byte alignments around source-computed global-array end."""
+    if count<2 or expected>len(data):return []
+    out=[]
+    start=max(112,expected-radius)
+    stop=min(len(data)-16*min(count,32),expected+radius)
+    for at in range(start,stop):
+        types=Counter()
+        tags=Counter()
+        for i in range(min(80,count)):
+            offset=at+16*i
+            kind,pad,ptr=struct.unpack_from("<IIQ",data,offset)
+            if kind>=71 or pad or ptr not in (0,MARKER):break
+            types[kind]+=1
+            tags["inline" if ptr==MARKER else "null"]+=1
+        n=sum(types.values())
+        if n>=min(count,16) and sum(v for k,v in types.items() if k!=0)>=max(1,n//8):
+            out.append({
+                "offset":at,"delta_from_predicted":at-expected,
+                "matched":n,"types":dict(types.most_common(16)),"pointer_tags":dict(tags)
+            })
+    out.sort(key=lambda d:(-d["matched"],abs(d["delta_from_predicted"])))
+    return out[:8]
+
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
@@ -250,6 +317,7 @@ def inspect_prefix(data: bytes) -> dict:
     end_of_strings=(result.get("decoded_indexed_script_strings") or {}).get("inline_blob_end_offset",112)
     result["xasset_16byte_table_candidate_runs"]=scan_table_candidates(data, asset_count)
     result["candidate_post_script_globals"]=inspect_post_script_cursor(data,end_of_strings,asset_count)
+    result["parsed_source_gfx_globals"]=inspect_h1_gfx_globals(data,end_of_strings,asset_count)
     result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
         data,asset_count,end_of_strings)
     return result
