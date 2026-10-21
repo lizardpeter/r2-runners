@@ -180,7 +180,9 @@ def run():
         for filename in PRESETS[preset]:
             key=PREFIX+filename
             target=Path(temp)/filename
-            byte_count,digest,_type=download(BASE+"/"+quote(key,safe="/"),target,max_bytes=40*1024*1024)
+            if SOURCES[filename] > 40 * 1024 * 1024:
+                raise ValueError("Refusing source larger than BO3 research budget")
+            byte_count,digest,_type=download(BASE+"/"+quote(key,safe="/"),target)
             if byte_count != SOURCES[filename]:
                 raise ValueError(f"Original R2 object length does not match authenticated listing: {key}")
             decoded,blocks=parse_zlib_zone(target)
