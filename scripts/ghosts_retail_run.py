@@ -19,7 +19,6 @@ from r2_download import download, validate_key
 
 ORIGIN = "https://r2.houseofkublai.com"
 SOURCE_PREFIX = "ghosts/DUMP/"
-MAX_FILE_BYTES = 850 * 1024 * 1024
 MAX_FILES = 32
 # Measured from the owner's actual R2 objects, and verified against decoded
 # authenticated FastFiles on the independent original-source research runner.
@@ -116,7 +115,7 @@ def main() -> int:
             target = Path(temporary) / name
             print(f"Downloading original R2 object {index+1}/{len(keys)}: {key}", flush=True)
             size, sha256, content_type = download(
-                ORIGIN + "/" + quote(key, safe="/"), target, MAX_FILE_BYTES
+                ORIGIN + "/" + quote(key, safe="/"), target
             )
             expected = VERIFIED.get(name)
             known_size = expected[0] if expected is not None else OTHER_SIZES.get(name)
