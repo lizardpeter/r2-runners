@@ -66,6 +66,7 @@ def main():
     root=Path(os.environ.get("BO3_REPORT_DIR","reports/bo3"))
     root.mkdir(parents=True,exist_ok=True)
     index_info,keys=read_base_index()
+    keys=set(keys)
     sources=["en_initial.xpak","en_base.xpak","base_patch_tu32.xpak"]
     for src in sources:
         _meta,extra=read_other_source_index(src)
