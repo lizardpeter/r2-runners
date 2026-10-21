@@ -73,6 +73,7 @@ def inspect_path_nodes(data: bytes) -> dict:
     link_kinds: Counter[str] = Counter()
     links = 0
     linked_nodes = 0
+    link_declarations: list[tuple[int,str]] = []
     invalid_origins = 0
     bounds_min = [math.inf] * 3
     bounds_max = [-math.inf] * 3
@@ -96,8 +97,45 @@ def inspect_path_nodes(data: bytes) -> dict:
         link_kinds[ptr] += 1
         links += count
         linked_nodes += int(count != 0)
+        link_declarations.append((count,ptr))
+    # Source-derived candidate: original node link arrays are serialized
+    # immediately following all fixed 176-byte pathnode_t records. Validate
+    # every real link target/distance before accepting this layout.
+    link_cursor = end
+    invalid_targets = 0
+    invalid_distances = 0
+    self_links = 0
+    decoded_links = 0
+    link_max_distance = 0.0
+    for source_node, (count,kind) in enumerate(link_declarations):
+        if kind not in ("follows","insert"):
+            if count:
+                raise ValueError(f"node {source_node}: missing link pointer")
+            continue
+        link_cursor = (link_cursor + 3) & ~3
+        next_offset = link_cursor + 12*count
+        if next_offset > len(data):
+            raise ValueError("PathData link source extends beyond authenticated XFile")
+        for off in range(link_cursor,next_offset,12):
+            distance,target,disconnect,negotiation,flags=struct.unpack_from("<fHBBB3x",data,off)
+            invalid_targets += int(target >= node_count)
+            invalid_distances += int(not math.isfinite(distance) or distance < 0)
+            self_links += int(target == source_node)
+            if math.isfinite(distance):
+                link_max_distance=max(link_max_distance,distance)
+            decoded_links += 1
+        link_cursor = next_offset
+    accepted=(decoded_links == links and invalid_targets==0 and invalid_distances==0)
     return {
-        "status": "original_IW6_path_node_array_read_from_retail_bytes",
+        "status": "original_IW6_path_links_validated" if accepted else "original_IW6_path_links_not_validated",
+        "candidate_source_link_end":link_cursor,
+        "decoded_link_slots":decoded_links,
+        "invalid_target_indices":invalid_targets,
+        "invalid_link_distances":invalid_distances,
+        "self_link_count":self_links,
+        "max_link_distance":link_max_distance,
+        "source_link_layout_accepted":accepted,
+
         "pathdata_header_source_offset": hdr_off,
         "path_node_array_file_offset": pos,
         "path_node_array_end": end,
@@ -110,7 +148,7 @@ def inspect_path_nodes(data: bytes) -> dict:
         "nonfinite_node_origins": invalid_origins,
         "bounds_min": bounds_min if invalid_origins != node_count else None,
         "bounds_max": bounds_max if invalid_origins != node_count else None,
-        "links_decoded": False,
+        "links_decoded": accepted,
         "navigation_graph_ready": False,
     }
 
