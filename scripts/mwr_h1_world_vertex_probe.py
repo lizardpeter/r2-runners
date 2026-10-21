@@ -27,7 +27,8 @@ class WorldVertexRunScanner:
     @staticmethod
     def is_vertex(b,at):
         if at<0 or at+STRIDE>len(b):return False
-        if b[at+12:at+16] not in SIGN_BYTES:return False
+        binormal=struct.unpack_from("<f",b,at+12)[0]
+        if not math.isfinite(binormal) or abs(binormal)>1.1:return False
         x,y,z=struct.unpack_from("<fff",b,at)
         if not all(math.isfinite(n) and abs(n)<2_000_000 for n in (x,y,z)):return False
         u,v,lu,lv=struct.unpack_from("<ffff",b,at+20)
@@ -38,6 +39,20 @@ class WorldVertexRunScanner:
         base=self.offset-len(self.carry)
         cursor=0
         longest=0
+        # Once a preceding decode block revealed a valid 44-byte array
+        # phase, continue it over chunk boundaries even when the original
+        # binormalSign no longer contains literal +/-1.0.
+        for phase in range(STRIDE):
+            n=0
+            while (phase+(n+1)*STRIDE<=len(b) and
+                   self.is_vertex(b,phase+n*STRIDE)):
+                n+=1
+            if n>=MIN_CANDIDATE_VERTICES:
+                at=base+phase
+                if at>=0:
+                    self.runs.append((at,n))
+                    self.signatures_valid+=1
+                    longest=max(longest,n)
         while cursor+STRIDE*MIN_CANDIDATE_VERTICES<=len(b):
             plus=b.find(b"\0\0\x80\x3f",cursor+12)
             minus=b.find(b"\0\0\x80\xbf",cursor+12)
@@ -112,5 +127,5 @@ class WorldVertexRunScanner:
           "longest_clusters":sorted(merged,key=lambda v:-v["potential_vertices"])[:20],
           "longest_single_decode_blocks":self.top_blocks[:16],
           "sampled_strict_vertex_run_boundaries":self.long_run_break_reasons[:20],
-          "note":"Candidates are exact-stride source checks, not vertex/index offset certification."
+          "note":"Source binormalSign is not restricted to +/-1.0; candidates use bounded finite source attributes and exact stride, not full byte-span certification."
         }
