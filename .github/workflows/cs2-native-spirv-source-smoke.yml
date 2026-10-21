@@ -67,7 +67,7 @@ jobs:
           $stage = 'shaders/vfx/csgo_vertexlitgeneric_vulkan_50_vs.vcs'
           $segment = python -c "import sys;sys.path.insert(0,'scripts');from pathlib import Path;from cs2_material_source_handoff import parse_vpk_index;idx=parse_vpk_index(Path(sys.argv[1]));print(idx.entries[sys.argv[2]].archive_index)" $index $stage
           if ($LASTEXITCODE -ne 0) { throw 'Original shader is absent in VPK directory' }
-          $segment = [int]($segment[-1].Trim())
+          $segment = [int](([string]$segment).Trim())
           if ($segment -ne 32767) {
             $file = 'game/csgo/shaders_vulkan_{0:D3}.vpk' -f $segment
             $filelist = Join-Path $root 'original-shader-segment.txt'
