@@ -37,11 +37,20 @@ jobs:
             --manifest manifests/bo1-server.json \
             --preset "$BO1_PRESET" \
             --output-dir "$RUNNER_TEMP/bo1"
-      - name: Publish source-only validation summary (never original binaries)
+      - name: Preserve exact original BO1 source files and original directory structure
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bo1-original-source-audit
+          name: bo1-exact-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/bo1/original-bo1/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+      - name: Publish companion source authentication report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-source-audit-${{ github.run_id }}
           path: ${{ runner.temp }}/bo1/report/*.json
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 90
