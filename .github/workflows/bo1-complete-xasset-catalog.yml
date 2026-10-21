@@ -1,0 +1,216 @@
+name: BO1 full client original 43-class XAsset catalog
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-complete-xasset-catalog.yml"
+      - "scripts/bo1_full_xasset_inventory.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  all-original-game-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 110
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and authenticate COMPLETE original 11GB BO1 game ZIP
+        env:
+          SOURCE_URL: https://r2.houseofkublai.com/downloads/games/pluto_t5_full_game.zip
+        run: |
+          mkdir -p "$RUNNER_TEMP/bo1-original-client"
+          python3 - <<'PY'
+          import os,sys
+          from pathlib import Path
+          sys.path.insert(0,"scripts")
+          from r2_download import download
+          path=Path(os.environ["RUNNER_TEMP"])/"bo1-original-client"/"pluto_t5_full_game.zip"
+          count,sha,_=download(os.environ["SOURCE_URL"],path)
+          expected="09722cfb94a30e24a90a3544df53e78c93894304bb75511067dcf3cdaf11ee9b"
+          assert (count,sha)==(11161080622,expected),("original BO1 ZIP integrity",count,sha)
+          print("Original complete BO1 client ZIP authenticated:",count,sha)
+          PY
+      - name: Decode all ORIGINAL XAsset tables and preserve every original FF
+        run: |
+          python3 scripts/bo1_full_xasset_inventory.py \
+            --original-game-zip "$RUNNER_TEMP/bo1-original-client/pluto_t5_full_game.zip" \
+            --output-dir "$RUNNER_TEMP/bo1-original-client/catalog"
+      - name: Shard original whole FastFiles as real transferable files
+        run: |
+          python3 scripts/shard_original_assets.py \
+            --source "$RUNNER_TEMP/bo1-original-client/catalog/original-bo1" \
+            --target "$RUNNER_TEMP/bo1-original-client/catalog/transfer" \
+            --shard-mib 490
+      - name: Preserve original BO1 complete zone binaries part 00
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-00
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-00/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 01
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-01
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-01/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 02
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-02
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-02/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 03
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-03
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-03/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 04
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-04
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-04/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 05
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-05
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-05/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 06
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-06
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-06/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 07
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-07
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-07/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 08
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-08
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-08/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 09
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-09
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-09/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 10
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-10
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-10/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 11
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-11
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-11/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 12
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-12
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-12/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 13
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-13
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-13/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 14
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-14
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-14/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 15
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-15
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-15/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 16
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-16
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-16/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 17
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-17
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-17/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 18
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-18
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-18/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original BO1 complete zone binaries part 19
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-all-original-fastfiles-${{ github.run_id }}-19
+          path: ${{ runner.temp }}/bo1-original-client/catalog/transfer/part-19/
+          if-no-files-found: ignore
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve original XAsset provenance and all unresolved zone diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-all-xasset-provenance-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/bo1-original-client/catalog/report/
+            ${{ runner.temp }}/bo1-original-client/catalog/transfer/transfer-manifest.json
+          if-no-files-found: warn
+          retention-days: 90
