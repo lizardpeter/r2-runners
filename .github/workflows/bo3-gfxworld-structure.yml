@@ -1,0 +1,30 @@
+name: BO3 generic GfxWorld struct source scan
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_gfxworld_structural_scan.py
+      - .github/workflows/bo3-gfxworld-structure.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-gfxworld:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate original BO3 world header fields with generic T7 source-wide structural invariants
+        env:
+          BO3_WORLD_ZONE: core_frontend.ff
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-gfxworld-structural
+          BO3_MAX_DECODED: '1073741824'
+        run: python3 scripts/bo3_gfxworld_structural_scan.py
+      - name: Upload original-header metadata only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-gfxworld-structural-candidates
+          path: ${{ runner.temp }}/bo3-gfxworld-structural/*.json
+          retention-days: 7
+          if-no-files-found: warn
