@@ -14,6 +14,7 @@ import sys
 from urllib.request import Request, urlopen
 from urllib.parse import quote
 from mwr_h1_asset_directory import inspect_prefix
+from mwr_h1_asset_runs import AssetRunScanner
 from mwr_h1_image_streams import analyze_stream_table
 
 CHUNK = 1 << 20
@@ -176,6 +177,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False) -> dict:
         digest = hashlib.sha256()
         leading = b""
         sample = bytearray()
+        asset_scanner = AssetRunScanner() if analyze_directory else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -192,6 +194,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False) -> dict:
                 leading=raw[:144]
             if analyze_directory and len(sample) < 2*1024*1024:
                 sample.extend(raw[:2*1024*1024-len(sample)])
+            if asset_scanner is not None:
+                asset_scanner.push(raw)
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -210,6 +214,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False) -> dict:
         }
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
+            result["complete_zone_asset_run_scan"] = asset_scanner.report()
         return result
 
 def main()->int:

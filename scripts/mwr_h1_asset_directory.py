@@ -4,6 +4,7 @@ Operates on the original decoded-stream prefix, retained only in memory of authe
 bytes. Reports counts, candidate record layouts and short bounded samples.
 """
 from collections import Counter
+from mwr_h1_asset_payload import analyze_first_source_body, inspect_sequential_source_files
 import struct
 
 XFILE_BYTES = 72
@@ -203,6 +204,165 @@ def probe_xasset_array_after_strings(data: bytes, asset_count: int, script_end: 
                            -r["pointer_tags"].get("inline",0),r["offset"]))
     return out[:8]
 
+
+
+def inspect_post_script_cursor(data: bytes, script_end: int, asset_count: int) -> dict:
+    aligned=(script_end+7)&~7
+    max_bytes=min(384,len(data)-aligned)
+    if max_bytes < 40:
+        return {"status":"not_available"}
+    blob=data[aligned:aligned+max_bytes]
+    words=[struct.unpack_from("<Q",blob,i)[0] for i in range(0,len(blob)-7,8)]
+    dwords=[struct.unpack_from("<I",blob,i)[0] for i in range(0,len(blob)-3,4)]
+    return {
+        "after_script_unaligned":script_end,
+        "after_script_aligned":aligned,
+        "first_192_raw_hex":blob[:192].hex(" "),
+        "first_36_u64":[f"{v:016x}" for v in words[:36]],
+        "first_48_u32":dwords[:48],
+        "asset_count_from_root":asset_count,
+    }
+
+
+
+def inspect_h1_gfx_globals(data: bytes, script_end: int, count: int) -> dict:
+    """Parse XGlobals+XGfxGlobals with source-native field widths.
+
+    The actual byte cursor is the end of inline strings: the original
+    archive does NOT insert a blanket align-to-eight boundary here.
+    H1 runtime structures identify ten count/pointer-bearing arrays.
+    """
+    at=script_end
+    if at+112>len(data):return {"status":"not_present_in_prefix"}
+    gfx_ptr=u64(data,at)
+    if gfx_ptr==0:return {"status":"no_gfx_globals","source_cursor":at}
+    if gfx_ptr!=MARKER:return {"status":"unsupported_gfx_pointer_tag","tag":f"{gfx_ptr:016x}"}
+    b=at+8
+    depth,blend=struct.unpack_from("<II",data,b)
+    ptrs=[u64(data,b+i) for i in (8,16,24,32,56,64,72,80,88,96)]
+    prim,obj,stable=struct.unpack_from("<III",data,b+40)
+    sizes=[(depth,8),(blend,12),(depth,8),(blend,8),(prim,4),(obj,4),(stable,4),
+           (prim,8),(obj,8),(stable,8)]
+    start=b+104
+    expected=sum(n*size for n,size in sizes)
+    return {
+        "status":"header_parsed",
+        "xglobals_pointer_offset":at,
+        "xgfxglobals_struct_offset":b,
+        "xgfxglobals_struct_end":start,
+        "depth_stencil_count":depth,"blend_count":blend,
+        "per_primitive_cb_count":prim,"per_object_cb_count":obj,
+        "stable_cb_count":stable,
+        "array_pointer_tags":[f"{p:016x}" for p in ptrs],
+        "all_array_pointers_are_inline":all(p==MARKER for p in ptrs),
+        "array_lengths_source_struct":sizes,
+        "candidate_arrays_total_bytes":expected,
+        "candidate_after_arrays":start+expected,
+        "after_arrays_first_192_hex":data[start+expected:start+expected+192].hex(" "),
+        "after_arrays_first_20_u64":[f"{u64(data,o):016x}" for o in range(start+expected,
+                            min(start+expected+8*20,len(data)-7),8)],
+        "candidate_asset_array_near_after_globals":probe_xasset_array_wide(
+            data, count, start+expected, 4096)
+    }
+
+
+def probe_xasset_array_wide(data: bytes, count: int, expected: int, radius: int) -> list[dict]:
+    """Search all byte alignments around source-computed global-array end."""
+    if count<2 or expected>len(data):return []
+    out=[]
+    start=max(112,expected-radius)
+    stop=min(len(data)-16*min(count,32),expected+radius)
+    for at in range(start,stop):
+        types=Counter()
+        tags=Counter()
+        for i in range(min(80,count)):
+            offset=at+16*i
+            kind,pad,ptr=struct.unpack_from("<IIQ",data,offset)
+            if kind>=71 or pad or ptr not in (0,MARKER):break
+            types[kind]+=1
+            tags["inline" if ptr==MARKER else "null"]+=1
+        n=sum(types.values())
+        if n>=min(count,16) and sum(v for k,v in types.items() if k!=0)>=max(1,n//8):
+            out.append({
+                "offset":at,"delta_from_predicted":at-expected,
+                "matched":n,"types":dict(types.most_common(16)),"pointer_tags":dict(tags)
+            })
+    out.sort(key=lambda d:(-d["matched"],abs(d["delta_from_predicted"])))
+    return out[:8]
+
+
+
+def verify_full_xasset_arrays(data: bytes, directory: dict, gfx: dict) -> dict:
+    """Verify EVERY authored record before promoting a candidate to real table.
+
+    No game/map-specific offsets. The only search region is bounded by the
+    already decoded XGlobals structure and its original serialized arrays.
+    A valid result must pass the entire declared asset count and source
+    pointer checks, not a short heuristic prefix.
+    """
+    count=directory["asset_count"]
+    if not 1<=count<=100_000:
+        return {"status":"not_applicable"}
+    if gfx.get("status")=="header_parsed":
+        start=gfx["xgfxglobals_struct_end"]
+        expected=gfx["candidate_after_arrays"]
+    elif gfx.get("status")=="no_gfx_globals":
+        start=gfx["source_cursor"]+8
+        expected=start
+    else:
+        return {"status":"unsupported_globals_layout","gfx_status":gfx.get("status")}
+    limit=min(len(data)-16*count,start+max(4096,2*(expected-start)+4096))
+    if limit<start:
+        return {"status":"insufficient_prefix","required":start+16*count,"have":len(data)}
+    marker=struct.pack("<Q",MARKER)
+    passes=[]
+    rejected=Counter()
+    at=start
+    while at<=limit:
+        # Fast reject all 16-byte starts whose first pair is not a valid
+        # H1 source type + pointer. The full table validation is bounded.
+        kind,pad,ptr=struct.unpack_from("<IIQ",data,at)
+        if not (kind<71 and pad==0 and ptr in (0,MARKER)):
+            at+=1
+            continue
+        # To avoid empty/garbage regions require at least one non-zero
+        # source type, then check source pointer validity across all slots.
+        counts=Counter()
+        tags=Counter()
+        for i in range(count):
+            where=at+i*16
+            k,p,reference=struct.unpack_from("<IIQ",data,where)
+            if k>=71 or p!=0 or reference not in (0,MARKER):
+                rejected["bad_record"]+=1
+                break
+            counts[k]+=1
+            tags["inline" if reference==MARKER else "null"]+=1
+        else:
+            if any(k!=0 and v>0 for k,v in counts.items()):
+                passes.append({
+                    "start_offset":at,
+                    "end_offset":at+count*16,
+                    "verified_records":count,
+                    "delta_from_model":at-expected,
+                    "type_histogram":dict(sorted(counts.items())),
+                    "source_pointer_tags":dict(tags),
+                    "source_type_indices_in_order_sha256":__import__("hashlib").sha256(
+                        data[at:at+count*16]).hexdigest(),
+                    "first_16_asset_types":[struct.unpack_from("<I",data,at+i*16)[0]
+                                            for i in range(min(count,16))],
+                    "first_asset_body_160_hex":data[at+count*16:at+count*16+160].hex(" "),
+                    "first_asset_body_words":[f"{u64(data,pos):016x}" for pos in
+                        range(at+count*16,min(at+count*16+8*16,len(data)-7),8)]
+                })
+        at+=1
+    return {"status":"fully_verified" if len(passes)==1 else
+            "ambiguous" if passes else "unresolved",
+            "candidate_count":len(passes),
+            "validated_tables":passes[:8],
+            "search_start":start,"search_end":limit,"expected_source_cursor":expected,
+            "partial_match_rejections":dict(rejected)}
+
+
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
@@ -230,6 +390,14 @@ def inspect_prefix(data: bytes) -> dict:
     result["sample_8byte_words_at_112"]=[f"{u64(data,p):016x}" for p in range(112, min(len(data)-8,360),8)]
     end_of_strings=(result.get("decoded_indexed_script_strings") or {}).get("inline_blob_end_offset",112)
     result["xasset_16byte_table_candidate_runs"]=scan_table_candidates(data, asset_count)
+    result["candidate_post_script_globals"]=inspect_post_script_cursor(data,end_of_strings,asset_count)
+    result["parsed_source_gfx_globals"]=inspect_h1_gfx_globals(data,end_of_strings,asset_count)
+    result["complete_xasset_directory_evidence"]=verify_full_xasset_arrays(
+        data,result,result["parsed_source_gfx_globals"])
+    verified=result["complete_xasset_directory_evidence"].get("validated_tables",[])
+    if result["complete_xasset_directory_evidence"].get("status")=="fully_verified" and verified:
+        result["first_original_asset_payload"]=analyze_first_source_body(data,verified[0])
+        result["sequential_original_source_files"]=inspect_sequential_source_files(data,verified[0])
     result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
         data,asset_count,end_of_strings)
     return result
