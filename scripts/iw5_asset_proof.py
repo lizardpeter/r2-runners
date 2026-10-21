@@ -162,6 +162,22 @@ def verify_signed_prefix(path:Path):
     packed=sum(x not in (0,INLINE) for x in technique_slots)
     if (technique_set_name,inline,absent,packed)!=("mc_ambient_t0c0_nocast",22,14,18):
         raise ValueError("original source technique mapping census regression")
+    # Source-original packed IW5 references are encoded as (block<<28
+    # | offset) + 1; the -1 is essential. Each target must fit the actual
+    # nine named XFile virtual block byte sizes, not the decompressed file
+    # offset. This is the first real recursive pointer admission check.
+    block_sizes=struct.unpack_from("<9I",inflated,8)
+    verified_packed=[]
+    for raw in technique_slots:
+        if raw in (0,INLINE):continue
+        block_and_offset=raw-1
+        block=block_and_offset>>28
+        offset=block_and_offset & 0x0fffffff
+        if block>=9 or offset>=block_sizes[block]:
+            raise ValueError("original material technique uses invalid packed block pointer")
+        verified_packed.append({"block":block,"byte_offset":offset})
+    if len(verified_packed)!=18 or any(x["block"]!=3 for x in verified_packed):
+        raise ValueError("original IW5 technique packed-reference block ownership changed")
     # Verify the first original inlined technique's pass-binding table.
     # The shader objects themselves are separate recursive source assets,
     # so this is evidence of original links, not shader translation.
@@ -198,6 +214,7 @@ def verify_signed_prefix(path:Path):
         "absent_technique_slots":absent,
         "lit_slot_9_pointer":f"0x{technique_slots[9]:08x}",
         "technique_slots_total":len(technique_slots),
+        "verified_packed_technique_pointers":verified_packed,
         "model_records":types[4],
         "material_records":types[5],
         "technique_set_records":types[9],
