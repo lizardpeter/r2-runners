@@ -348,7 +348,10 @@ def verify_full_xasset_arrays(data: bytes, directory: dict, gfx: dict) -> dict:
                     "source_type_indices_in_order_sha256":__import__("hashlib").sha256(
                         data[at:at+count*16]).hexdigest(),
                     "first_16_asset_types":[struct.unpack_from("<I",data,at+i*16)[0]
-                                            for i in range(min(count,16))]
+                                            for i in range(min(count,16))],
+                    "first_asset_body_160_hex":data[at+count*16:at+count*16+160].hex(" "),
+                    "first_asset_body_words":[f"{u64(data,pos):016x}" for pos in
+                        range(at+count*16,min(at+count*16+8*16,len(data)-7),8)]
                 })
         at+=1
     return {"status":"fully_verified" if len(passes)==1 else
