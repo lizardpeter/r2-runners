@@ -1,0 +1,47 @@
+name: BO1 original-source validation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-real-source.yml"
+      - "scripts/bo1_probe.py"
+      - "scripts/r2_download.py"
+      - "scripts/test_bo1_probe.py"
+      - "manifests/bo1-server.json"
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Which original BO1 map FastFiles to validate"
+        type: choice
+        required: true
+        default: both
+        options: [nuketown, firingrange, both, all_multiplayer]
+
+permissions:
+  contents: read
+
+jobs:
+  original-source-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the T5 binary decoder against local fixtures
+        run: python3 -m unittest discover -s scripts -p "test_bo1_probe.py" -v
+      - name: Download authentic BO1 FastFiles and IWDs to private runner scratch
+        env:
+          BO1_PRESET: ${{ inputs.preset || 'both' }}
+        run: |
+          python3 scripts/bo1_probe.py \
+            --manifest manifests/bo1-server.json \
+            --preset "$BO1_PRESET" \
+            --output-dir "$RUNNER_TEMP/bo1"
+      - name: Publish source-only validation summary (never original binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-original-source-audit
+          path: ${{ runner.temp }}/bo1/report/*.json
+          if-no-files-found: warn
+          retention-days: 7
