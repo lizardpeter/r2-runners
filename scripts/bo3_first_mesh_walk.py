@@ -156,6 +156,34 @@ def decode_authentic_rigid_geometry(zone,source_info,surface):
         ).hexdigest(),
     }
 
+def exact_original_surface_array(zone,start,end,count,mesh_info):
+    """Read source-authored 0x60 XSurface list contiguously only when all
+    records and their index/vertex extents pass strong bounds checks."""
+    if not (1<count<=128) or start+count*0x60>end:return None
+    all_surfaces=[]
+    for i in range(count):
+        at=start+i*0x60
+        vc,tri=struct.unpack_from("<HH",zone,at+4)
+        vb,ib=struct.unpack_from("<II",zone,at+8)
+        if not(0<vc<=mesh_info["vertex_count"] and
+               0<tri<=65535 and
+               vb+vc<=mesh_info["vertex_count"] and
+               ib+3*tri<=mesh_info["face_count"]):
+            return None
+        surf={"original_offset":at,"source_vertices":vc,"authored_triangles":tri,
+              "vertex_base":vb,"index_base":ib,"weight_flags":list(zone[at:at+4])}
+        decoded=decode_authentic_rigid_geometry(zone,mesh_info,surf)
+        if decoded.get("status")!="original_rigid_surface_decoded":return None
+        surf["real_geometry"]=decoded
+        all_surfaces.append(surf)
+    return {
+        "status":"original_multisurface_array_decoded",
+        "authored_surfaces":count,
+        "real_vertices":sum(x["real_geometry"]["vertices"] for x in all_surfaces),
+        "real_triangles":sum(x["real_geometry"]["authored_triangles"] for x in all_surfaces),
+        "source_surface_locations":[x["original_offset"] for x in all_surfaces],
+    }
+
 def survey(z):
     d=parse_directory(bytearray(z))
     if d["status"]!="t7_asset_table_layout_verified":
@@ -217,6 +245,12 @@ def survey(z):
                     info["decoded_retail_surface"]=decode_authentic_rigid_geometry(
                         z,info,exact[0]
                     )
+                elif x["surface_count"]>1:
+                    multi=exact_original_surface_array(
+                        z,inline_end,next_at,x["surface_count"],info
+                    )
+                    if multi is not None:
+                        info["decoded_retail_surface_array"]=multi
         records.append({
             "candidate_source_mesh_info":stream_candidates,
             "early_mesh_info_field_probes":nearby_mesh_info_fields(z,name_end,next_at) if k<4 else [],
@@ -246,6 +280,9 @@ def survey(z):
         "verified_actual_retail_surface_decodes":sum(c.get("decoded_retail_surface",{}).get("status")=="original_rigid_surface_decoded" for x in records for c in x["candidate_source_mesh_info"]),
         "verified_actual_retail_vertices":sum(c.get("decoded_retail_surface",{}).get("vertices",0) for x in records for c in x["candidate_source_mesh_info"]),
         "verified_actual_retail_triangles":sum(c.get("decoded_retail_surface",{}).get("authored_triangles",0) for x in records for c in x["candidate_source_mesh_info"]),
+        "verified_original_multisurface_arrays":sum(c.get("decoded_retail_surface_array",{}).get("status")=="original_multisurface_array_decoded" for x in records for c in x["candidate_source_mesh_info"]),
+        "verified_original_multi_triangles":sum(c.get("decoded_retail_surface_array",{}).get("real_triangles",0) for x in records for c in x["candidate_source_mesh_info"]),
+        "stream_header_status_flags":dict(Counter(c["status_flag"] for x in records for c in x["candidate_source_mesh_info"])),
 
         "source_order_digest_sha256":hashlib.sha256(
             "\n".join(x["model_name"] for x in records).encode()).hexdigest(),
