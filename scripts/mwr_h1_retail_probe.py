@@ -21,6 +21,7 @@ from mwr_h1_world_geometry_root import GfxWorldGeometryScanner
 from mwr_h1_world_vertex_probe import WorldVertexRunScanner
 from mwr_h1_world_vertex_verify import verify_source_vertex_array
 from mwr_h1_index_candidate_probe import probe_original_index_array
+from mwr_h1_surface_probe import H1SurfaceSourceScanner
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -186,6 +187,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         gfx_scanner = GfxWorldCandidateScanner(gfx_stem) if gfx_stem is not None else None
         geometry_scanner=GfxWorldGeometryScanner() if gfx_stem is not None else None
         vertex_scanner=WorldVertexRunScanner() if gfx_stem is not None else None
+        surface_scanner=H1SurfaceSourceScanner() if gfx_stem is not None else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -210,6 +212,11 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
                 geometry_scanner.push(raw)
             if vertex_scanner is not None:
                 vertex_scanner.push(raw)
+            if surface_scanner is not None:
+                roots=list(geometry_scanner.hits.values())
+                if len(roots)==1 and surface_scanner.expected_surface_count is None:
+                    surface_scanner.bind_root(roots[0])
+                surface_scanner.push(raw)
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -234,6 +241,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
             if len(roots)==1:
                 vertex_scanner.expected_count=roots[0]["vertex_count"]
             result["gfxworld_vertex_source_candidate_scan"]=vertex_scanner.report()
+            result["gfxworld_surface_source_candidate_scan"]=surface_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
             result["complete_zone_asset_run_scan"] = asset_scanner.report()
