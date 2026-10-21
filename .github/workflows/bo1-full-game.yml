@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/bo1-full-game.yml"
       - "scripts/bo1_full_game_range.py"
+      - "scripts/r2_download.py"
       - "scripts/test_bo1_full_game_range.py"
       - "scripts/shard_original_assets.py"
       - "scripts/bo1_probe.py"
