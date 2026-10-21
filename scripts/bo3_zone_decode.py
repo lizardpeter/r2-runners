@@ -159,7 +159,7 @@ def parse_directory(data:bytearray)->dict:
             types.append(typ)
             if typ<=103:
                 valid_type+=1
-            if ptr in (0xFFFFFFFFFFFFFFFF,0,0xFFFFFFFFFFFFFFFE):
+            if ptr in (0xFFFFFFFFFFFFFFFF, 0, 0xFFFFFFFFFFFFFFFE) or (ptr >> 56) == 0x50:
                 inline+=1
             headers[f"0x{ptr:016x}"]+=1
             if idx<5:
@@ -186,7 +186,7 @@ def parse_directory(data:bytearray)->dict:
         return {**info,"status":"asset_table_out_of_bounds","string_start":string_start,"string_end":cursor}
     best=options[0]
     credible=(asset_count>0 and best["known_type_records"]==asset_count and
-              best["recognized_inline_markers"]>=asset_count*0.95)
+              best["recognized_inline_markers"]==asset_count)
     return {**info,
             "status":"t7_asset_table_layout_verified" if credible else "asset_table_layout_not_verified",
             "script_strings_parsed":len(strings),
