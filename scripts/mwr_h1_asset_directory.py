@@ -71,6 +71,43 @@ def scan_table_candidates(data: bytes, count: int, limit: int = 12) -> list[dict
     return candidates[:limit]
 
 
+
+
+def analyze_script_string_run(data: bytes, script_count: int) -> dict:
+    """Inspect candidate inline NUL-terminated strings after the pointer vector.
+
+    A tagged pointer can precede the string bytes. Do not assume that these
+    guesses are authenticated script-string index mappings until count and
+    the continuation boundary have been proven across more zones.
+    """
+    if not 0 < script_count <= 100_000:
+        return {}
+    vector_end = 104 + script_count * 8
+    if vector_end + 8 >= len(data):
+        return {"status":"pointer_vector_outside_prefix"}
+    expected = u64(data,vector_end)
+    runs=[]
+    for start in (vector_end,vector_end+8):
+        segment=data[start:min(len(data),start+128*1024)]
+        end=0
+        for b in segment:
+            if b not in (0,9,10,13) and not 32<=b<=126:
+                break
+            end+=1
+        raw=segment[:end]
+        strings=[x.decode("ascii","replace") for x in raw.split(b"\0") if x]
+        runs.append({
+            "start_offset":start,
+            "printable_run_bytes":end,
+            "nul_count":raw.count(0),
+            "candidate_strings":len(strings),
+            "first_candidate_strings":[x[:72] for x in strings[:12]],
+            "stopped_offset":start+end,
+            "string_count_matches_inline_marker_count":len(strings)==script_count-1,
+        })
+    return {"next_word_after_pointer_vector":f"{expected:016x}",
+            "candidate_string_runs":runs}
+
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
@@ -89,6 +126,7 @@ def inspect_prefix(data: bytes) -> dict:
         hist=Counter("marker" if p==MARKER else "null" if p==0 else
                      "tagged" if (p>>48)==0xFDFD else "other" for p in ptrs)
         result["script_pointer_vector_at_104_hypothesis"]=dict(hist)
+        result["inline_script_string_run_analysis"]=analyze_script_string_run(data,script_count)
         result["sample_words_following_pointer_vector"]=[
             f"{u64(data,p):016x}" for p in range(104+script_count*8,
                                                   min(len(data)-8,104+script_count*8+64),8)]
