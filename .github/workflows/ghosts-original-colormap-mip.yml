@@ -20,20 +20,24 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import hashlib,urllib.request,zlib
+          import hashlib,subprocess,tempfile,pathlib,zlib
           # Original mp_alien_town.ff, XAsset #25 source:
           # 104-byte GfxImage at decoded offset 135328.
           # Authored XStreamFile row 0: imagefile1.pak [88778934,88788527).
           start,end=88778934,88788527
           url="https://r2.houseofkublai.com/ghosts/DUMP/imagefile1.pak"
-          request=urllib.request.Request(url,headers={
-              "Range":f"bytes={start}-{end-1}",
-              "Accept-Encoding":"identity"})
-          with urllib.request.urlopen(request,timeout=65) as response:
-              assert response.status==206,(response.status,response.headers)
-              assert response.headers.get("Content-Range","").startswith(
-                  f"bytes {start}-{end-1}/"),response.headers
-              compressed=response.read(20000)
+          with tempfile.TemporaryDirectory() as d:
+              dest=pathlib.Path(d)/"source-pak-part"
+              headers=pathlib.Path(d)/"headers"
+              subprocess.run(["curl","--fail","--show-error","--silent",
+                  "--location","--retry","3","--connect-timeout","20",
+                  "--max-time","120","-H","Accept-Encoding: identity",
+                  "-H",f"Range: bytes={start}-{end-1}",
+                  "-D",str(headers),"-o",str(dest),url],check=True)
+              response_headers=headers.read_text().lower()
+              assert " 206 " in response_headers,response_headers
+              assert f"content-range: bytes {start}-{end-1}/" in response_headers,response_headers
+              compressed=dest.read_bytes()
           assert len(compressed)==end-start,(len(compressed),end-start)
           pixels=zlib.decompress(compressed)
           assert len(pixels)==128*128,(len(pixels),128*128)
