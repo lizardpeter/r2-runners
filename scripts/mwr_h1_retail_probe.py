@@ -18,6 +18,12 @@ from mwr_h1_asset_runs import AssetRunScanner
 from mwr_h1_image_streams import analyze_stream_table
 from mwr_h1_gfxworld_probe import GfxWorldCandidateScanner
 from mwr_h1_world_geometry_root import GfxWorldGeometryScanner
+from mwr_h1_world_vertex_probe import WorldVertexRunScanner
+from mwr_h1_world_vertex_verify import verify_source_vertex_array
+from mwr_h1_index_candidate_probe import probe_original_index_array
+from mwr_h1_surface_probe import H1SurfaceSourceScanner
+from mwr_h1_surface_verify import verify_source_surface_array
+from mwr_h1_index_surface_verify import verify_original_index_bytes
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -182,6 +188,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         asset_scanner = AssetRunScanner() if analyze_directory else None
         gfx_scanner = GfxWorldCandidateScanner(gfx_stem) if gfx_stem is not None else None
         geometry_scanner=GfxWorldGeometryScanner() if gfx_stem is not None else None
+        vertex_scanner=WorldVertexRunScanner() if gfx_stem is not None else None
+        surface_scanner=H1SurfaceSourceScanner() if gfx_stem is not None else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -204,6 +212,13 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
                 gfx_scanner.push(raw)
             if geometry_scanner is not None:
                 geometry_scanner.push(raw)
+            if vertex_scanner is not None:
+                vertex_scanner.push(raw)
+            if surface_scanner is not None:
+                roots=list(geometry_scanner.hits.values())
+                if len(roots)==1 and surface_scanner.expected_surface_count is None:
+                    surface_scanner.bind_root(roots[0])
+                surface_scanner.push(raw)
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -222,7 +237,13 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         }
         if gfx_scanner is not None:
             result["gfxworld_source_scan"]=gfx_scanner.report()
-            result["gfxworld_geometry_source_root_scan"]=geometry_scanner.report()
+            geometry=geometry_scanner.report()
+            result["gfxworld_geometry_source_root_scan"]=geometry
+            roots=geometry["candidates"]
+            if len(roots)==1:
+                vertex_scanner.expected_count=roots[0]["vertex_count"]
+            result["gfxworld_vertex_source_candidate_scan"]=vertex_scanner.report()
+            result["gfxworld_surface_source_candidate_scan"]=surface_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
             result["complete_zone_asset_run_scan"] = asset_scanner.report()
@@ -264,6 +285,25 @@ def main()->int:
             if args.full_decode:
                 try:
                     header["whole_zone_decode"]=decode_lz4_zone(local,header,args.analyze_directory,stem if args.probe_gfxworld and name==f"{stem}.ff" else None)
+                    if args.probe_gfxworld and name==f"{stem}.ff":
+                        scanned=header["whole_zone_decode"]
+                        roots=scanned["gfxworld_geometry_source_root_scan"]["candidates"]
+                        if len(roots)==1:
+                            scanned["world_vertex_exact_window_verification"]=verify_source_vertex_array(
+                                local,header,LogicalSignedStream,
+                                scanned["gfxworld_vertex_source_candidate_scan"],
+                                roots[0]["vertex_count"])
+                            checked=scanned["world_vertex_exact_window_verification"]
+                            if checked.get("status")=="complete":
+                                scanned["world_index_source_order_candidates"]=probe_original_index_array(
+                                    local,header,LogicalSignedStream,checked,roots[0])
+                            scanned["world_surface_exact_window_verification"]=verify_source_surface_array(
+                                local,header,LogicalSignedStream,
+                                scanned["gfxworld_surface_source_candidate_scan"],roots[0])
+                            surfaces=scanned["world_surface_exact_window_verification"]
+                            if checked.get("status")=="complete" and surfaces.get("status")=="complete_original_surface_struct_array_verified":
+                                scanned["world_index_all_surfaces_linked_verification"]=verify_original_index_bytes(
+                                    local,header,LogicalSignedStream,roots[0],checked,surfaces)
                 except Exception as exc:
                     header["whole_zone_decode"]={"status":"failed","reason":str(exc)}
                     print(f"H1 full decode not yet validated for {name}: {exc}",file=sys.stderr,flush=True)
