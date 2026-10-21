@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/t6-material-ipak-source.yml"
       - "scripts/r2_download.py"
+      - "scripts/r2_range_download.py"
   workflow_dispatch:
 
 permissions:
@@ -40,7 +41,8 @@ jobs:
           esac
           echo "SOURCE_KEY=bo2/zone/all/$ARCHIVE.ipak" >> "$GITHUB_ENV"
           echo "SOURCE_BYTES=$expected" >> "$GITHUB_ENV"
-      - name: Download entire R2 image package and SHA-verify length
+      - name: Download entire non-base R2 image package
+        if: matrix.archive != 'base'
         shell: bash
         run: |
           set -euo pipefail
@@ -52,26 +54,27 @@ jobs:
           FILE="$RUNNER_TEMP/t6/artifact/$SOURCE_KEY"
           test "$(stat -c%s "$FILE")" -eq "$SOURCE_BYTES"
           sha256sum "$FILE" | tee "$RUNNER_TEMP/t6/full-object.sha256"
-      - name: Prepare transport-only shards for base.ipak
+      - name: Retrieve complete base.ipak with exact byte ranges
         if: matrix.archive == 'base'
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/t6/base-parts"
-          FILE="$RUNNER_TEMP/t6/artifact/$SOURCE_KEY"
-          split -b 768m -d -a 2 "$FILE" "$RUNNER_TEMP/t6/base-parts/base.ipak.part-"
-          (cd "$RUNNER_TEMP/t6/base-parts" && sha256sum base.ipak.part-*) > "$RUNNER_TEMP/t6/base-parts/parts.sha256"
-          cp "$RUNNER_TEMP/t6/full-object.sha256" "$RUNNER_TEMP/t6/base-parts/full-object.sha256"
-          cp "$RUNNER_TEMP/t6/artifact/verification.json" "$RUNNER_TEMP/t6/base-parts/verification.json"
-          cat > "$RUNNER_TEMP/t6/base-parts/README.txt" <<'EOS'
-          Transport-only sharding. Original full source file was downloaded and
-          size-verified on the same runner; original bytes were not modified.
-          Reassemble: cat base.ipak.part-* > base.ipak
-          Validate against full-object.sha256 (adjust expected path as needed).
+          python3 scripts/r2_range_download.py \
+            --base-url https://r2.houseofkublai.com \
+            --key "$SOURCE_KEY" \
+            --output-dir "$RUNNER_TEMP/t6" \
+            --expected-size "$SOURCE_BYTES"
+          cd "$RUNNER_TEMP/t6/base-parts"
+          test "$(find . -name 'base.ipak.part-*' | wc -l)" -eq 4
+          sha256sum --check parts.sha256
+          cat base.ipak.part-* | sha256sum
+          cat > README.txt <<'EOS'
+          This 2.61 GB retail base.ipak was fetched in complete, verified HTTP
+          byte ranges because single-object HTTP responses truncate upstream.
+          Parts are consecutive byte-for-byte source slices. Reassemble:
+              cat base.ipak.part-* > base.ipak
+              sha256sum -c full-object.sha256
           EOS
-          test "$(find "$RUNNER_TEMP/t6/base-parts" -name 'base.ipak.part-*' | wc -l)" -eq 4
-          cat "$RUNNER_TEMP/t6/base-parts"/base.ipak.part-* | sha256sum
-          sha256sum "$FILE"
       - name: Publish exact non-base object
         if: matrix.archive != 'base'
         uses: actions/upload-artifact@v4
