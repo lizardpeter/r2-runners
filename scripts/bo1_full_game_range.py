@@ -1,0 +1,213 @@
+#!/usr/bin/env python3
+"""Read source files inside the owner's ORIGINAL 11.16 GB BO1 R2 ZIP by HTTP Range.
+
+No complete ZIP download required. Only source-selected FastFiles and IWDs are
+materialized on the GitHub runner, never published or committed to the public
+repository. The audit artifact contains metadata only.
+"""
+from __future__ import annotations
+import argparse
+from collections import Counter, OrderedDict
+import io
+import json
+import os
+from pathlib import Path
+import shutil
+import sys
+import zipfile
+from urllib.request import Request, urlopen
+from urllib.parse import quote
+
+from bo1_probe import probe_ff, probe_iwd
+
+R2_BASE = "https://r2.houseofkublai.com/"
+BO1_ZIP_KEY = "downloads/games/pluto_t5_full_game.zip"
+EXPECTED_SIZE = 11_161_080_622
+BLOCK_SIZE = 2 * 1024 * 1024
+CACHE_BLOCKS = 12
+MAX_EXTRACT = 700 * 1024 * 1024
+
+class HttpRangeObject(io.RawIOBase):
+    """Small bounded seekable reader suitable for Python's ZipFile, including ZIP64."""
+    def __init__(self, url: str, size: int):
+        super().__init__()
+        self.url, self.size, self.pos = url, size, 0
+        self.cache: OrderedDict[int, bytes] = OrderedDict()
+        # Probe Range support rather than silently downloading an 11 GB body.
+        self._block(0)
+
+    def readable(self): return True
+    def seekable(self): return True
+    def tell(self): return self.pos
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        if whence == io.SEEK_END: value = self.size + offset
+        elif whence == io.SEEK_CUR: value = self.pos + offset
+        elif whence == io.SEEK_SET: value = offset
+        else: raise ValueError(f"Invalid seek origin {whence}")
+        if value < 0: raise ValueError("Negative ZIP source seek")
+        self.pos = value
+        return self.pos
+
+    def _block(self, index: int) -> bytes:
+        if index in self.cache:
+            self.cache.move_to_end(index)
+            return self.cache[index]
+        start = index * BLOCK_SIZE
+        if start >= self.size: return b""
+        end = min(start + BLOCK_SIZE, self.size) - 1
+        request = Request(self.url, headers={
+            "Range": f"bytes={start}-{end}",
+            "Accept-Encoding": "identity",
+            "User-Agent": "r2-runners/bo1-remote-zip/1.0",
+        })
+        with urlopen(request, timeout=90) as response:
+            if response.status != 206:
+                raise RuntimeError("R2 server did not honor HTTP Range (must be 206)")
+            returned = response.headers.get("Content-Range", "")
+            if returned != f"bytes {start}-{end}/{self.size}":
+                raise RuntimeError(f"Unexpected R2 Content-Range: {returned}")
+            data = response.read(BLOCK_SIZE + 1)
+        if len(data) != end - start + 1:
+            raise RuntimeError("R2 byte-range was truncated or oversized")
+        self.cache[index] = data
+        if len(self.cache) > CACHE_BLOCKS:
+            self.cache.popitem(last=False)
+        return data
+
+    def read(self, size: int = -1) -> bytes:
+        if self.pos >= self.size: return b""
+        if size < 0:
+            # ZipFile always issues bounded reads for central directory and
+            # compressed members. A caller trying to read all 11 GB is a bug.
+            raise RuntimeError("Unbounded read of original BO1 ZIP prohibited")
+        size = min(size, self.size - self.pos)
+        chunks = []
+        while size:
+            index, inner = divmod(self.pos, BLOCK_SIZE)
+            data = self._block(index)
+            piece = data[inner:inner + size]
+            if not piece: raise RuntimeError("R2 range block did not contain requested data")
+            chunks.append(piece)
+            self.pos += len(piece)
+            size -= len(piece)
+        return b"".join(chunks)
+
+
+def relative_original_member(path: str) -> str | None:
+    clean = path.replace("\\", "/").strip("/")
+    if ".." in clean.split("/") or not clean:
+        return None
+    bits = clean.split("/")
+    for root in ("zone", "main"):
+        if root in bits:
+            return "/".join(bits[bits.index(root):])
+    return None
+
+
+def choose_entries(items: list[zipfile.ZipInfo], preset: str) -> tuple[list[tuple[str,zipfile.ZipInfo]], dict]:
+    matches: dict[str, list[zipfile.ZipInfo]] = {}
+    extensions = Counter()
+    for entry in items:
+        if entry.is_dir(): continue
+        extensions[Path(entry.filename).suffix.lower()] += 1
+        logical = relative_original_member(entry.filename)
+        if logical:
+            matches.setdefault(logical.lower(), []).append(entry)
+    required = {"zone/common/common_mp.ff", "zone/common/patch_mp.ff"}
+    if preset == "both":
+        required.update({"zone/common/mp_nuked.ff", "zone/common/mp_firingrange.ff"})
+    elif preset == "nuketown":
+        required.add("zone/common/mp_nuked.ff")
+    elif preset == "firingrange":
+        required.add("zone/common/mp_firingrange.ff")
+    elif preset == "all_multiplayer":
+        required.update(p for p in matches if p.startswith("zone/common/mp_") and p.endswith(".ff"))
+    # Inventory IWDs, then request only a bounded number for this first audit.
+    # Original game ZIP may supply textures in numerous zone packages instead.
+    iwd_candidates = sorted(p for p in matches if p.startswith("main/") and p.endswith(".iwd"))
+    required.update(iwd_candidates[:4])
+    selected = []
+    missing = []
+    for name in sorted(required):
+        candidates = matches.get(name, [])
+        if len(candidates) > 1:
+            raise ValueError(f"Ambiguous source paths for {name}: {len(candidates)}")
+        if not candidates:
+            missing.append(name)
+        else:
+            selected.append((name, candidates[0]))
+    catalog = {
+        "total_zip_members": len(items),
+        "extensions": dict(extensions.most_common(30)),
+        "original_iwd_count": len(iwd_candidates),
+        "original_iwd_examples": iwd_candidates[:20],
+        "original_zone_ff_count": sum(1 for p in matches if p.startswith("zone/") and p.endswith(".ff")),
+        "missing_selected": missing,
+    }
+    return selected, catalog
+
+
+def run(preset: str, output_dir: Path) -> dict:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    reports = output_dir / "report"
+    reports.mkdir(exist_ok=True)
+    url = R2_BASE + quote(BO1_ZIP_KEY, safe="/")
+    report = {"source_r2_key": BO1_ZIP_KEY, "source_zip_expected_bytes": EXPECTED_SIZE,
+              "preset": preset, "member_report": [], "complete": False}
+    path = reports / "bo1-full-game-range-report.json"
+    try:
+        with HttpRangeObject(url, EXPECTED_SIZE) as source:
+            with zipfile.ZipFile(source) as archive:
+                selected, catalog = choose_entries(archive.infolist(), preset)
+                report["catalog"] = catalog
+                report["zip64_range_open_succeeded"] = True
+                if catalog["missing_selected"]:
+                    raise RuntimeError("Original full game ZIP lacks requested source assets")
+                total = sum(x.file_size for _,x in selected)
+                if total > MAX_EXTRACT:
+                    raise ValueError(f"Selected original source bytes {total} exceed scratch bound {MAX_EXTRACT}")
+                scratch = output_dir / "original-bo1"
+                for rel, info in selected:
+                    target = scratch.joinpath(*rel.split("/"))
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    with archive.open(info, "r") as read, target.open("wb") as write:
+                        shutil.copyfileobj(read, write, 1024*1024)
+                    if target.stat().st_size != info.file_size:
+                        raise RuntimeError("Original ZIP member truncated")
+                    datum = {"path": rel, "size": info.file_size,
+                             "crc32": f"{info.CRC:08x}", "source_compression": info.compress_type}
+                    if rel.endswith(".ff"):
+                        datum["t5_fastfile"] = probe_ff(target.read_bytes())
+                    elif rel.endswith(".iwd"):
+                        datum["iwd"] = probe_iwd(target)
+                    report["member_report"].append(datum)
+                    path.write_text(json.dumps(report,indent=2)+"\n")
+        report["complete"] = True
+    except Exception as exc:
+        report["error"] = str(exc)
+        raise
+    finally:
+        path.write_text(json.dumps(report,indent=2)+"\n", encoding="utf-8")
+        print(json.dumps({k:v for k,v in report.items() if k!="member_report"},indent=2))
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"],"a") as f:
+                f.write(f"### Original 11.16 GB BO1 archive ranged inspection\n\n"
+                        f"- ZIP directory opened: {report.get('zip64_range_open_succeeded',False)}\n"
+                        f"- Extracted source members to scratch: {len(report['member_report'])}\n"
+                        f"- Completed: {report['complete']}\n"
+                        f"- No original game bytes included in workflow artifacts\n")
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument("--preset", choices=["nuketown","firingrange","both","all_multiplayer"], default="both")
+    p.add_argument("--output-dir", type=Path, required=True)
+    args=p.parse_args()
+    run(args.preset,args.output_dir)
+
+if __name__ == "__main__":
+    try: main()
+    except Exception as e:
+        print(f"BO1 ZIP64 range probe failed: {e}",file=sys.stderr)
+        sys.exit(1)
