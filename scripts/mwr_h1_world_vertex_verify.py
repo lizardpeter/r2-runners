@@ -6,6 +6,7 @@ report complete only when consecutive records match GfxWorld.vertexCount.
 """
 import math
 import struct
+import hashlib
 import lz4.block
 
 STRIDE=44
@@ -91,6 +92,23 @@ def verify_source_vertex_array(ff_file,header,stream_class,report,expected_verti
             "verified_vertex_records":(hi-lo)//STRIDE} for lo,hi in runs[:15]]
     max_records=major[0]["verified_vertex_records"] if major else 0
     exact=next((entry for entry in major if entry["verified_vertex_records"]>=expected_vertices),None)
+    signature=None
+    authentic_bounds=None
+    if exact:
+        pos=exact["start_offset"]-begin
+        original=data[pos:pos+expected_vertices*STRIDE]
+        if len(original)!=expected_vertices*STRIDE:
+            raise ValueError("H1 complete source vertex span truncated in proof window")
+        signature=hashlib.sha256(original).hexdigest()
+        bounds_lo=[float("inf")]*3
+        bounds_hi=[float("-inf")]*3
+        for at in range(0,len(original),STRIDE):
+            xyz=struct.unpack_from("<fff",original,at)
+            for i,v in enumerate(xyz):
+                bounds_lo[i]=min(bounds_lo[i],v)
+                bounds_hi[i]=max(bounds_hi[i],v)
+        authentic_bounds={"min_original_units":bounds_lo,
+                           "max_original_units":bounds_hi}
     return {
         "status":"complete" if exact else "near_full_boundary_unresolved",
         "authored_gfxworld_vertex_count":expected_vertices,
@@ -100,6 +118,8 @@ def verify_source_vertex_array(ff_file,header,stream_class,report,expected_verti
         "candidate_source_end":end,
         "validation_window_start":begin,
         "validation_window_end":stop,
+        "complete_original_vertex_sha256":signature,
+        "complete_original_world_aabb":authentic_bounds,
         "complete_source_array_start":exact["start_offset"] if exact else None,
         "complete_source_array_end":exact["start_offset"]+expected_vertices*STRIDE if exact else None,
         "top_verified_contiguous_runs":major,
