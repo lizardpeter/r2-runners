@@ -9,6 +9,7 @@ on:
       - "scripts/mwr_h1_gfxworld_probe.py"
       - "scripts/mwr_h1_world_geometry_root.py"
       - "scripts/mwr_h1_world_vertex_probe.py"
+      - "tests/test_mwr_h1_world_vertex_probe.py"
       - "scripts/mwr_h1_asset_runs.py"
       - "scripts/mwr_h1_asset_payload.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
@@ -36,6 +37,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install independent LZ4 research tool
         run: python3 -m pip install --quiet lz4
+      - name: Validate H1 source vertex stride and fractional binormal invariants
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_world_vertex_probe.py
       - name: Fetch exact original H1 FastFiles and inspect headers and LZ4 framing
         shell: bash
         env:
