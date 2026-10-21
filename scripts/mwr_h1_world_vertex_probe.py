@@ -109,19 +109,36 @@ class WorldVertexRunScanner:
             self.top_blocks.append((self.offset-len(raw),longest))
             self.top_blocks=sorted(self.top_blocks,key=lambda t:-t[1])[:32]
     def report(self):
-        runs=sorted(set(self.runs))
+        # A coincident byte interval does NOT prove vertex-array continuity.
+        # Alignments with different absolute offsets modulo 44 can overlap
+        # extensively, and unconditionally merging them created a false
+        # 1.617 million 'vertex' claim. Keep each authenticated 44B phase
+        # independent, merging ONLY touching/overlapping runs with exactly
+        # the same original file-byte alignment.
+        by_phase={}
+        for at,count in sorted(set(self.runs)):
+            if count<MIN_CANDIDATE_VERTICES:continue
+            by_phase.setdefault(at%STRIDE,[]).append((at,at+count*STRIDE))
         merged=[]
-        for at,count in runs:
-            end=at+count*STRIDE
-            if merged and at<=merged[-1]["end_offset"]:
-                previous=merged[-1]
-                previous["end_offset"]=max(previous["end_offset"],end)
-                previous["potential_vertices"]=max(previous["potential_vertices"],
-                    (previous["end_offset"]-previous["start_offset"])//STRIDE)
-                previous["confirmed_windows"]+=1
-            else:
-                merged.append({"start_offset":at,"end_offset":end,
-                               "potential_vertices":count,"confirmed_windows":1})
+        for phase,runs in by_phase.items():
+            runs.sort()
+            local=[]
+            for at,end in runs:
+                if local and at<=local[-1]["end_offset"]:
+                    local[-1]["end_offset"]=max(local[-1]["end_offset"],end)
+                    local[-1]["verified_vertex_records"]=(local[-1]["end_offset"]-
+                        local[-1]["start_offset"])//STRIDE
+                    local[-1]["confirmed_windows"]+=1
+                else:
+                    local.append({"start_offset":at,"end_offset":end,
+                                  "verified_vertex_records":(end-at)//STRIDE,
+                                  "confirmed_windows":1,"source_stride_phase":phase})
+            merged.extend(local)
+        merged.sort(key=lambda v:v["start_offset"])
+        # Legacy name retained for downstream report consumers, but the value
+        # now counts ONLY strict same-phase contiguous original 44B records.
+        for entry in merged:
+            entry["potential_vertices"]=entry["verified_vertex_records"]
         return {
           "source_bytes_scanned":self.offset,
           "GfxWorld_vertex_count_from_authored_header":self.expected_count,
@@ -131,5 +148,5 @@ class WorldVertexRunScanner:
           "longest_clusters":sorted(merged,key=lambda v:-v["potential_vertices"])[:20],
           "longest_single_decode_blocks":self.top_blocks[:16],
           "sampled_strict_vertex_run_boundaries":self.long_run_break_reasons[:20],
-          "note":"Source binormalSign is not restricted to +/-1.0; candidates use bounded finite source attributes and exact stride, not full byte-span certification."
+          "note":"Only touching or overlapping source ranges in the identical 44-byte phase are merged. These are strict original source vertex candidates, not a full buffer certification."
         }
