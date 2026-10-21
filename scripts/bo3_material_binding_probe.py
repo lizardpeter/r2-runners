@@ -48,7 +48,13 @@ def examine(zone,mat,end):
                 at=start_candidate+i*32
                 ptr=struct.unpack_from("<Q",zone,at)[0]
                 semantic=struct.unpack_from("<I",zone,at+8)[0]
-                if not tag(ptr) or ptr==0 or semantic==0:
+                # Source T7 MaterialImage.ImagePtr is a GfxImage handle:
+                # inline -1 or block-5 backref. Block-6 tagged words can
+                # belong to the preceding material metadata, not images.
+                if ptr!=0xffffffffffffffff and (ptr>>56)!=0x50:
+                    seen=False
+                    break
+                if semantic==0:
                     seen=False
                     break
                 slots.append({"src":at,"source_pointer":f"0x{ptr:016x}",
