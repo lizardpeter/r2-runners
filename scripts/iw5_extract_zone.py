@@ -81,7 +81,7 @@ def extract(dst, max_files):
                             raise ValueError("source zone exceeds bounded artifact budget")
                         sha.update(block)
                         target.write(block)
-                if n<21 or path.read_bytes()[:4]!=b"IWff":
+                if n<21 or (lambda p: p.open("rb").read(4))(path)!=b"IWff":
                     path.unlink(missing_ok=True)
                     raise ValueError(f"original source FF header invalid: {name}")
                 total+=n
