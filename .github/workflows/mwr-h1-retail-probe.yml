@@ -6,6 +6,7 @@ on:
       - "scripts/mwr_h1_retail_probe.py"
       - "scripts/mwr_h1_asset_directory.py"
       - "scripts/mwr_h1_image_streams.py"
+      - "scripts/mwr_h1_gfxworld_probe.py"
       - "scripts/mwr_h1_asset_runs.py"
       - "scripts/mwr_h1_asset_payload.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
@@ -46,7 +47,8 @@ jobs:
             --report "$RUNNER_TEMP/h1-report.json" \
             --include-primary \
             --full-decode \
-            --analyze-directory
+            --analyze-directory \
+            --probe-gfxworld
           cat "$RUNNER_TEMP/h1-report.json"
           echo '### Verified H1 retail probe' >> "$GITHUB_STEP_SUMMARY"
           echo 'Original source bytes remained only in ephemeral runner scratch storage.' >> "$GITHUB_STEP_SUMMARY"

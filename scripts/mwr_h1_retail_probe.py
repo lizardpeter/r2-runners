@@ -16,6 +16,7 @@ from urllib.parse import quote
 from mwr_h1_asset_directory import inspect_prefix
 from mwr_h1_asset_runs import AssetRunScanner
 from mwr_h1_image_streams import analyze_stream_table
+from mwr_h1_gfxworld_probe import GfxWorldCandidateScanner
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -161,7 +162,7 @@ class LogicalSignedStream:
             self.read(padding)
 
 
-def decode_lz4_zone(file: Path, header: dict, analyze_directory=False) -> dict:
+def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=None) -> dict:
     """Bounded, streaming H1 decompression; never writes decoded retail assets."""
     import lz4.block
     with file.open("rb") as f:
@@ -178,6 +179,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False) -> dict:
         leading = b""
         sample = bytearray()
         asset_scanner = AssetRunScanner() if analyze_directory else None
+        gfx_scanner = GfxWorldCandidateScanner(gfx_stem) if gfx_stem is not None else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -196,6 +198,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False) -> dict:
                 sample.extend(raw[:2*1024*1024-len(sample)])
             if asset_scanner is not None:
                 asset_scanner.push(raw)
+            if gfx_scanner is not None:
+                gfx_scanner.push(raw)
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -212,6 +216,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False) -> dict:
             "xfile_header_u64":list(struct.unpack("<9Q",leading[:72])) if len(leading)>=72 else [],
             "xfile_payload_len_matches":(struct.unpack_from("<Q",leading,0)[0]+72==decoded) if len(leading)>=72 else False,
         }
+        if gfx_scanner is not None:
+            result["gfxworld_source_scan"]=gfx_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
             result["complete_zone_asset_run_scan"] = asset_scanner.report()
@@ -226,6 +232,7 @@ def main()->int:
     p.add_argument("--include-primary",action="store_true")
     p.add_argument("--full-decode",action="store_true")
     p.add_argument("--analyze-directory",action="store_true")
+    p.add_argument("--probe-gfxworld",action="store_true")
     p.add_argument("--report",type=Path,required=True)
     args=p.parse_args()
     stem=args.stem
@@ -251,7 +258,7 @@ def main()->int:
                 header["lz4_probe"]=scan_lz4_first_block(local,header["candidate_stream_offset"])
             if args.full_decode:
                 try:
-                    header["whole_zone_decode"]=decode_lz4_zone(local,header,args.analyze_directory)
+                    header["whole_zone_decode"]=decode_lz4_zone(local,header,args.analyze_directory,stem if args.probe_gfxworld and name==f"{stem}.ff" else None)
                 except Exception as exc:
                     header["whole_zone_decode"]={"status":"failed","reason":str(exc)}
                     print(f"H1 full decode not yet validated for {name}: {exc}",file=sys.stderr,flush=True)
