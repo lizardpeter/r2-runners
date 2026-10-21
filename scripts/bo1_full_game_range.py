@@ -26,7 +26,7 @@ BO1_ZIP_KEY = "downloads/games/pluto_t5_full_game.zip"
 EXPECTED_SIZE = 11_161_080_622
 BLOCK_SIZE = 2 * 1024 * 1024
 CACHE_BLOCKS = 12
-MAX_EXTRACT = 700 * 1024 * 1024
+MIN_SCRATCH_RESERVE = 512 * 1024 * 1024
 
 class HttpRangeObject(io.RawIOBase):
     """Small bounded seekable reader suitable for Python's ZipFile, including ZIP64."""
@@ -117,7 +117,10 @@ def relative_original_member(path: str) -> str | None:
     return None
 
 
-def choose_entries(items: list[zipfile.ZipInfo], preset: str) -> tuple[list[tuple[str,zipfile.ZipInfo]], dict]:
+def choose_entries(
+    items: list[zipfile.ZipInfo], preset: str,
+    iwd_start: int = 0, iwd_count: int | None = 4,
+) -> tuple[list[tuple[str,zipfile.ZipInfo]], dict]:
     matches: dict[str, list[zipfile.ZipInfo]] = {}
     extensions = Counter()
     for entry in items:
@@ -135,10 +138,13 @@ def choose_entries(items: list[zipfile.ZipInfo], preset: str) -> tuple[list[tupl
         required.add("zone/common/mp_firingrange.ff")
     elif preset == "all_multiplayer":
         required.update(p for p in matches if p.startswith("zone/common/mp_") and p.endswith(".ff"))
-    # Inventory IWDs, then request only a bounded number for this first audit.
-    # Original game ZIP may supply textures in numerous zone packages instead.
+    # Any original client IWD can be selected, including the entire source
+    # inventory. Batch only when actual temporary runner disk is insufficient.
     iwd_candidates = sorted(p for p in matches if p.startswith("main/") and p.endswith(".iwd"))
-    required.update(iwd_candidates[:4])
+    if iwd_start < 0 or (iwd_count is not None and iwd_count < 0):
+        raise ValueError("IWD source range must be nonnegative")
+    selected_iwds = iwd_candidates[iwd_start:] if iwd_count is None else iwd_candidates[iwd_start:iwd_start+iwd_count]
+    required.update(selected_iwds)
     selected = []
     missing = []
     for name in sorted(required):
@@ -154,13 +160,18 @@ def choose_entries(items: list[zipfile.ZipInfo], preset: str) -> tuple[list[tupl
         "extensions": dict(extensions.most_common(30)),
         "original_iwd_count": len(iwd_candidates),
         "original_iwd_examples": iwd_candidates[:20],
+        "selected_iwd_start": iwd_start,
+        "selected_iwd_count": len(selected_iwds),
         "original_zone_ff_count": sum(1 for p in matches if p.startswith("zone/") and p.endswith(".ff")),
         "missing_selected": missing,
     }
     return selected, catalog
 
 
-def run(preset: str, output_dir: Path) -> dict:
+def run(
+    preset: str, output_dir: Path,
+    iwd_start: int = 0, iwd_count: int | None = 4,
+) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     reports = output_dir / "report"
     reports.mkdir(exist_ok=True)
@@ -183,7 +194,9 @@ def run(preset: str, output_dir: Path) -> dict:
             # GitHub runners provide temporary storage, not a repo checkout.
             # Never attempt an 11 GB GET if there is insufficient scratch disk.
             available = shutil.disk_usage(output_dir).free
-            required = EXPECTED_SIZE + MAX_EXTRACT + 768 * 1024 * 1024
+            # The complete original archive may be downloaded to runner disk;
+            # available scratch for selected files is measured separately.
+            required = EXPECTED_SIZE + MIN_SCRATCH_RESERVE + 512 * 1024 * 1024
             if available < required:
                 raise RuntimeError(
                     f"R2 Range failed and scratch has only {available} free "
@@ -201,14 +214,21 @@ def run(preset: str, output_dir: Path) -> dict:
             source = full_source.open("rb")
         with source:
             with zipfile.ZipFile(source) as archive:
-                selected, catalog = choose_entries(archive.infolist(), preset)
+                selected, catalog = choose_entries(
+                    archive.infolist(), preset, iwd_start, iwd_count,
+                )
                 report["catalog"] = catalog
                 report["zip64_range_open_succeeded"] = True
                 if catalog["missing_selected"]:
                     raise RuntimeError("Original full game ZIP lacks requested source assets")
                 total = sum(x.file_size for _,x in selected)
-                if total > MAX_EXTRACT:
-                    raise ValueError(f"Selected original source bytes {total} exceed scratch bound {MAX_EXTRACT}")
+                available = shutil.disk_usage(output_dir).free
+                if total + MIN_SCRATCH_RESERVE > available:
+                    raise ValueError(
+                        f"Requested original client files total {total} bytes, "
+                        f"but only {available} bytes remain on runner disk. "
+                        "Request a smaller --iwd-count or a larger runner."
+                    )
                 scratch = output_dir / "original-bo1"
                 for rel, info in selected:
                     target = scratch.joinpath(*rel.split("/"))
@@ -238,15 +258,20 @@ def run(preset: str, output_dir: Path) -> dict:
                         f"- ZIP directory opened: {report.get('zip64_range_open_succeeded',False)}\n"
                         f"- Extracted source members to scratch: {len(report['member_report'])}\n"
                         f"- Completed: {report['complete']}\n"
-                        f"- No original game bytes included in workflow artifacts\n")
+                        f"- Original binary files retained for artifact transfer\n")
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--preset", choices=["nuketown","firingrange","both","all_multiplayer"], default="both")
     p.add_argument("--output-dir", type=Path, required=True)
+    p.add_argument("--iwd-start", type=int, default=0,
+                   help="Starting archive index within the original client IWD inventory")
+    p.add_argument("--iwd-count", type=int, default=4,
+                   help="Complete IWD archives to extract (0 selects all remaining)")
     args=p.parse_args()
-    run(args.preset,args.output_dir)
+    run(args.preset,args.output_dir,args.iwd_start,
+        None if args.iwd_count == 0 else args.iwd_count)
 
 if __name__ == "__main__":
     try: main()
