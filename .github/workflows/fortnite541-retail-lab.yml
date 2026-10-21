@@ -30,7 +30,7 @@ jobs:
   poi-native-source:
     if: github.event_name == 'push' || inputs.scope == 'poi' || inputs.scope == 'all'
     runs-on: ubuntu-24.04
-    timeout-minutes: 65
+    timeout-minutes: 110
     steps:
       - name: Checkout authenticated public source parser
         uses: actions/checkout@v4
@@ -59,6 +59,23 @@ jobs:
           # The public inventory CLI currently supports terrain/sky/foliage only.
           # The exact POI file census is generated below for every file,
           # including after a partially failed source decode.
+      - name: Checkout public R2 dependency workbench
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/r2-runners
+          path: r2-workbench
+          persist-credentials: false
+      - name: Recover original architectural Blueprint and StaticMesh packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 r2-workbench/scripts/fortnite541_dependency_handoff.py --self-test
+          python3 r2-workbench/scripts/fortnite541_dependency_handoff.py \
+            --scope architecture \
+            --frontier "$RUNNER_TEMP/fortnite541-poi-report/native-actor-frontier.log" \
+            --destination "$RUNNER_TEMP/fortnite541-poi" \
+            --report-dir "$RUNNER_TEMP/fortnite541-poi-report" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-poi-report/architecture-dependency-download.log"
       - name: Write exact-source byte inventory, even if parser failed
         if: always()
         shell: bash
