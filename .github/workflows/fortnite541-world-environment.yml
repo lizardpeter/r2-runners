@@ -14,7 +14,7 @@ on:
         description: "Retail source family; all runs every family"
         required: true
         default: all
-        options: [all, poi, streaming, buildings, background, vegetation, atmosphere, terrain]
+        options: [all, root, poi, streaming, buildings, background, vegetation, atmosphere, terrain]
 
 permissions:
   contents: read
@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        family: [poi, streaming, buildings, background, vegetation, atmosphere, terrain]
+        family: [root, poi, streaming, buildings, background, vegetation, atmosphere, terrain]
         shard: [0, 1]
     steps:
       - name: Filter selected original source family
@@ -75,7 +75,7 @@ jobs:
             --destination "$root" --reports "$report" \
             2>&1 | tee "$report/authenticated-source-download.log"
       - name: Decode exact actor names, authored lights, vegetation and atmosphere classes from UWorlds
-        if: steps.selected.outputs.run == 'true' && (matrix.family == 'poi' || matrix.family == 'streaming' || matrix.family == 'buildings' || matrix.family == 'background')
+        if: steps.selected.outputs.run == 'true' && (matrix.family == 'root' || matrix.family == 'poi' || matrix.family == 'streaming' || matrix.family == 'buildings' || matrix.family == 'background')
         shell: bash
         env:
           FAMILY: ${{ matrix.family }}
