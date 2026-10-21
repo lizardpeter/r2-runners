@@ -1,0 +1,34 @@
+name: BO3 extended original game asset type census
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/bo3-extended-type-coverage.yml
+      - scripts/bo3_full_asset_coverage.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  extended-xasset-census:
+    strategy:
+      fail-fast: false
+      matrix:
+        preset: [additional, large]
+    runs-on: ubuntu-latest
+    timeout-minutes: 85
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reconstruct original BO3 FastFiles in runner scratch and classify each authentic source asset
+        env:
+          BO3_COVERAGE_PRESET: ${{ matrix.preset }}
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-full-type-coverage
+          BO3_MAX_DECODED: 1073741824
+        run: python3 scripts/bo3_full_asset_coverage.py
+      - name: Preserve source type-count audit without copyrighted game data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-all-original-types-${{ matrix.preset }}
+          path: ${{ runner.temp }}/bo3-full-type-coverage/*.json
+          retention-days: 7
+          if-no-files-found: warn
