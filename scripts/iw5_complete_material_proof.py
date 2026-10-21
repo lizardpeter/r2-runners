@@ -158,6 +158,40 @@ def verify(source_path):
     state=struct.unpack_from("<II",inflated,state_off)
     require(state==(0x18259125,0xe00e0002),
             "original source fixed state bits not retained")
+    # The source Material has 54 technique->GfxStateBits indices.
+    # 0xff is NOT a table index; slot #4 is unlit and selects entry 0.
+    state_indices=mat[24:78]
+    require(len(state_indices)==54 and state_indices[4]==0 and
+            all(i==4 or value==255 for i,value in enumerate(state_indices)),
+            "original IW5 stateBitsEntry technique selection changed")
+    color_word,depth_word=state
+    native_raster={
+        "src_rgb_blend_factor":color_word&15,
+        "dst_rgb_blend_factor":(color_word>>4)&15,
+        "rgb_blend_op":(color_word>>8)&7,
+        "alpha_test_disabled":bool((color_word>>11)&1),
+        "alpha_test":(color_word>>12)&3,
+        "cull_face":(color_word>>14)&3,
+        "src_alpha_blend_factor":(color_word>>16)&15,
+        "dst_alpha_blend_factor":(color_word>>20)&15,
+        "alpha_blend_op":(color_word>>24)&7,
+        "color_write_rgb":bool((color_word>>27)&1),
+        "color_write_alpha":bool((color_word>>28)&1),
+        "depth_write":bool(depth_word&1),
+        "depth_test_disabled":bool((depth_word>>1)&1),
+        "depth_compare":(depth_word>>2)&3,
+        "stencil_front_enabled":bool((depth_word>>6)&1),
+        "stencil_back_enabled":bool((depth_word>>7)&1),
+    }
+    require(native_raster["src_rgb_blend_factor"]==5
+            and native_raster["dst_rgb_blend_factor"]==2
+            and native_raster["rgb_blend_op"]==1
+            and native_raster["alpha_test"]==1
+            and not native_raster["alpha_test_disabled"]
+            and native_raster["cull_face"]==2
+            and native_raster["depth_test_disabled"]
+            and not native_raster["depth_write"],
+            "original unlit technique alpha-weighted additive state changed")
     return {
         "source_file":source_path.name,"source_sha256":SOURCE_SHA,
         "xfile_bytes":len(inflated),
@@ -179,6 +213,8 @@ def verify(source_path):
             "external_iwd_needed_for_pixels":True,
         },
         "original_fixed_function_state_words":[hex(x) for x in state],
+        "native_unlit_slot":4,
+        "native_raster_source_fields":native_raster,
     }
 def main():
     p=argparse.ArgumentParser()
