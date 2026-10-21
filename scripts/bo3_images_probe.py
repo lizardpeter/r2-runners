@@ -19,6 +19,10 @@ FILES={
     "core_gfx.ff":6790208,
     "en_core_common.ff":545024,
     "en_core_frontend.ff":2977856,
+    "core_pre_gfx.ff":22285376,
+    "core_specialists.ff":51386816,
+    "core_frontend_patch.ff":72319872,
+    "core_patch.ff":44856320,
 }
 PACKAGES={"en_initial.xpak":13893632,"base_patch_tu32.xpak":1048576}
 FF_PRESETS={
@@ -110,6 +114,7 @@ def scan_images(zone:bytes,known_hashes:set[int])->dict:
             "inline_exact_mip_chains":sum(1 for h in hits if h["source_kind"]=="inline" and h.get("exact_mip_chain_levels") is not None),
             "inline_unproven_mip_chains":sum(1 for h in hits if h["source_kind"]=="inline" and h.get("exact_mip_chain_levels") is None),
             "formats":dict(Counter(str(h["source_format"]) for h in hits)),
+            "nonexact_inline_examples":[{"name":h["name"],"format":h["source_format"],"width":h["width"],"height":h["height"],"bytes":h["inline_payload_bytes"]} for h in hits if h["source_kind"]=="inline" and h.get("exact_mip_chain_levels") is None][:12],
             "source_size_total":sum(h["source_bytes"] for h in hits),
             "first_20":hits[:20],
             "unmatched_candidate_count":without_pixels["unresolved_hash_or_inline"],
