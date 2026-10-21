@@ -42,6 +42,7 @@ def inspect_bank(name):
     stride=struct.unpack_from("<I",head,0x08)[0]
     table=struct.unpack_from("<Q",head,0x30)[0]
     name_table=struct.unpack_from("<Q",head,0x250)[0]
+    alternative_table=struct.unpack_from("<Q",head,0x28)[0]
     if stride!=0x24 or entries>2_000_000:
         raise ValueError(f"Unsupported original SAB record stride or count {name}")
     span=entries*stride
@@ -54,6 +55,8 @@ def inspect_bank(name):
       "table_in_original_source_bounds":True,
       "name_table_overlap_bytes":max(0,table+span-name_table) if name_table else 0,
       "name_table_may_not_follow_index":table+span>name_table if name_table else False,
+      "candidate_first_audio_entries_table_at_0x28":alternative_table,
+      "candidate_0x28_records":[],
       "sampled_records":[],
     }
     if entries:
@@ -63,6 +66,9 @@ def inspect_bank(name):
           for i in range(min(8,entries))
         ]
         out["first_entries_bytes_sha256"]=hashlib.sha256(start).hexdigest()
+        if 608<=alternative_table and alternative_table+stride*3<=SIZES[name]:
+            other=original_range(name,alternative_table,min(3,entries)*stride)
+            out["candidate_0x28_records"]=[record_sample(other[i*stride:(i+1)*stride]) for i in range(min(3,entries))]
     return out
 
 def main():
