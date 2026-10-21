@@ -28,7 +28,12 @@ def validate_key(key: str) -> str:
     return key
 
 
-def download(url: str, dest: Path) -> tuple[int, str, str]:
+def download(url: str, dest: Path, max_bytes: int | None = None) -> tuple[int, str, str]:
+    # No default download cap: callers can retrieve entire original R2 files.
+    # Older game-specific runners may supply a per-file bound, so preserve
+    # that optional argument rather than breaking those source workflows.
+    if max_bytes is not None and max_bytes <= 0:
+        raise ValueError("Optional download byte bound must be positive")
     part = dest.with_suffix(".part")
     for attempt in range(3):
         digest = hashlib.sha256()
@@ -40,11 +45,16 @@ def download(url: str, dest: Path) -> tuple[int, str, str]:
                 final_host = urlsplit(response.url).hostname
                 if final_host != origin_host:
                     raise ValueError(f"Unexpected redirect host: {final_host}")
-                # Stream the complete response; no application-level size cap.
-                # The caller can verify an expected exact length afterwards.
+                # Stream the full original response. Optional callers can
+                # still reject an unexpected oversized source.
+                length = response.headers.get("Content-Length")
+                if max_bytes is not None and length and int(length) > max_bytes:
+                    raise ValueError("R2 object exceeds declared caller size bound")
                 content_type = response.headers.get("Content-Type", "")
                 while chunk := response.read(1024 * 1024):
                     count += len(chunk)
+                    if max_bytes is not None and count > max_bytes:
+                        raise ValueError("R2 response exceeds declared caller size bound")
                     digest.update(chunk)
                     output.write(chunk)
             os.replace(part, dest)
