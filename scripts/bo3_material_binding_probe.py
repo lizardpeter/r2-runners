@@ -48,11 +48,12 @@ def examine(zone,mat,end):
                 at=start_candidate+i*32
                 ptr=struct.unpack_from("<Q",zone,at)[0]
                 semantic=struct.unpack_from("<I",zone,at+8)[0]
-                if not tag(ptr) or ptr==0 or semantic not in SEMANTICS:
+                if not tag(ptr) or ptr==0 or semantic==0:
                     seen=False
                     break
                 slots.append({"src":at,"source_pointer":f"0x{ptr:016x}",
-                              "semantic":SEMANTICS[semantic]})
+                              "semantic":SEMANTICS.get(semantic,"other"),
+                              "raw_semantic_hash":f"0x{semantic:08x}"})
             if seen and start_candidate not in [v["begin"] for v in arrays]:
                 arrays.append({"begin":start_candidate,"after_name":start_candidate-start,
                                "slots":slots})
@@ -62,6 +63,7 @@ def examine(zone,mat,end):
             "near_semantics":hits[:12],
             "complete_consecutive_slot_arrays":arrays[:8],
             "all_arrays_count":len(arrays),
+            "candidate_array_offsets":[x["begin"] for x in arrays],
             "scan_end":before}
 def analyze(zone):
     headers=source_headers(zone,"in_memory")["authored_struct_candidates"]["material"]
