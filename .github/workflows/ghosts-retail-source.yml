@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/ghosts-retail-source.yml"
       - "scripts/ghosts_retail_run.py"
+      - "scripts/iw6_pathdata_source.py"
   workflow_dispatch:
     inputs:
       group:
