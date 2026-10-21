@@ -1,0 +1,31 @@
+name: BO3 first owned XModelMesh source walk
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-first-mesh-walk.yml"
+      - "scripts/bo3_first_mesh_walk.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-mesh-walk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate original T7 first XModelMesh bodies at exact XAsset table boundary
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-mesh-placements
+        run: python3 scripts/bo3_first_mesh_walk.py
+      - name: Preserve source placement metadata only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-first-mesh-placements
+          path: ${{ runner.temp }}/bo3-mesh-placements/*.json
+          if-no-files-found: warn
+          retention-days: 7
