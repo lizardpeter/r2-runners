@@ -73,7 +73,7 @@ def verify_original_index_bytes(ff_file,ff_header,stream_class,world,verts,surfs
     max_start=surf_at-byte_count
     if seed_limit<3 or max_start<0:
         return {"status":"no_source_index_seed"}
-    bounded=bytes(data[:max_start])
+    bounded=bytes(data[:max_start+16])
     # Little-endian small u16s: low byte under source vcount, high byte zero.
     pat=re.compile(b"(?:[\\x00-\\x"+f"{seed_limit-1:02x}".encode()+b"]\\x00){6}")
     checked=set()
@@ -88,6 +88,11 @@ def verify_original_index_bytes(ff_file,ff_header,stream_class,world,verts,surfs
         for delta in range(-12,13):
             at=hit.start()+delta-base0*2
             if at in checked or at<0 or at>max_start:continue
+            # Precheck the FIRST twelve source indices before adding this
+            # position to the deduplication set. Otherwise many thousands
+            # of valid short low-u16 sequences exhaust the scan cap.
+            first=struct.unpack_from("<12H",data,at+base0*2)
+            if any(x>=vc0 for x in first):continue
             checked.add(at)
             # First 3 authentic surface records have especially tight
             # vertexCount bounds and ordered baseIndex spans.
