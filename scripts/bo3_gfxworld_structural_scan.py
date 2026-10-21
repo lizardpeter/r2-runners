@@ -30,6 +30,9 @@ def analyze(name):
     relaxed=[]
     candidates=0
     tag_hist={}
+    double_inline=[]
+    zero_basename=[]
+    special=[]
     at=table+dir["asset_count"]*16
     while at+LEN<=len(z):
         p=z.find(INLINE,at)
@@ -44,6 +47,9 @@ def analyze(name):
         if not (0<=planes<2_000_000 and 0<=nodes<2_000_000 and 0<surfaces<1_000_000):
             continue
         candidates+=1
+        style=("inline" if b==0xffffffffffffffff else "zero" if b==0 else
+               "external" if b==0xfffffffffffffffe else "source_block")
+        tag_hist[style]=tag_hist.get(style,0)+1
         stream0,stream1=struct.unpack_from("<QQ",z,p+0x20)
         # Preserve independent source evidence. No assumed streamInfo
         # layout or renderer admission from these counts.
@@ -55,6 +61,12 @@ def analyze(name):
           "stream_qword1":f"0x{stream1:016x}",
           "trailing_struct_sha256":hashlib.sha256(z[p+LEN-64:p+LEN]).hexdigest(),
           "first_0x60_source_bytes_hex":bytes(z[p:p+96]).hex()}
+        if b==0xffffffffffffffff:
+            if len(double_inline)<120:double_inline.append(sample)
+        if b==0 and planes>0 and nodes>0 and surfaces>0:
+            if len(zero_basename)<120:zero_basename.append(sample)
+        if b!=0 and b!=0xffffffffffffffff:
+            if len(special)<120:special.append(sample)
         # Structural positive cases: not a repeated material array,
         # no implausibly large plane/node count relative to surfaces.
         if planes<=200000 and nodes<=200000 and surfaces<=200000 and planes+nodes>0:
@@ -64,6 +76,10 @@ def analyze(name):
        "full_decoded_bytes":len(z),
        "initial_inline_pointer_gfxworld_header_candidates":candidates,
        "positive_structural_candidates_count":len(strong),
+       "second_pointer_type_histogram":tag_hist,
+       "double_inline_header_candidates":double_inline,
+       "both_positive_plane_node_with_null_basename":zero_basename,
+       "suspicious_special_basename_candidates":special,
        "positive_structural_candidates":strong[:70],
        "weak_structural_candidates":relaxed[:60],
        "warning":"Header signatures are candidates; exact GfxWorld XAsset root-loader stream position and owned surfaces must be reconstructed."}
