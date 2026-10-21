@@ -1,0 +1,37 @@
+name: BO1 original complete weapon and attachment-source verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-original-weapons.yml"
+      - "scripts/bo1_weapon_source_verify.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  real-retail-weapon-definitions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download ACTUAL BO1 iw_00.iwd from authentic original client artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39637661371
+          name: bo1-complete-client-39637661371-part-00
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/source
+      - name: Decode every original authored weapon, attachment variant and killstreak controller record
+        run: |
+          python3 scripts/bo1_weapon_source_verify.py \
+            --iwd "$RUNNER_TEMP/source/original-bo1/main/iw_00.iwd" \
+            --report "$RUNNER_TEMP/bo1-original-weapon-source-links.json"
+      - name: Preserve full source reference audit (the REAL IWD is preserved in source run)
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-source-weapons-model-animation-sound-links-${{ github.run_id }}
+          path: ${{ runner.temp }}/bo1-original-weapon-source-links.json
+          retention-days: 90
