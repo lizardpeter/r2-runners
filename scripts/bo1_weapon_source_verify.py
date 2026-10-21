@@ -110,6 +110,29 @@ def verify(original_iwd:Path,report:Path):
         if codepages["non_ascii_original_files"]!=2:
             raise ValueError("Original non-UTF8 CP1252 source weapon count unexpected")
         lookup={r["original_path"]:r for r in entries}
+        # Independently authenticate selected native weapon gameplay
+        # parameters against complete original WEAPONFILE source bytes.
+        for source,expected in [
+            ("weapons/mp/ak47_mp",{
+                "damage":"40","minDamage":"30","clipSize":"30",
+                "fireTime":"0.08","reloadTime":"2.5","adsTransInTime":"0.25",
+            }),
+            ("weapons/mp/ak47_acog_mp",{
+                "damage":"40","clipSize":"30","fireTime":"0.08",
+                "adsTransInTime":"0.35",
+            }),
+            ("weapons/sp/ray_gun_upgraded_zm",{
+                "damage":"1000","clipSize":"40","maxAmmo":"200",
+                "fireTime":"0.33",
+            }),
+            ("weapons/mp/dogs_mp",{
+                "damage":"0","fireTime":"0.8",
+            }),
+        ]:
+            actual=dict(original_weapon_fields(game.read(source),source)[1])
+            for field,wanted in expected.items():
+                if actual.get(field)!=wanted:
+                    raise ValueError(f"Original source weapon {source} {field} mismatched {wanted}")
         for name,parent,kind in [
             ("weapons/mp/ak47_mp","ak47","WEAPONFILE"),
             ("weapons/mp/ak47_acog_mp","ak47","WEAPONFILE"),
