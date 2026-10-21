@@ -82,7 +82,7 @@ def inspect_bank(name):
         names=[]
         for ordinal in range(entries):
             record=names_src[ordinal*name_stride:(ordinal+1)*name_stride]
-            end=record.find(b"\\0")
+            end=record.find(b"\x00")
             if end<0:
                 raise ValueError(f"Original T7 sound entry {ordinal} name unterminated")
             text=record[:end]
