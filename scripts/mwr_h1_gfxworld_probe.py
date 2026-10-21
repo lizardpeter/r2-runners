@@ -25,6 +25,9 @@ class GfxWorldCandidateScanner:
         self.loose_roots=[]
         self.source_name_mentions=[]
         self.loose_versions=Counter()
+        self.map_mentions_by_band=Counter()
+        self.map_mentions_last=[]
+        self.single_marker_candidates=[]
 
     def push(self,data):
         base=self.seen-len(self.carry)
@@ -72,6 +75,14 @@ class GfxWorldCandidateScanner:
                 pos=ix+len(needle)
                 prev=b[max(0,ix-32):ix]
                 tail=b[ix:min(ix+96,len(b))]
+                self.map_mentions_by_band[(base+ix)//(16*1024*1024)] += 1
+                snippet={
+                    "decoded_offset":base+ix,
+                    "name_prefix_ascii": "".join(chr(c) if 32<=c<127 else "." for c in prev)[-32:],
+                    "name_suffix_ascii":"".join(chr(c) if 32<=c<127 else "." for c in tail)[:96],
+                }
+                self.map_mentions_last.append(snippet)
+                self.map_mentions_last=self.map_mentions_last[-30:]
                 if len(self.source_name_mentions)<80:
                     self.source_name_mentions.append({
                         "decoded_offset":base+ix,
@@ -113,6 +124,8 @@ class GfxWorldCandidateScanner:
             "loose_source_root_samples":self.loose_roots[:64],
             "plausible_version_histogram":dict(self.loose_versions.most_common(32)),
             "map_source_name_mentions":self.source_name_mentions[:40],
+            "map_source_mentions_by_16mib_band":dict(self.map_mentions_by_band),
+            "last_30_map_name_mentions":self.map_mentions_last,
             "plausible_gfxworld_root_count":len(candidates),
             "candidate_roots":candidates[:48],
             "bsp_version_histogram":dict(self.version_hist.most_common(24)),
