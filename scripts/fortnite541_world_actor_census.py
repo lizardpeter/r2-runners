@@ -107,9 +107,9 @@ def inspect_world(source:bytes)->dict:
     for i,(name,outer,class_ref) in enumerate(exports):
         source_class=identity(class_ref) if class_ref else ""
         class_totals[source_class]+=1
-        if source_class.endswith("Component"):
-            continue
-        actor_count+=1
+        is_component=source_class.endswith("Component")
+        if not is_component:
+            actor_count+=1
         actor_path=identity(i+1)
         class_lc=source_class.lower()
         for category,patterns in CATEGORY_TOKENS.items():
@@ -117,6 +117,7 @@ def inspect_world(source:bytes)->dict:
                 categories[category].append({
                     "source_actor":actor_path,
                     "source_class":source_class,
+                    "source_kind":"component" if is_component else "actor_or_other_export",
                 })
     return {
         "source_name_count":len(names),
