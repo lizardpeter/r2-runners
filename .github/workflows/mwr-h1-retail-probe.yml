@@ -10,6 +10,7 @@ on:
       - "scripts/mwr_h1_world_geometry_root.py"
       - "scripts/mwr_h1_world_vertex_probe.py"
       - "scripts/mwr_h1_world_vertex_verify.py"
+      - "scripts/mwr_h1_index_candidate_probe.py"
       - "tests/test_mwr_h1_world_vertex_probe.py"
       - "scripts/mwr_h1_asset_runs.py"
       - "scripts/mwr_h1_asset_payload.py"
