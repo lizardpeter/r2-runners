@@ -1,0 +1,92 @@
+name: T6 exact material source handoff
+
+# Every job transfers one original retail zone to a separately downloadable
+# artifact. This public workbench never checks out private Rust-test code.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/t6-material-source.yml"
+      - "scripts/r2_download.py"
+  workflow_dispatch:
+    inputs:
+      map:
+        description: "SHA-pinned T6 map zone to transfer with shared MP material dependencies"
+        required: true
+        type: choice
+        options:
+          - mp_hijacked
+          - mp_nuketown_2020
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source:
+    name: ${{ matrix.asset }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        asset:
+          - map
+          - common_mp
+          - common_patch_mp
+          - patch_mp
+          - code_post_gfx_mp
+          - en_code_post_gfx_mp
+          - en_common_mp
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select exact verified source object
+        shell: bash
+        env:
+          REQUESTED_MAP: ${{ inputs.map || 'mp_hijacked' }}
+          ASSET: ${{ matrix.asset }}
+        run: |
+          set -euo pipefail
+          case "$ASSET" in
+            map)
+              case "$REQUESTED_MAP" in
+                mp_hijacked) file=mp_hijacked; hash=2e5f9b87af64645e6d2e3678bca46d458890efa9a19eb8afea4cda6e8dab4037 ;;
+                mp_nuketown_2020) file=mp_nuketown_2020; hash=6c026322a713c461a03de9815bf6eef0e959fb2ab5d82299b029b775fa1ab1e0 ;;
+                *) echo "Unsupported map: $REQUESTED_MAP" >&2; exit 1 ;;
+              esac
+              subdir=all ;;
+            common_mp) subdir=all; file=common_mp; hash=93fe48b0f0d8cc6844be875ccad94e0cfcf635f62eeff00ac33f2f668a77cb77 ;;
+            common_patch_mp) subdir=all; file=common_patch_mp; hash=95622d93d4fb761db311a123cd073bed34ea48c9c711d2c11bce4170dd08bae9 ;;
+            patch_mp) subdir=all; file=patch_mp; hash=459077cda8e4a1457f7ee7d8f6c5e0abf30f41767a21ff6744df6a4307cbce1e ;;
+            code_post_gfx_mp) subdir=all; file=code_post_gfx_mp; hash=b7bce1dbe94692b1668ae9a1c83a4dcf008979ee5d5f79b3d2e619c23a1002b3 ;;
+            en_code_post_gfx_mp) subdir=english; file=en_code_post_gfx_mp; hash=7534d3ae7ceaabacbea23576f89a78c15e5ff881e542e8fc38ed740070ab2940 ;;
+            en_common_mp) subdir=english; file=en_common_mp; hash=22b9893f41fd2bdb4d48ea1b15f45fc7656956cbff3e26d1340e60142093996f ;;
+            *) echo "Unsupported asset: $ASSET" >&2; exit 1 ;;
+          esac
+          printf 'SOURCE_KEY=bo2/zone/%s/%s.ff\nSOURCE_SHA256=%s\n' "$subdir" "$file" "$hash" >> "$GITHUB_ENV"
+      - name: Transfer complete original FastFile
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/r2_download.py \
+            --base-url https://r2.houseofkublai.com \
+            --key "$SOURCE_KEY" \
+            --output-dir "$RUNNER_TEMP/t6"
+          echo "$SOURCE_SHA256  $RUNNER_TEMP/t6/artifact/$SOURCE_KEY" | sha256sum --check --
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path(os.environ["RUNNER_TEMP"]) / "t6" / "artifact" / "verification.json"
+          record = json.loads(p.read_text())
+          record["expected_sha256"] = os.environ["SOURCE_SHA256"]
+          record["retail_sha256_verified"] = record["sha256"] == record["expected_sha256"]
+          p.write_text(json.dumps(record, indent=2) + "\n")
+          PY
+      - name: Publish original source bytes and verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-${{ inputs.map || 'mp_hijacked' }}-${{ matrix.asset }}-exact-source
+          path: ${{ runner.temp }}/t6/artifact/
+          if-no-files-found: warn
+          retention-days: 30
+          compression-level: 0
