@@ -83,6 +83,30 @@ def verify(path:Path,out:Path):
             actual_bones=[]
             counters["no_bones"]+=1
         else:raise ValueError(f"Original {name} has unknown bone pointer kind")
+        # Real T5 XAnimNotifyInfo array follows the original bone-name
+        # script indices, each source row exactly 8 bytes: u16 script name,
+        # u16 padding, f32 normalized time. Do not align physical file bytes.
+        notify_count=zone[pos+34]
+        notify_pointer=pointers[8]
+        after_bones=en+1+(bones*2 if pointers[0]==0xffffffff else 0)
+        events=[]
+        if notify_count:
+            if notify_pointer!=0xffffffff:
+                raise ValueError(f"Original {name} has a notify table without FOLLOWING pointer")
+            for ordinal in range(notify_count):
+                script_index,time=struct.unpack_from("<Hxxf",zone,after_bones+ordinal*8)
+                if script_index>=len(scripts) or not math.isfinite(time) or not 0<=time<=1.001:
+                    raise ValueError(f"Original {name} notify {ordinal} invalid")
+                raw_name=scripts[script_index]
+                if not raw_name:counters["empty_source_notetrack_names"]+=1
+                events.append({
+                    "source_script_id":script_index,
+                    "source_name":raw_name or None,
+                    "normalized_time":time,
+                })
+                counters["original_notetrack_events"]+=1
+        elif notify_pointer!=0:
+            raise ValueError(f"Original {name} has zero notify events but non-null source pointer")
         counters["inline_animation_headers"]+=1
         if name.startswith("viewmodel_"):counters["viewmodel_headers"]+=1
         entries.append({
@@ -96,11 +120,12 @@ def verify(path:Path,out:Path):
             "bone_count":bones,
             "source_script_indices":list(indices),
             "source_bone_names":actual_bones,
+            "source_notetrack_events":events,
             "source_array_pointers":list(pointers),
             "keyframes_decoded":False,
         })
         pos+=4
-    if counters["inline_animation_headers"]!=2666 or counters["fully_named_skeletons"]!=2661 or counters["no_bones"]!=5:
+    if counters["inline_animation_headers"]!=2666 or counters["fully_named_skeletons"]!=2661 or counters["no_bones"]!=5 or counters["original_notetrack_events"]!=5735 or counters["empty_source_notetrack_names"]!=2:
         raise ValueError(f"Original common_mp inline XAnimParts evidence disagrees: {counters}")
     found={x["name"]:x for x in entries}
     test=found["pb_stand_bombplant"]
@@ -108,6 +133,8 @@ def verify(path:Path,out:Path):
         raise ValueError("Original bombplant XAnimParts source header differs")
     if test["source_bone_names"][:5]!=["j_mainroot","j_hip_le","j_hip_ri","torso_stabilizer","j_spinelower"]:
         raise ValueError("Original bombplant ScriptString bone names differ")
+    if len(test["source_notetrack_events"])!=10 or test["source_notetrack_events"][0]["source_name"]!="sndnt#fly_bomb_buttons_npc" or test["source_notetrack_events"][-1]["source_name"]!="end":
+        raise ValueError("Original bombplant XAnim sound/end notetrack IDs differ")
     result={
         "original_fastfile_sha256":hashlib.sha256(original).hexdigest(),
         "source_expanded_bytes":len(zone),
@@ -118,6 +145,8 @@ def verify(path:Path,out:Path):
         "no_bones_headers":5,
         "remaining_type4_rows_not_yet_linked":689,
         "original_bone_name_occurrences":counters["bone_name_references"],
+        "source_notetrack_events":counters["original_notetrack_events"],
+        "blank_source_notetrack_names":counters["empty_source_notetrack_names"],
         "source_authored_animation_headers":entries,
         "transform_samples_decoded":0,
     }
@@ -127,6 +156,7 @@ def verify(path:Path,out:Path):
           f"{len(entries):,} named x86 animation headers, "
           f"{counters['fully_named_skeletons']:,} fully resolved bone name tables, "
           f"{counters['bone_name_references']:,} authentic bone ScriptString references, "
+          f"{counters['original_notetrack_events']:,} original sound/FX/end notetrack events, "
           f"{counters['no_bones']} bone-free clips; 689 remaining animation XAsset rows.")
     print("Original XAnimParts timing and joints VERIFIED; actual compressed keyframe arrays are NOT decoded yet.")
 
