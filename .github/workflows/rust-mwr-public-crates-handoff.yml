@@ -1,0 +1,48 @@
+name: Public Rust MWR and NeutralScene crates for offline local tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/rust-mwr-public-crates-handoff.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  vendor-public-crates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Download exact public dependency source crates for MWR and NeutralScene
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/mwr-cargo-deps/src"
+          cat > "$RUNNER_TEMP/mwr-cargo-deps/Cargo.toml" <<'TOML'
+          [package]
+          name = "offline-mwr-dependencies"
+          version = "0.1.0"
+          edition = "2021"
+          [dependencies]
+          lz4_flex = "0.11"
+          flate2 = "1"
+          memchr = "2"
+          serde = { version = "1", features = ["derive", "rc"] }
+          bytemuck = { version = "1", features = ["min_const_generics", "extern_crate_alloc"] }
+          TOML
+          printf '%s\n' 'fn main() {}' > "$RUNNER_TEMP/mwr-cargo-deps/src/main.rs"
+          cd "$RUNNER_TEMP/mwr-cargo-deps"
+          cargo generate-lockfile
+          cargo vendor --locked --versioned-dirs vendor >/dev/null
+          for crate in lz4_flex flate2 memchr serde bytemuck; do
+            test -n "$(find vendor -maxdepth 1 -type d -name "$crate-*" -print -quit)"
+          done
+          tar -czf "$RUNNER_TEMP/mwr-public-crates.tar.gz" -C "$RUNNER_TEMP/mwr-cargo-deps" Cargo.lock vendor
+          du -h "$RUNNER_TEMP/mwr-public-crates.tar.gz"
+      - name: Deliver complete original public crate sources for offline MWR compilation
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-crates-for-mwr-offline-tests
+          path: ${{ runner.temp }}/mwr-public-crates.tar.gz
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
