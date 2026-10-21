@@ -22,6 +22,9 @@ class GfxWorldCandidateScanner:
         self.path_matches=[]
         self.version_hist=Counter()
         self.total_pair_hits=0
+        self.loose_roots=[]
+        self.source_name_mentions=[]
+        self.loose_versions=Counter()
 
     def push(self,data):
         base=self.seen-len(self.carry)
@@ -37,6 +40,12 @@ class GfxWorldCandidateScanner:
             if second not in (0,INLINE):continue
             self.total_pair_hits+=1
             version,plane,node,surface,sky=struct.unpack_from("<IIIII",b,k+16)
+            if version<=4096 and plane<=30_000_000 and node<=30_000_000 and surface<=15_000_000 and sky<=128:
+                self.loose_versions[version]+=1
+                if len(self.loose_roots)<200:
+                    self.loose_roots.append({"decoded_offset":base+k,"version":version,
+                      "planes":plane,"nodes":node,"surfaces":surface,"skies":sky,
+                      "sky_source_raw":f"{struct.unpack_from('<Q',b,k+40)[0]:016x}"})
             if not (1<=version<=4096 and 0<=plane<=20_000_000 and
                     0<=node<=20_000_000 and 0<surface<=10_000_000
                     and 0<=sky<=32):continue
@@ -54,6 +63,22 @@ class GfxWorldCandidateScanner:
                 "first_96_hex":b[k:k+96].hex(" ")
             })
             self.version_hist[version]+=1
+        if self.expected_stem:
+            needle=self.expected_stem.encode()
+            pos=0
+            while True:
+                ix=b.find(needle,pos)
+                if ix<0:break
+                pos=ix+len(needle)
+                prev=b[max(0,ix-32):ix]
+                tail=b[ix:min(ix+96,len(b))]
+                if len(self.source_name_mentions)<80:
+                    self.source_name_mentions.append({
+                        "decoded_offset":base+ix,
+                        "around_hex":b[max(ix-24,0):ix+min(80,len(b)-ix)].hex(" "),
+                        "name_prefix_ascii": "".join(chr(c) if 32<=c<127 else "." for c in prev)[-32:],
+                        "name_suffix_ascii":"".join(chr(c) if 32<=c<127 else "." for c in tail)[:96]
+                    })
         # The string search looks for H1 .d3dbsp source names without
         # choosing a world candidate based on an unverified neighbor.
         needle=b".d3dbsp"
@@ -85,6 +110,9 @@ class GfxWorldCandidateScanner:
         return {
             "source_decoded_bytes_scanned":self.seen,
             "pointer_pair_candidates":self.total_pair_hits,
+            "loose_source_root_samples":self.loose_roots[:64],
+            "plausible_version_histogram":dict(self.loose_versions.most_common(32)),
+            "map_source_name_mentions":self.source_name_mentions[:40],
             "plausible_gfxworld_root_count":len(candidates),
             "candidate_roots":candidates[:48],
             "bsp_version_histogram":dict(self.version_hist.most_common(24)),
