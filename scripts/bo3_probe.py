@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import struct
+import zlib
 import sys
 from urllib.parse import quote, urlsplit
 from urllib.request import Request, urlopen
@@ -82,6 +83,58 @@ def read_bounded(key: str, expected_size: int, sample_size: int = MAX_PROBE_BYTE
     }
     return payload, meta
 
+
+def decode_zlib_fastfile_sample(payload: bytes, file_bytes: int) -> dict:
+    """Decode only complete, bounded T7 zlib blocks, from real retail bytes."""
+    if not payload.startswith(b"TAff0000"):
+        raise ValueError("Not T7 FastFile")
+    version = struct.unpack_from("<I", payload, 8)[0]
+    compression = payload[13]
+    start = {0x251: 0x248, 0x265: 0x638}.get(version)
+    report = {"version": hex(version), "compression_id": compression,
+              "block_table_start": start, "verified_blocks": [], "decoded_prefix_hex": "",
+              "sample_incomplete": len(payload) < file_bytes}
+    if start is None or compression != 1:
+        report["block_status"] = "unsupported_version_or_non_zlib_codec"
+        return report
+    pos = start
+    decoded = bytearray()
+    for i in range(8):
+        if pos + 16 > len(payload):
+            report["block_status"] = "need_more_source_bytes"
+            break
+        compressed, uncompressed, block_size, offset = struct.unpack_from("<iiii", payload, pos)
+        block = {"offset": pos, "compressed_bytes": compressed, "decoded_bytes": uncompressed,
+                 "block_size_word": block_size, "block_position_word": offset}
+        if block_size == 0:
+            report["block_status"] = "source_end_marker"
+            break
+        if offset != pos or compressed < 0 or uncompressed < 0 or compressed > 8 * 1024 * 1024 or uncompressed > 32 * 1024 * 1024:
+            report["block_status"] = "invalid_block_header"
+            report["failed_block"] = block
+            break
+        end = pos + 16 + compressed
+        if not uncompressed:
+            report["block_status"] = "unsupported_empty_block_alignment"
+            break
+        if end > len(payload):
+            report["block_status"] = "need_more_source_bytes"
+            report["next_block"] = block
+            break
+        stream = zlib.decompressobj()
+        raw = stream.decompress(payload[pos + 16:end], uncompressed + 1)
+        raw += stream.flush()
+        if len(raw) != uncompressed or not stream.eof or stream.unused_data:
+            report["block_status"] = "zlib_size_or_eof_mismatch"
+            report["failed_block"] = block
+            break
+        block["decoded_sha256"] = hashlib.sha256(raw).hexdigest()
+        report["verified_blocks"].append(block)
+        decoded.extend(raw[:max(0, 256 - len(decoded))])
+        pos = end
+    report["decoded_prefix_hex"] = bytes(decoded[:128]).hex()
+    return report
+
 def inspect(key: str, payload: bytes, meta: dict) -> dict:
     if len(payload) < 32:
         raise ValueError("Insufficient header bytes")
@@ -108,6 +161,7 @@ def inspect(key: str, payload: bytes, meta: dict) -> dict:
             hits[name].append(at)
             start = at + 1
     # A partial sample is not a full-object hash.
+    decoding = decode_zlib_fastfile_sample(payload, meta["expected_source_bytes"]) if key.endswith(".ff") else None
     return {
         "key": key, **meta, "sha256_sample": hashlib.sha256(payload).hexdigest(),
         "sha256_scope": "entire_object" if meta["sample_is_complete"] else "prefix_only",
@@ -115,7 +169,8 @@ def inspect(key: str, payload: bytes, meta: dict) -> dict:
         "header_hex_128": payload[:128].hex(),
         "u32_le_first_16": words,
         "candidate_compression_signatures_first_4096": {k: v for k, v in hits.items() if v},
-        "decoder_state": "source_header_observed; asset_body_not_yet_decoded",
+        "decoder_state": "authenticated_archive_blocks" if decoding and decoding["verified_blocks"] else "source_header_observed",
+        "fastfile_block_decoder": decoding,
     }
 
 def main() -> int:
