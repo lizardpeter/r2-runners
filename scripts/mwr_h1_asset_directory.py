@@ -292,6 +292,26 @@ def probe_xasset_array_wide(data: bytes, count: int, expected: int, radius: int)
 
 
 
+
+
+def type_runs_for_original_list(data,at,count):
+    """Run-length encode source-owned XAsset type IDs without dumping assets."""
+    runs=[]
+    kind_prev=None
+    begin=0
+    for i in range(count):
+        kind=struct.unpack_from("<I",data,at+i*16)[0]
+        if kind!=kind_prev:
+            if kind_prev is not None:
+                runs.append({"type_id":kind_prev,"from_index":begin,
+                             "to_exclusive":i,"count":i-begin})
+            kind_prev=kind
+            begin=i
+    if count:
+        runs.append({"type_id":kind_prev,"from_index":begin,
+                     "to_exclusive":count,"count":count-begin})
+    return runs
+
 def verify_full_xasset_arrays(data: bytes, directory: dict, gfx: dict) -> dict:
     """Verify EVERY authored record before promoting a candidate to real table.
 
@@ -348,6 +368,14 @@ def verify_full_xasset_arrays(data: bytes, directory: dict, gfx: dict) -> dict:
                     "source_pointer_tags":dict(tags),
                     "source_type_indices_in_order_sha256":__import__("hashlib").sha256(
                         data[at:at+count*16]).hexdigest(),
+                    "world_entry_indices":[i for i in range(count)
+                        if struct.unpack_from("<I",data,at+i*16)[0]==31],
+                    "geometry_related_entry_indices":[
+                        {"index":i,"type":struct.unpack_from("<I",data,at+i*16)[0]}
+                        for i in range(count)
+                        if struct.unpack_from("<I",data,at+i*16)[0] in (6,7,24,25,26,27,29,30,31)
+                    ][:256],
+                    "asset_type_runs":type_runs_for_original_list(data,at,count),
                     "first_16_asset_types":[struct.unpack_from("<I",data,at+i*16)[0]
                                             for i in range(min(count,16))],
                     "first_asset_body_160_hex":data[at+count*16:at+count*16+160].hex(" "),
