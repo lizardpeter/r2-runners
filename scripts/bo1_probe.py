@@ -240,7 +240,7 @@ def run(manifest_path: Path, out: Path, preset: str) -> dict:
         item = {"path": rel, "expected_bytes": spec["bytes"],
                 "r2_etag": spec["etag"]}
         try:
-            size, sha256, _ = download(url, dest, max_bytes=max(spec["bytes"], 1))
+            size, sha256, _ = download(url, dest)
             item["bytes"] = size
             item["sha256"] = sha256
             if size != spec["bytes"]:
