@@ -62,7 +62,7 @@ def main() -> None:
     parser.add_argument("--key", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-size", type=int, required=True)
-    parser.add_argument("--chunk-size", type=int, default=768 * 1024 * 1024)
+    parser.add_argument("--chunk-size", type=int, default=384 * 1024 * 1024)
     args = parser.parse_args()
     source = urlsplit(args.base_url)
     if source.scheme != "https" or not source.hostname or source.path.rstrip("/"):
