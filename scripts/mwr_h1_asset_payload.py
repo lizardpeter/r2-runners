@@ -45,12 +45,32 @@ def read_source_payload(data:bytes,kind:int,at:int):
         if ptr!=MARKER or pad!=0:
             raise ValueError("invalid H1 NetConstStrings source name/padding")
         name,cursor=inline_name(data,at+32)
-        if count or names_ptr:
-            raise ValueError(f"nonempty H1 NetConstStrings list requires indexed-pointer decoding: {name} ({count} entries)")
+        names=[]
+        if count:
+            if count>32768 or names_ptr!=MARKER:
+                raise ValueError(f"H1 NetConstStrings invalid source pointer/count: {name} ({count} entries)")
+            if cursor+8*count>len(data):
+                raise ValueError(f"H1 NetConstStrings source list truncated: {name}")
+            slots=[u64(data,cursor+8*i) for i in range(count)]
+            cursor+=8*count
+            for index,pointer in enumerate(slots):
+                if pointer==0:
+                    names.append(None)
+                elif pointer==MARKER:
+                    value,cursor=inline_name(data,cursor)
+                    names.append(value)
+                else:
+                    raise ValueError(f"H1 NetConstStrings unsupported string slot {index} {pointer:#x}")
+        elif names_ptr!=0:
+            raise ValueError(f"H1 NetConstStrings empty list has non-null pointer: {name}")
         return cursor,{
             "kind":"NetConstStrings","name":name,
             "source_type":source_id,"string_type":kind_id,
-            "entry_count":count,
+            "entry_count":count,"recovered_strings":len(names),
+            "inline_strings_sha256":hashlib.sha256(
+                b"".join((x.encode("utf-8")+b"\0") if x is not None else b"\xff" for x in names)
+            ).hexdigest(),
+            "first_strings":names[:8],
         }
     if kind==49:
         # Original H1 ScriptFile: name, compressedLen, len, bytecodeLen,
