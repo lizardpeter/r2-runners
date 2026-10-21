@@ -1,0 +1,35 @@
+name: BO3 all asset kinds retail coverage
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_full_asset_coverage.py
+      - .github/workflows/bo3-all-asset-coverage.yml
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: Original T7 zone selection
+        type: choice
+        options: [small, additional, large, all]
+        default: small
+permissions:
+  contents: read
+jobs:
+  original-asset-census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode original BO3 asset directory types with no invented payload coverage
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-asset-coverage
+          BO3_COVERAGE_PRESET: ${{ inputs.preset || 'small' }}
+        run: python3 scripts/bo3_full_asset_coverage.py
+      - name: Store type-count evidence without original game payloads
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-source-type-coverage
+          path: ${{ runner.temp }}/bo3-asset-coverage/*.json
+          if-no-files-found: warn
+          retention-days: 7
