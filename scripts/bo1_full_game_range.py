@@ -83,9 +83,16 @@ class HttpRangeObject(io.RawIOBase):
     def read(self, size: int = -1) -> bytes:
         if self.pos >= self.size: return b""
         if size < 0:
-            # ZipFile always issues bounded reads for central directory and
-            # compressed members. A caller trying to read all 11 GB is a bug.
-            raise RuntimeError("Unbounded read of original BO1 ZIP prohibited")
+            # ZipFile deliberately calls read() without a length while it
+            # scans the final 65,557 bytes for EOCD/ZIP64 metadata. Permit
+            # that bounded tail-read, but never allow an accidental read()
+            # from the beginning to pull all 11 GB into memory.
+            remaining = self.size - self.pos
+            if remaining > 128 * 1024:
+                raise RuntimeError(
+                    f"Unbounded BO1 ZIP read exceeds safe trailing-window limit: {remaining}"
+                )
+            size = remaining
         size = min(size, self.size - self.pos)
         chunks = []
         while size:
