@@ -160,7 +160,8 @@ def fetch_verified(entry: tuple, destination: Path, base: str, ranged) -> dict:
     return {"path": str(destination), "bytes": unpacked, "sha1": digest.hex(),
             "source_archive": archive, "status": "verified_download"}
 
-def source_handoff(log: str, scope: str, destination: Path, report_dir: Path) -> dict:
+def source_handoff(log: str, scope: str, destination: Path, report_dir: Path,
+                   report_filename: str = "original-architecture-source-handoff.json") -> dict:
     packages, census = collect_frontier(log, scope)
     base, ranged, index, indexes = authenticated_archive_index()
     jobs: list[tuple[str,tuple]] = []
@@ -217,7 +218,7 @@ def source_handoff(log: str, scope: str, destination: Path, report_dir: Path) ->
         "verified_payload_bytes": sum(r["bytes"] for r in completed),
     }
     report_dir.mkdir(parents=True, exist_ok=True)
-    (report_dir / "original-architecture-source-handoff.json").write_text(
+    (report_dir / report_filename).write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf8"
     )
     print("ORIGINAL_541_ARCHITECTURE_SOURCE_HANDOFF",
