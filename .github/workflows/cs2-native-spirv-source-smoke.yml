@@ -1,0 +1,107 @@
+name: CS2 native Vulkan source dictionary and SPIR-V smoke
+
+on:
+  push:
+    branches:
+      - main
+      - work/cs2-vcs-dictionary-gpu-smoke-20261021
+    paths:
+      - ".github/workflows/cs2-native-spirv-source-smoke.yml"
+      - "scripts/cs2_vcs_gpu_smoke.py"
+      - "scripts/cs2_material_source_handoff.py"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/cs2-native-spirv-source-smoke.yml"
+      - "scripts/cs2_vcs_gpu_smoke.py"
+
+permissions:
+  contents: read
+
+jobs:
+  authenticated-native-spirv:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Install actual Zstd decoder and test source-only constraints
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check zstandard
+          if ($LASTEXITCODE -ne 0) { throw 'Python Zstd source decompression library failed' }
+          python scripts/cs2_vcs_gpu_smoke.py --self-test
+          if ($LASTEXITCODE -ne 0) { throw 'CS2 compiled native bytecode self-test failed' }
+
+      - name: Set up anonymous Steam source VPK acquisition
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'cs2-native-source'
+          $tool = Join-Path $root 'SteamRE'
+          New-Item -ItemType Directory -Force -Path $tool | Out-Null
+          $zip = Join-Path $root 'DepotDownloader.zip'
+          Invoke-WebRequest -Uri 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-windows-x64.zip' -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $tool -Force
+          $exe = Join-Path $tool 'DepotDownloader.exe'
+          if (-not (Test-Path -LiteralPath $exe)) { throw 'Anonymous SteamRE downloader missing' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_NATIVE_ROOT=$root"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_NATIVE_STEAM=$exe"
+
+      - name: Download retail original Vulkan shader VPK directory
+        shell: pwsh
+        run: |
+          $root = $env:CS2_NATIVE_ROOT
+          $filelist = Join-Path $root 'source-index.txt'
+          'game/csgo/shaders_vulkan_dir.vpk' | Set-Content -LiteralPath $filelist -Encoding ascii
+          & $env:CS2_NATIVE_STEAM -app 730 -depot 2347770 -filelist $filelist -dir $root -max-downloads 4
+          if ($LASTEXITCODE -ne 0) { throw 'Steam original shader directory retrieval failed' }
+
+      - name: Locate original vertex stage by VPK authored entry
+        shell: pwsh
+        run: |
+          $root = $env:CS2_NATIVE_ROOT
+          $index = Join-Path $root 'game/csgo/shaders_vulkan_dir.vpk'
+          $stage = 'shaders/vfx/csgo_vertexlitgeneric_vulkan_50_vs.vcs'
+          $segment = python -c "import sys;sys.path.insert(0,'scripts');from pathlib import Path;from cs2_material_source_handoff import parse_vpk_index;idx=parse_vpk_index(Path(sys.argv[1]));print(idx.entries[sys.argv[2]].archive_index)" $index $stage
+          if ($LASTEXITCODE -ne 0) { throw 'Original shader is absent in VPK directory' }
+          $segment = [int](([string]$segment).Trim())
+          if ($segment -ne 32767) {
+            $file = 'game/csgo/shaders_vulkan_{0:D3}.vpk' -f $segment
+            $filelist = Join-Path $root 'original-shader-segment.txt'
+            $file | Set-Content -LiteralPath $filelist -Encoding ascii
+            Write-Host "Acquiring only authenticated original shader source: $file"
+            & $env:CS2_NATIVE_STEAM -app 730 -depot 2347770 -filelist $filelist -dir $root -max-downloads 4
+            if ($LASTEXITCODE -ne 0) { throw 'Steam source shader VPK segment retrieval failed' }
+          }
+
+      - name: Retrieve original Valve Vulkan VCS dictionary
+        shell: pwsh
+        run: |
+          $root = $env:CS2_NATIVE_ROOT
+          $dictionary = Join-Path $root 'vfx_zstd_255df362.bin'
+          Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ValveResourceFormat/ValveResourceFormat/master/ValveResourceFormat/Utils/vfx_zstd_255df362.bin' -OutFile $dictionary
+          if ((Get-Item -LiteralPath $dictionary).Length -ne 65536) {
+            throw 'Recovered Valve VCS dictionary must be exactly 65536 bytes'
+          }
+          $hash = (Get-FileHash -LiteralPath $dictionary -Algorithm SHA256).Hash.ToLowerInvariant()
+          Write-Host "Original Valve VCS dictionary SHA256=$hash"
+
+      - name: Decode and validate original compiler GPU SPIR-V
+        shell: pwsh
+        run: |
+          $root = $env:CS2_NATIVE_ROOT
+          python scripts/cs2_vcs_gpu_smoke.py --vpk-index (Join-Path $root 'game/csgo/shaders_vulkan_dir.vpk') --depot-root $root --dictionary (Join-Path $root 'vfx_zstd_255df362.bin') --output (Join-Path $root 'verified-gpu-source')
+          if ($LASTEXITCODE -ne 0) { throw 'Original source VCS dictionary/SPIR-V validation failed' }
+
+      - name: Publish original VCS, original Valve dictionary, and verified SPIR-V
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-authentic-vulkan-gpu-source-first-physical-record
+          path: ${{ runner.temp }}/cs2-native-source/verified-gpu-source/**
+          if-no-files-found: error
+          compression-level: 1
+          retention-days: 7
