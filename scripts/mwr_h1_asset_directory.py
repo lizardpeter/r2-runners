@@ -63,7 +63,7 @@ def scan_table_candidates(data: bytes, count: int, limit: int = 12) -> list[dict
 
     # Scan alignment first. Fixed-size 16B entries normally retain 8-byte
     # alignment; test both mod-16 classes through an 8-byte step.
-    for at in range(104, stop, 8):
+    for at in range(112, stop, 8):
         v = evaluate(at)
         if v:
             candidates.append(v)
@@ -76,13 +76,13 @@ def scan_table_candidates(data: bytes, count: int, limit: int = 12) -> list[dict
 def analyze_script_string_run(data: bytes, script_count: int) -> dict:
     """Inspect candidate inline NUL-terminated strings after the pointer vector.
 
-    A tagged pointer can precede the string bytes. Do not assume that these
+    The 40-byte root includes a globals pointer. Do not assume these
     guesses are authenticated script-string index mappings until count and
     the continuation boundary have been proven across more zones.
     """
     if not 0 < script_count <= 100_000:
         return {}
-    vector_end = 104 + script_count * 8
+    vector_end = 112 + script_count * 8
     if vector_end + 8 >= len(data):
         return {"status":"pointer_vector_outside_prefix"}
     expected = u64(data,vector_end)
@@ -113,21 +113,19 @@ def analyze_script_string_run(data: bytes, script_count: int) -> dict:
 def decode_source_script_slots(data: bytes, count: int) -> dict:
     """Recover H1 XAssetList's authored script indices from inline strings.
 
-    The first 8 bytes after the pointer array are the source inline marker,
-    followed by N null-terminated strings in slot order. Preserve empty
+    After the complete pointer array, N inline NUL-terminated strings follow
+    in slot order. Preserve empty
     strings distinctly from null slots.
     """
     if not 0 <= count <= 100000:
         raise ValueError("invalid H1 script count")
     if count == 0:
         return {"status":"no_script_strings","slots":0}
-    pointer_end=104+count*8
-    if len(data)<pointer_end+8:
+    pointer_end=112+count*8
+    if len(data)<pointer_end:
         raise ValueError("truncated H1 script string pointer vector")
-    pointers=[u64(data,104+i*8) for i in range(count)]
-    if u64(data,pointer_end)!=MARKER:
-        raise ValueError("missing H1 inline script-string blob marker")
-    cursor=pointer_end+8
+    pointers=[u64(data,112+i*8) for i in range(count)]
+    cursor=pointer_end
     names=[]
     for i,pointer in enumerate(pointers):
         if pointer==0:
@@ -162,7 +160,7 @@ def decode_source_script_slots(data: bytes, count: int) -> dict:
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
-    script_count, script_ptr, asset_count, asset_ptr = struct.unpack_from("<QQQQ", data, 72)
+    script_count, script_ptr, asset_count, asset_ptr, globals_ptr = struct.unpack_from("<QQQQQ", data, 72)
     result = {
         "sampled_decompressed_prefix_bytes":len(data),
         "xasset_list_decompressed_offset":72,
@@ -170,18 +168,19 @@ def inspect_prefix(data: bytes) -> dict:
         "script_string_pointer_raw_hex":f"{script_ptr:016x}",
         "asset_count":asset_count,
         "asset_array_pointer_raw_hex":f"{asset_ptr:016x}",
+        "globals_pointer_raw_hex":f"{globals_ptr:016x}",
     }
     # Distinguish the pointer-vector hypothesis from actual string relocation.
-    if script_count < 100000 and 104 + script_count * 8 <= len(data):
-        ptrs=[u64(data, 104+i*8) for i in range(script_count)]
+    if script_count < 100000 and 112 + script_count * 8 <= len(data):
+        ptrs=[u64(data, 112+i*8) for i in range(script_count)]
         hist=Counter("marker" if p==MARKER else "null" if p==0 else
                      "tagged" if (p>>48)==0xFDFD else "other" for p in ptrs)
-        result["script_pointer_vector_at_104_hypothesis"]=dict(hist)
+        result["script_pointer_vector_at_112"]=dict(hist)
         result["inline_script_string_run_analysis"]=analyze_script_string_run(data,script_count)
         result["decoded_indexed_script_strings"]=decode_source_script_slots(data,script_count)
         result["sample_words_following_pointer_vector"]=[
-            f"{u64(data,p):016x}" for p in range(104+script_count*8,
-                                                  min(len(data)-8,104+script_count*8+64),8)]
-    result["sample_8byte_words_at_104"]=[f"{u64(data,p):016x}" for p in range(104, min(len(data)-8,360),8)]
+            f"{u64(data,p):016x}" for p in range(112+script_count*8,
+                                                  min(len(data)-8,112+script_count*8+64),8)]
+    result["sample_8byte_words_at_112"]=[f"{u64(data,p):016x}" for p in range(112, min(len(data)-8,360),8)]
     result["xasset_16byte_table_candidate_runs"]=scan_table_candidates(data, asset_count)
     return result
