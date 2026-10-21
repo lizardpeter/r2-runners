@@ -147,10 +147,9 @@ def parse_vpk_index(path: Path) -> VpkIndex:
                     full_path += "." + extension
                 if not _safe_path(full_path):
                     raise ValueError(f"unsafe resolved VPK path {full_path!r}")
-                key = full_path.casefold()
-                if key in entries:
-                    raise ValueError(f"duplicate VPK path (case-insensitive): {full_path}")
-                entries[key] = VpkEntry(
+                if full_path in entries:
+                    raise ValueError(f"duplicate exact VPK path: {full_path}")
+                entries[full_path] = VpkEntry(
                     path=full_path,
                     crc32=crc32,
                     preload=preload,
@@ -170,9 +169,15 @@ def resolve_targets(index: VpkIndex, targets: Iterable[str] = TARGETS) -> list[V
     for target in targets:
         if not _safe_path(target):
             raise ValueError(f"unsafe requested target {target!r}")
-        entry = index.entries.get(target.casefold())
+        entry = index.entries.get(target)
         if entry is None:
-            raise ValueError(f"exact original VMAT texture not found in pak01_dir.vpk: {target}")
+            candidates = [value for name, value in index.entries.items()
+                          if name.casefold() == target.casefold()]
+            if len(candidates) != 1:
+                raise ValueError(
+                    f"exact original VMAT texture not found uniquely in pak01_dir.vpk: {target}"
+                )
+            entry = candidates[0]
         result.append(entry)
     return result
 
