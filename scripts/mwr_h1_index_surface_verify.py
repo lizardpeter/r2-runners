@@ -41,7 +41,7 @@ def validate_full_indices(data,at,surfaces,expected_index_count):
         return {"status":"surface_index_count_mismatch",
                 "declared":expected_index_count,"covered":total,"max_end":maximal_end}
     triangle_count=total//3
-    if degenerate>max(1,triangle_count//200):
+    if degenerate*200>triangle_count:
         return {"status":"source_triangle_topology_inconsistent",
                 "degenerate":degenerate,"triangles":triangle_count}
     return {
