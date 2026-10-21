@@ -30,7 +30,7 @@ SOURCES = {
     "en_core_frontend.ff": 2977856,
 }
 PRESETS = {
-    "small": ["en_core_common.ff", "core_gfx.ff", "core_pre_gfx.ff"],
+    "small": ["en_core_common.ff", "core_gfx.ff", "core_pre_gfx.ff", "core_ui.ff", "en_core_frontend.ff"],
     "ui": ["core_ui.ff", "en_core_frontend.ff"],
     "all": list(SOURCES),
 }
