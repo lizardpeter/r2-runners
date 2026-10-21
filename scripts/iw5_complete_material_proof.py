@@ -58,10 +58,13 @@ def shader_audit(blob,at,expected_stage,expected_dwords):
     n=1
     ops={}
     declarations=[]
+    native_instructions=[]
     while n<len(shader)//4-1:
         token=word(shader,n*4)
         kind=token&65535
         count=(token>>16)&32767 if kind==65534 else (token>>24)&15
+        if kind not in (65534,31):
+            native_instructions.append((kind,tuple(struct.unpack_from("<"+"I"*count,shader,(n+1)*4))))
         if kind!=65534:
             ops[str(kind)]=ops.get(str(kind),0)+1
             if kind==31:
@@ -69,6 +72,28 @@ def shader_audit(blob,at,expected_stage,expected_dwords):
                 declarations.append(struct.unpack_from("<II",shader,(n+1)*4))
         n+=count+1
     require(n==len(shader)//4-1,"source shader instruction stream alignment")
+    if expected_stage=="vertex":
+        require([a for a,_ in native_instructions]
+                ==[81,4]+[9]*8+[1]*2,
+                "original vertex shader is not homogeneous MAD + 8 DP4 + colour/UV passthrough")
+        require(native_instructions[0][1]
+                ==(0xa00f0008,0x3f800000,0,0,0),
+                "original vertex shader c8 is not homogeneous identity constant")
+        require(native_instructions[1][1]
+                ==(0x800f0000,0x90240000,0xa0400008,0xa0150008),
+                "original vertex source position homogeneity is not proven")
+        for row in range(4):
+            world=native_instructions[2+row][1]
+            projection=native_instructions[6+row][1]
+            require(world==(0x80000001|(1<<(16+row)),0x80e40000,
+                            0xa0e40004+row),
+                    f"source world matrix DP4 row {row} changed")
+            require(projection==(0xe0000000|(1<<(16+row)),0x80e40001,
+                                 0xa0e40000+row),
+                    f"source view-projection DP4 row {row} changed")
+        require(native_instructions[10][1]==(0xe00f0001,0x90e40001)
+                and native_instructions[11][1]==(0xe0030002,0x90e40002),
+                "original vertex colour/UV passthrough changed")
     return {"stage":expected_stage,"dwords":expected_dwords,
             "program_byte_offset":program_at,"shader_sha256":hashlib.sha256(shader).hexdigest(),
             "opcodes":ops,
@@ -203,6 +228,8 @@ def verify(source_path):
         "vertex_stream_routes":[["position","position"],["color","color0"],
                                 ["texcoord0","texcoord0"]],
         "original_vertex_shader":vsdata,"original_pixel_shader":psdata,
+        "verified_vertex_transform":"homogeneous local position -> 4 world DP4 -> 4 viewprojection DP4",
+        "verified_vertex_varyings":["color0", "texcoord0"],
         "original_pass_shader_arguments":[
             {"type":a,"destination":b,"source_value":hex(c)} for a,b,c in arguments],
         "original_source_material_texture":{
