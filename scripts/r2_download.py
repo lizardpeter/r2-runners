@@ -6,7 +6,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import sys
 import time
 from urllib.parse import quote, urlsplit
@@ -67,15 +66,15 @@ def main() -> int:
     parser.add_argument("--key", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-size", type=int)
-    parser.add_argument("--max-bytes", type=int, default=200 * 1024 * 1024)
-    parser.add_argument("--artifact-copy-limit", type=int, default=10 * 1024 * 1024)
+    parser.add_argument("--max-bytes", type=int, default=10 * 1024 * 1024 * 1024,
+                        help="Maximum object size; bounded by runner disk and artifact limits")
     args = parser.parse_args()
 
     key = validate_key(args.key)
     base = urlsplit(args.base_url)
     if base.scheme != "https" or not base.netloc or base.username or base.password or base.path.rstrip("/"):
         parser.error("--base-url must be an HTTPS origin with no path or credentials")
-    if args.max_bytes <= 0 or args.artifact_copy_limit < 0:
+    if args.max_bytes <= 0:
         parser.error("Byte limits must be valid")
 
     url = args.base_url.rstrip("/") + "/" + quote(key, safe="/")
@@ -98,19 +97,22 @@ def main() -> int:
         "signature_verified": key == DEFAULT_SAMPLE,
     }
     artifact_dir = args.output_dir / "artifact"
-    artifact_dir.mkdir(exist_ok=True)
+    artifact_file = artifact_dir.joinpath(*key.split("/"))
+    artifact_file.parent.mkdir(parents=True, exist_ok=True)
+    # Keep every byte at its original R2 key-relative path, including large files.
+    # A move avoids doubling scratch disk usage on the runner.
+    os.replace(output_file, artifact_file)
     (artifact_dir / "verification.json").write_text(
-        json.dumps(report, indent=2) + "\n", encoding="utf-8"
+        json.dumps({**report, "artifact_path": key}, indent=2) + "\n",
+        encoding="utf-8"
     )
-    if byte_count <= args.artifact_copy_limit:
-        shutil.copyfile(output_file, artifact_dir / Path(key).name)
 
     summary = (
         f"### Public R2 binary download succeeded\n\n"
         f"- Object: \`{key}\`\n"
         f"- Bytes: {byte_count}\n"
         f"- SHA-256: \`{sha256}\`\n"
-        f"- Actual bytes stored at: \`{output_file}\` (runner temporary directory)\n"
+        f"- Exact original bytes staged at: \`{artifact_file}\` (runner temporary directory)\n"
     )
     if os.environ.get("GITHUB_STEP_SUMMARY"):
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
