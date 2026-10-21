@@ -68,6 +68,19 @@ jobs:
             --family "$FAMILY" --shard "$SHARD" --shards 4 \
             --destination "$root" --reports "$report" \
             2>&1 | tee "$report/retail-pak-extraction.log"
+      - name: Decode every original shader hash/offset, Zlib payload and embedded DXBC
+        if: steps.selected.outputs.run == 'true' && matrix.family == 'shaders'
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/fortnite541-graphics-$FAMILY-$SHARD"
+          report="$RUNNER_TEMP/fortnite541-graphics-$FAMILY-$SHARD-report"
+          python3 r2-workbench/scripts/fortnite541_shader_index_decode.py \
+            --root "$root" --report "$report" \
+            2>&1 | tee "$report/original-shader-dxbc-decode.log"
       - name: Inventory exact binary bytes on success or partial source failure
         if: always() && steps.selected.outputs.run == 'true'
         shell: bash
