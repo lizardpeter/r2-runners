@@ -1,6 +1,6 @@
 """Inspect genuine MWR/H1 FastFile streamed-image header records.
 
-Never assume which word is a pak index without source validation. Return
+Never assume which field identifies a texture PAK without source evidence. Return
 candidate field statistics so the importer can discover exact dependencies
 without uploading or extracting original texture bytes.
 """
