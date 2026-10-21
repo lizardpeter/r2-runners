@@ -18,6 +18,40 @@
 - GitHub Actions artifact size, storage, bandwidth, and retention limits still apply. For a large source set, **split it into smaller game-/map-/asset-family-specific artifacts or keep a pinned original object in R2** and publish a verified exact-source retrieval manifest. Never describe metadata alone as a complete file handoff.
 - **This repository is public.** Artifacts from public workflow runs may be accessible to others with GitHub access to the run. Do not place secrets, credentials, personal data, or any files you are not authorized to publish in its artifacts. For restricted assets, use private storage or a private runner repository instead.
 
+## CS2 original Source 2 VMAT / VTEX handoff
+
+The [CS2 exact-source workflow](.github/workflows/cs2-material-source-handoff.yml)
+downloads the current anonymous Steam depot \`730/2347770\` VPK directory index,
+resolves source-authored texture paths, downloads only the physical VPK segments
+needed, and saves each ORIGINAL compiled \`.vtex_c\` byte stream after checking
+the index entry's CRC32. Original bytes, original resource names, a SHA-256
+manifest and any unindexed paths are published. Files are not recreated from
+screenshots or given synthetic substitutions.
+
+**Verified October 21, 2026:** [run 39646857633](https://github.com/lizardpeter/r2-runners/actions/runs/39646857633)
+passed and delivered all three original compiled VTEX resources missing from
+the 275-VMAT Dust2 material corpus:
+
+- \`materials/default/default_ao_tga_559f1ac6.vtex_c\`
+- \`materials/default/default_normal_tga_7be61377.vtex_c\`
+- \`materials/de_dust/hr_dust/hr_dust_trim_overlay_psd_92cba63e.vtex_c\`
+
+The archived files retain the \`cs2-base-resources/materials/...\` path.
+Extract that directory **beside the existing original Workshop
+\`3620630831_dir.vpk\`**, or into the corresponding existing CS2 source
+overlay root read by the Rust-test importer. Keep the Workshop VPKs untouched.
+An agent may fetch and unpack the artifacts into its own analysis environment
+using the GitHub artifact handoff.
+
+A separate original-source audit of all 18 existing compact corpus archives
+plus these three recovered files accounted for **275 original VMATs and 729
+original VTEX files**. All 275 original VMAT KV3 documents (268 v5, five v4,
+two v3) were independently decoded. All 729 VTEX files have valid payload and
+mip extents, including the 3D Perlin-noise volume whose depth halves at each
+mip (**4,712 source mip levels total**). These checks prove metadata/byte
+decoding and dependency closure in THIS corpus, not original VCS shader
+execution or visual parity for arbitrary CS2 maps.
+
 ## Fortnite 5.41: actual Athena assets for the Rust-test importer
 
 ### New full original Athena source and renderer-dependency workflows — October 21, 2026
