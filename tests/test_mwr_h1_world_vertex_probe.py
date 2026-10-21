@@ -28,6 +28,22 @@ class SourceVertexScannerTests(unittest.TestCase):
         report=p.report()
         self.assertTrue(any(x["potential_vertices"]>=512
                             for x in report["longest_clusters"]),report)
+    def test_overlapping_different_source_vertex_phases_do_not_merge(self):
+        scanner=WorldVertexRunScanner()
+        # These intervals overlap in byte address space but CANNOT be a
+        # single original 44-byte-stride array because their phases differ.
+        scanner.runs=[(100,20000),(101,20000),(102,20000)]
+        report=scanner.report()
+        self.assertEqual(report["source_run_clusters"],3,report)
+        self.assertTrue(all(x["potential_vertices"]==20000 for x in report["longest_clusters"]),report)
+
+    def test_adjacent_equal_phase_runs_merge_exactly(self):
+        scanner=WorldVertexRunScanner()
+        scanner.runs=[(88,16000),(88+16000*44,500)]
+        report=scanner.report()
+        self.assertEqual(report["source_run_clusters"],1,report)
+        self.assertEqual(report["longest_clusters"][0]["potential_vertices"],16500)
+
     def test_zero_bytes_are_not_mesh_vertices(self):
         p=WorldVertexRunScanner()
         p.push(bytes(65536))
