@@ -109,6 +109,12 @@ def verify_original_shader_material_sampler_names(zone:bytes,materials:list[dict
     }
     lookup={original_material_sampler_hash(n):(n,sem) for n,sem in source_vocabulary.items()}
     assert len(lookup)==len(source_vocabulary)
+    ctab_source_names={}
+    for name in source_vocabulary:
+        root=name.rstrip("0123456789")
+        number=name[len(root):]
+        ctab_name=f"{root}Sampler{number}".encode()+bytes([0])
+        ctab_source_names[name]=ctab_name in zone
     mapped=0
     missing={}
     for material in materials:
@@ -120,11 +126,8 @@ def verify_original_shader_material_sampler_names(zone:bytes,materials:list[dict
                     raise ValueError(f"source sampler {name} has unexpected semantic {slot['semantic']}")
                 if (slot["name_start"],slot["name_end"]) != (ord(name[0]),ord(name[-1])):
                     raise ValueError(f"source sampler {name} original first/last bytes do not match")
-                root=name.rstrip("0123456789")
-                number=name[len(root):]
-                ctab_name=f"{root}Sampler{number}".encode()+bytes([0])
-                if ctab_name not in zone:
-                    raise ValueError(f"original SM3 CTAB sampler {ctab_name!r} not found in source")
+                if not ctab_source_names[name]:
+                    raise ValueError(f"original SM3 CTAB sampler for {name} not found in source")
                 mapped+=1
             else:
                 missing[h]=missing.get(h,0)+1
