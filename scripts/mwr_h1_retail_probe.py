@@ -183,7 +183,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         asset_scanner = AssetRunScanner() if analyze_directory else None
         gfx_scanner = GfxWorldCandidateScanner(gfx_stem) if gfx_stem is not None else None
         geometry_scanner=GfxWorldGeometryScanner() if gfx_stem is not None else None
-        vertex_scanner=WorldVertexRunScanner(1619019) if gfx_stem is not None else None
+        vertex_scanner=WorldVertexRunScanner() if gfx_stem is not None else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -227,6 +227,9 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         if gfx_scanner is not None:
             result["gfxworld_source_scan"]=gfx_scanner.report()
             result["gfxworld_geometry_source_root_scan"]=geometry_scanner.report()
+            roots=geometry_scanner.report()["candidates"]
+            if len(roots)==1:
+                vertex_scanner.expected_count=roots[0]["vertex_count"]
             result["gfxworld_vertex_source_candidate_scan"]=vertex_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
