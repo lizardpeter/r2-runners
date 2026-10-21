@@ -15,6 +15,7 @@ from urllib.request import Request, urlopen
 from urllib.parse import quote
 
 CHUNK = 1 << 20
+# The research target is selected by --stem; never embed map-specific codec paths.
 AUTH_REGION = 0x8000
 MAX_STREAM_ROWS = 16384
 
