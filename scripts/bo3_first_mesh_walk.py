@@ -93,7 +93,7 @@ def survey(z):
         "first_root_body_exactly_after_table":True,
         "surface_count_total":surfaces_total,
         "source_order_digest_sha256":hashlib.sha256(
-            "\n".join(x["name"] for x in records).encode()).hexdigest(),
+            "\n".join(x["model_name"] for x in records).encode()).hexdigest(),
         "first_15_mesh_placements":records[:15],
         "last_5_mesh_placements":records[-5:],
     }
