@@ -120,7 +120,7 @@ def scan_images(zone:bytes,known_hashes:set[int])->dict:
             "source_size_total":sum(h["source_bytes"] for h in hits),
             "first_20":hits[:20],
             "unmatched_candidate_count":without_pixels["unresolved_hash_or_inline"],
-            "all_name_hashes":[{"name":h["name"],"format":h["source_format"],"kind":h["source_kind"],
+            "all_name_hashes":[{"name":h["name"],"source_offset":h["source_offset"],"format":h["source_format"],"kind":h["source_kind"],
                                 "source_key":h["source_key"],"width":h["width"],"height":h["height"],
                                 "source_bytes":h["source_bytes"]} for h in hits[:2000]]}
 
