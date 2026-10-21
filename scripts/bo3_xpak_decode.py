@@ -29,7 +29,9 @@ OBJECTS = {
     "en_initial.xpak": 13893632,
 }
 PRESETS = {
-    "small": ("base_patch_tu32.xpak","core_gfx.xpak","core_common.xpak"),
+    "small": ("base_patch_tu32.xpak","core_gfx.xpak","core_common.xpak",
+              "core_frontend.xpak","core_frontend_patch.xpak","core_ui.xpak",
+              "core_pre_gfx.xpak","en_initial.xpak"),
     "extended": tuple(OBJECTS),
 }
 MAX_ENTRY_SOURCE = 2 * 1024 * 1024
