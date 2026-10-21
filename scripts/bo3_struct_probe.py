@@ -46,6 +46,7 @@ def survey(zone:bytes,source:str):
     types=directory.get("asset_table",{}).get("type_counts",{})
     count=Counter()
     candidates={}
+    authenticated_candidates={}
     for label,info in LAYOUTS.items():
         start=0;valid=[];near=[]
         name_off=info["name_offset"]
@@ -87,6 +88,7 @@ def survey(zone:bytes,source:str):
                 props.update({"surfaces":surfaces,"surfaceptr":hex(surfaceptr)})
             valid.append(props)
             if len(valid)>=100000:break
+        authenticated_candidates[label]=valid
         candidates[label]={"candidate_count":len(valid),
             "preview":valid[:15],
             "count_fields":dict(Counter(x.get("tex_count",x.get("surfaces",x.get("lod_byte"))) for x in valid).most_common(14)),
@@ -106,15 +108,17 @@ def survey(zone:bytes,source:str):
         for row in range(min(record_count,2_000_000)):
             ty,ref=struct.unpack_from("<QQ",zone,table_start+16*row)
             typed_headers.setdefault(ty,set()).add(ref)
-    xmodels=[x for x in candidates["xmodel"]["preview"]]
+    xmodels=authenticated_candidates["xmodel"]
     model_known=sum(int(x["mesh_pointer"],16) in typed_headers.get(5,set()) for x in xmodels)
-    mats=[x for x in candidates["material"]["preview"]]
+    mats=authenticated_candidates["material"]
     tech_known=sum(int(x["technique_ptr"],16) in typed_headers.get(8,set()) for x in mats)
-    direct_links={"sampled_local_models":len(xmodels),
+    matched_models=[x for x in xmodels if int(x["mesh_pointer"],16) in typed_headers.get(5,set())]
+    direct_links={"local_models":len(xmodels),
         "mesh_pointer_exact_xasset_header_matches":model_known,
-        "sampled_materials":len(mats),
+        "matched_model_examples":[{"name":x["name"],"mesh_pointer":x["mesh_pointer"]} for x in matched_models[:10]],
+        "material_candidates":len(mats),
         "technique_pointer_exact_xasset_header_matches":tech_known,
-        "note":"zero means not a direct XAsset header reference; block-slot mapping is still required"}
+        "note":"unmatched source refs require original stream-block mapping; no guessed relationships"}
     return {"original_source":source,"decoded_zone_bytes":len(zone),
             "directory_asset_count":directory.get("asset_count"),
             "directory_status":directory.get("status"),
