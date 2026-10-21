@@ -78,7 +78,12 @@ class GfxWorldGeometryScanner:
                 "basename_ptr":f"{base_name:016x}",
                 "vertex_ptr":f"{TAG:016x}",
                 "index_ptr":f"{index_ptr:016x}",
-                "surface_ptr":f"{surface_ptr:016x}"
+                "surface_ptr":f"{surface_ptr:016x}",
+                "after_root_first_128_hex":b[start+NEED:start+NEED+128].hex(" "),
+                "after_root_ascii":"".join(chr(x) if 32<=x<127 else "." for x in b[start+NEED:start+NEED+128]),
+                "vertex_layer_bytes":u32(b,start+176+160),
+                "lightmap_count":u32(b,start+176+56),
+                "world_model_count":u32(b,start+1512)
             }
         self.offset+=len(chunk)
         self.carry=b[-(NEED+512):]
