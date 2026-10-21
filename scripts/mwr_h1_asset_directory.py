@@ -289,6 +289,76 @@ def probe_xasset_array_wide(data: bytes, count: int, expected: int, radius: int)
     out.sort(key=lambda d:(-d["matched"],abs(d["delta_from_predicted"])))
     return out[:8]
 
+
+
+def verify_full_xasset_arrays(data: bytes, directory: dict, gfx: dict) -> dict:
+    """Verify EVERY authored record before promoting a candidate to real table.
+
+    No game/map-specific offsets. The only search region is bounded by the
+    already decoded XGlobals structure and its original serialized arrays.
+    A valid result must pass the entire declared asset count and source
+    pointer checks, not a short heuristic prefix.
+    """
+    count=directory["asset_count"]
+    if not 1<=count<=100_000:
+        return {"status":"not_applicable"}
+    if gfx.get("status")=="header_parsed":
+        start=gfx["xgfxglobals_struct_end"]
+        expected=gfx["candidate_after_arrays"]
+    elif gfx.get("status")=="no_gfx_globals":
+        start=gfx["source_cursor"]+8
+        expected=start
+    else:
+        return {"status":"unsupported_globals_layout","gfx_status":gfx.get("status")}
+    limit=min(len(data)-16*count,start+max(4096,2*(expected-start)+4096))
+    if limit<start:
+        return {"status":"insufficient_prefix","required":start+16*count,"have":len(data)}
+    marker=struct.pack("<Q",MARKER)
+    passes=[]
+    rejected=Counter()
+    at=start
+    while at<=limit:
+        # Fast reject all 16-byte starts whose first pair is not a valid
+        # H1 source type + pointer. The full table validation is bounded.
+        kind,pad,ptr=struct.unpack_from("<IIQ",data,at)
+        if not (kind<71 and pad==0 and ptr in (0,MARKER)):
+            at+=1
+            continue
+        # To avoid empty/garbage regions require at least one non-zero
+        # source type, then check source pointer validity across all slots.
+        counts=Counter()
+        tags=Counter()
+        for i in range(count):
+            where=at+i*16
+            k,p,reference=struct.unpack_from("<IIQ",data,where)
+            if k>=71 or p!=0 or reference not in (0,MARKER):
+                rejected["bad_record"]+=1
+                break
+            counts[k]+=1
+            tags["inline" if reference==MARKER else "null"]+=1
+        else:
+            if any(k!=0 and v>0 for k,v in counts.items()):
+                passes.append({
+                    "start_offset":at,
+                    "end_offset":at+count*16,
+                    "verified_records":count,
+                    "delta_from_model":at-expected,
+                    "type_histogram":dict(sorted(counts.items())),
+                    "source_pointer_tags":dict(tags),
+                    "source_type_indices_in_order_sha256":__import__("hashlib").sha256(
+                        data[at:at+count*16]).hexdigest(),
+                    "first_16_asset_types":[struct.unpack_from("<I",data,at+i*16)[0]
+                                            for i in range(min(count,16))]
+                })
+        at+=1
+    return {"status":"fully_verified" if len(passes)==1 else
+            "ambiguous" if passes else "unresolved",
+            "candidate_count":len(passes),
+            "validated_tables":passes[:8],
+            "search_start":start,"search_end":limit,"expected_source_cursor":expected,
+            "partial_match_rejections":dict(rejected)}
+
+
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
@@ -318,6 +388,8 @@ def inspect_prefix(data: bytes) -> dict:
     result["xasset_16byte_table_candidate_runs"]=scan_table_candidates(data, asset_count)
     result["candidate_post_script_globals"]=inspect_post_script_cursor(data,end_of_strings,asset_count)
     result["parsed_source_gfx_globals"]=inspect_h1_gfx_globals(data,end_of_strings,asset_count)
+    result["complete_xasset_directory_evidence"]=verify_full_xasset_arrays(
+        data,result,result["parsed_source_gfx_globals"])
     result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
         data,asset_count,end_of_strings)
     return result
