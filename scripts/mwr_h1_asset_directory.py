@@ -1,6 +1,6 @@
 """Generic H1 XAssetList evidence analyzer; never assumes a map-specific type schema.
 
-Operates on a small in-memory prefix of authenticated, decompressed XFile
+Operates on the original decoded-stream prefix, retained only in memory of authenticated, decompressed XFile
 bytes. Reports counts, candidate record layouts and short bounded samples.
 """
 from collections import Counter
