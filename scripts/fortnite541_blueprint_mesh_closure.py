@@ -17,7 +17,7 @@ from fortnite541_dependency_handoff import source_handoff
 
 MAGIC = 0x9e2a83c1
 
-def blueprint_imported_meshes(source: bytes) -> list[str]:
+def source_imported_objects(source: bytes, allowed_classes: tuple[str, ...]) -> list[str]:
     def value(pos: int, fmt: str):
         size = struct.calcsize(fmt)
         if pos < 0 or pos + size > len(source):
@@ -107,11 +107,14 @@ def blueprint_imported_meshes(source: bytes) -> list[str]:
         return "::".join(reversed(chain))
     result = set()
     for idx, row in enumerate(imports):
-        if row["class"] in ("StaticMesh", "FortStaticMesh"):
+        if row["class"] in allowed_classes:
             path = source_path(-idx - 1)
             if path.startswith("/Game/"):
                 result.add(path)
     return sorted(result)
+
+def blueprint_imported_meshes(source: bytes) -> list[str]:
+    return source_imported_objects(source, ("StaticMesh", "FortStaticMesh"))
 
 def collect_from_root(root: Path) -> tuple[list[str], dict]:
     files = sorted(root.glob("FortniteGame/Content/Building/ActorBlueprints/**/*.uasset"))
