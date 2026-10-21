@@ -1,0 +1,30 @@
+name: BO3 original frontend GfxWorld header proof
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_gfxworld_header_probe.py
+      - .github/workflows/bo3-gfxworld-header.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  gfxworld-first-root:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode real T7 original GfxWorld 0x2040 header candidate fields
+        env:
+          BO3_WORLD_ZONE: core_frontend.ff
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-gfxworld-header
+          BO3_MAX_DECODED: '1073741824'
+        run: python3 scripts/bo3_gfxworld_header_probe.py
+      - name: Persist bounded source metadata only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-first-gfxworld-source-header-evidence
+          path: ${{ runner.temp }}/bo3-gfxworld-header/*.json
+          retention-days: 7
+          if-no-files-found: warn
