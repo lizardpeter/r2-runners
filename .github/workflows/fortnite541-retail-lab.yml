@@ -41,8 +41,8 @@ jobs:
       - name: Compile and test public source parser
         run: |
           set -euo pipefail
-          cargo test --locked --manifest-path crates/fortnite_541/Cargo.toml --all-targets
-          cargo build --locked --release --manifest-path crates/fortnite_541/Cargo.toml --bin athena_poi_actor_frontier
+          cargo test --manifest-path crates/fortnite_541/Cargo.toml --all-targets
+          cargo build --release --manifest-path crates/fortnite_541/Cargo.toml --bin athena_poi_actor_frontier
       - name: Download only SHA1-authenticated original REC, Warehouses and Pueblo world dependencies
         run: |
           set -euo pipefail
@@ -111,16 +111,16 @@ jobs:
             python3 crates/fortnite_541/tools/fetch_athena_541.py \
               --all-landscape --with-terrain-materials --destination "$root" \
               2>&1 | tee "$report/download.log"
-            cargo run --locked --release --manifest-path "$manifest" --bin athena_surface_probe -- "$root" | tee "$report/geometry.log"
-            cargo run --locked --release --manifest-path "$manifest" --bin athena_material_graph_probe -- "$root" | tee "$report/material.log"
+            cargo run --release --manifest-path "$manifest" --bin athena_surface_probe -- "$root" | tee "$report/geometry.log"
+            cargo run --release --manifest-path "$manifest" --bin athena_material_graph_probe -- "$root" | tee "$report/material.log"
           else
             python3 crates/fortnite_541/tools/fetch_remote_541_dependencies.py \
               --scope "$FAMILY" --destination "$root" 2>&1 | tee "$report/download.log"
             if [[ "$FAMILY" == foliage ]]; then
-              cargo run --locked --release --manifest-path "$manifest" --bin athena_foliage_material_probe -- "$root" | tee "$report/foliage-material.log"
-              cargo run --locked --release --manifest-path "$manifest" --bin athena_foliage_alpha_probe -- "$root" | tee "$report/foliage-alpha.log"
+              cargo run --release --manifest-path "$manifest" --bin athena_foliage_material_probe -- "$root" | tee "$report/foliage-material.log"
+              cargo run --release --manifest-path "$manifest" --bin athena_foliage_alpha_probe -- "$root" | tee "$report/foliage-alpha.log"
             else
-              cargo run --locked --release --manifest-path "$manifest" --bin athena_remote_source_probe -- "$root" | tee "$report/sky-todm.log"
+              cargo run --release --manifest-path "$manifest" --bin athena_remote_source_probe -- "$root" | tee "$report/sky-todm.log"
             fi
           fi
           python3 crates/fortnite_541/tools/report_public_asset_probe.py \
