@@ -132,11 +132,61 @@ def verify_signed_prefix(path:Path):
         types[kind]+=1
     if script_count!=330 or asset_count!=670:
         raise ValueError("signed source script/XAsset census regression")
+    # Verify genuine serial asset sequencing, not a guessed scan across the
+    # compressed source. There are exactly 16 empty StringTable roots first,
+    # followed by the original first MaterialTechniqueSet root.
+    pos += asset_count*8
+    stringtable_names=[]
+    for i in range(16):
+        if pos+16>len(inflated): raise ValueError("IW5 source table header truncated")
+        name_ptr,columns,rows,cells_ptr=struct.unpack_from("<IIII",inflated,pos)
+        if (name_ptr,columns,rows,cells_ptr)!=(INLINE,0,0,INLINE):
+            raise ValueError("signed IW5 table serialized layout mismatch")
+        start=pos+16
+        end=inflated.find(b"\0",start,start+8192)
+        if end<0:raise ValueError("missing original IW5 StringTable filename")
+        stringtable_names.append(inflated[start:end].decode("ascii"))
+        pos=end+1
+    if pos+228>len(inflated): raise ValueError("source MaterialTechniqueSet truncated")
+    root_ptr,=struct.unpack_from("<I",inflated,pos)
+    vertex_format=inflated[pos+4]
+    remap_ptr,=struct.unpack_from("<I",inflated,pos+8)
+    technique_slots=struct.unpack_from("<54I",inflated,pos+12)
+    if root_ptr!=INLINE or vertex_format>=12 or remap_ptr!=0:
+        raise ValueError("source MaterialTechniqueSet 32-bit header mismatch")
+    end=inflated.find(b"\0",pos+228,pos+228+8192)
+    if end<0:raise ValueError("IW5 source technique-set name missing")
+    technique_set_name=inflated[pos+228:end].decode("ascii")
+    inline=sum(x==INLINE for x in technique_slots)
+    absent=sum(x==0 for x in technique_slots)
+    packed=sum(x not in (0,INLINE) for x in technique_slots)
+    if (technique_set_name,inline,absent,packed)!=("mc_ambient_t0c0_nocast",22,14,18):
+        raise ValueError("original source technique mapping census regression")
+    render_source={
+        "serialized_stringtables":len(stringtable_names),
+        "first_table":stringtable_names[0],
+        "last_table":stringtable_names[-1],
+        "first_technique_set":technique_set_name,
+        "vertex_format":vertex_format,
+        "inline_technique_slots":inline,
+        "packed_technique_slot_references":packed,
+        "absent_technique_slots":absent,
+        "lit_slot_9_pointer":f"0x{technique_slots[9]:08x}",
+        "technique_slots_total":len(technique_slots),
+        "model_records":types[4],
+        "material_records":types[5],
+        "technique_set_records":types[9],
+        "vertex_shader_record_count":types[7],
+        "pixel_shader_record_count":types[6],
+        "gfxworld_records":types[21],
+        "clipmap_records":types[15]
+    }
     return {"source":path.name,"sha256_verified_complete_blocks":checked,
             "authenticated_inflated_prefix_bytes":len(inflated),
             "script_string_count":script_count,
             "xasset_count":asset_count,
             "asset_type_counts":{str(k):v for k,v in sorted(types.items())},
+            "retail_render_structure":render_source,
             "authentication_marker":"IWffs100",
             "publisher_signature_verification":"not performed"}
 
