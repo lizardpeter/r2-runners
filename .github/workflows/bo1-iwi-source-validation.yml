@@ -1,0 +1,39 @@
+name: BO1 original map IWI pixel-layout verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-iwi-source-validation.yml"
+      - "scripts/bo1_iwi_source_validate.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  genuine-iwi-source-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch all ACTUAL original IWI pixel files from complete-client extraction
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39675418914
+          name: bo1-genuine-map-textures-39675418914-part-00
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/bo1-original-files
+      - name: Fetch original-byte SHA256 transfer manifest
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 39675418914
+          name: bo1-genuine-map-textures-manifest-39675418914
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/bo1-original-provenance
+      - name: Validate every real source image's mip layout and integrity
+        run: |
+          python3 scripts/bo1_iwi_source_validate.py \
+            --source-root "$RUNNER_TEMP/bo1-original-files/original-bo1" \
+            --transfer-manifest "$RUNNER_TEMP/bo1-original-provenance/transfer/transfer-manifest.json"
