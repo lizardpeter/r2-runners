@@ -28,10 +28,25 @@ SOURCES = {
     "core_pre_gfx.ff": 22285376,
     "core_ui.ff": 25129024,
     "en_core_frontend.ff": 2977856,
+    "core_specialists.ff": 51386816,
+    "core_frontend_patch.ff": 72319872,
+    "core_patch.ff": 44856320,
+    "core_post_gfx.ff": 283840,
+    "en_core_specialists.ff": 582720,
+    "en_core_post_gfx.ff": 1085056,
+    "en_core_patch.ff": 624896,
+    "en_core_ui.ff": 82816,
+    "en_core_frontend_patch.ff": 33216,
+    "core_frontend.ff": 229871360,
+    "core_common.ff": 198927488,
 }
 PRESETS = {
     "small": ["en_core_common.ff", "core_gfx.ff", "core_pre_gfx.ff", "core_ui.ff", "en_core_frontend.ff"],
     "ui": ["core_ui.ff", "en_core_frontend.ff"],
+    "additional": ["core_specialists.ff", "core_frontend_patch.ff", "core_patch.ff",
+                   "core_post_gfx.ff", "en_core_specialists.ff", "en_core_post_gfx.ff",
+                   "en_core_patch.ff", "en_core_ui.ff", "en_core_frontend_patch.ff"],
+    "large": ["core_frontend.ff", "core_common.ff"],
     "all": list(SOURCES),
 }
 TYPE_NAMES = {
@@ -45,8 +60,8 @@ TYPE_NAMES = {
     69:"scriptbundle",82:"lightdescription",84:"xcam",96:"umbra_tome",
     97:"navmesh",98:"navvolume",
 }
-MAX_DECODED = 256 * 1024 * 1024
-MAX_BLOCKS = 2048
+MAX_DECODED = int(os.environ.get('BO3_MAX_DECODED', str(1024 * 1024 * 1024)))
+MAX_BLOCKS = 10000
 
 def parse_zlib_zone(path: Path) -> tuple[bytearray, dict]:
     source_size = path.stat().st_size
@@ -209,8 +224,6 @@ def run():
         for filename in PRESETS[preset]:
             key=PREFIX+filename
             target=Path(temp)/filename
-            if SOURCES[filename] > 40 * 1024 * 1024:
-                raise ValueError("Refusing source larger than BO3 research budget")
             byte_count,digest,_type=download(BASE+"/"+quote(key,safe="/"),target)
             if byte_count != SOURCES[filename]:
                 raise ValueError(f"Original R2 object length does not match authenticated listing: {key}")
