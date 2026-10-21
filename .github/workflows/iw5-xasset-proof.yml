@@ -4,6 +4,7 @@ on:
     branches: ["work/iw5-stream-source-20261021"]
     paths:
       - "scripts/iw5_asset_proof.py"
+      - "scripts/iw5_shader_proof.py"
       - ".github/workflows/iw5-xasset-proof.yml"
   workflow_dispatch:
 permissions:
@@ -25,6 +26,11 @@ jobs:
       - name: Verify actual original IW5 XAsset tables and localization
         run: |
           python3 scripts/iw5_asset_proof.py \
+            --samples "$RUNNER_TEMP/original-iw5/source_samples" \
+            --out "$RUNNER_TEMP/iw5-proof"
+      - name: Verify 1,021 actual retail shader programs and CTAB bindings
+        run: |
+          python3 scripts/iw5_shader_proof.py \
             --samples "$RUNNER_TEMP/original-iw5/source_samples" \
             --out "$RUNNER_TEMP/iw5-proof"
       - name: Upload analysis results (no source bytes)
