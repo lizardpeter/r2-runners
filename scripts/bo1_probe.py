@@ -133,6 +133,17 @@ def probe_ff(data: bytes) -> dict:
 
 
 def probe_iwd(path: Path) -> dict:
+    # T5 server distributions contain archives named .iwd that are not ZIPs.
+    # Preserve their original header bytes as source evidence; do not treat
+    # them as IWI containers or claim to have decoded textures from them.
+    with path.open("rb") as stream:
+        prefix = stream.read(32)
+    if not zipfile.is_zipfile(path):
+        return {"container_status": "unrecognized_not_zip",
+                "signature_hex": prefix.hex(),
+                "iwi_members": None,
+                "iwi_uncompressed_bytes": None,
+                "source_bytes_preserved": True}
     with zipfile.ZipFile(path) as z:
         if len(z.infolist()) > 250_000:
             raise ValueError("IWD central directory contains too many entries")
@@ -144,7 +155,7 @@ def probe_iwd(path: Path) -> dict:
         for x in files:
             if x.filename.startswith("/") or ".." in x.filename.replace("\\", "/").split("/"):
                 raise ValueError("Unsafe IWD member path")
-        return {"members": len(files), "iwi_members": len(images),
+        return {"container_status": "zip", "members": len(files), "iwi_members": len(images),
                 "iwi_uncompressed_bytes": sum(x.file_size for x in images),
                 "iwi_sample_names": [x.filename for x in images[:8]]}
 
