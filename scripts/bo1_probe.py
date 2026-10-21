@@ -227,7 +227,7 @@ def run(manifest_path: Path, out: Path, preset: str) -> dict:
     report_dir.mkdir(parents=True, exist_ok=True)
     report = {"preset": preset, "bucket": manifest["bucket"],
               "files": [], "all_verified": False,
-              "source_asset_root": "runner temporary directory, not uploaded"}
+              "source_asset_root": "original-bo1/ (full original files uploaded as Actions artifact)"}
     errors = []
     for spec in selected:
         rel = spec["path"]
