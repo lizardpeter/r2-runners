@@ -1,0 +1,28 @@
+name: BO3 original T7 sound bank header census
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_audio_bank_headers.py
+      - .github/workflows/bo3-sound-bank-census.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sound-source-census:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original SABL and SABS source headers by bounded R2 ranges
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-audio-sources
+        run: python3 scripts/bo3_audio_bank_headers.py
+      - name: Preserve sound bank header evidence only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-authenticated-original-audio-bank-headers
+          path: ${{ runner.temp }}/bo3-audio-sources/*.json
+          retention-days: 7
+          if-no-files-found: warn
