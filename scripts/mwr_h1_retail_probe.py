@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Exact-source H1 FastFile research probe for a private, networked CI runner.
+
+Only reads original bytes; does not dump or publish proprietary source files.
+Map names are parameters, not codec branches. Source files are kept in local
+runner temporary storage during probing and cleaned by the runner afterward.
+"""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import struct
+import sys
+from urllib.request import Request, urlopen
+from urllib.parse import quote
+
+CHUNK = 1 << 20
+AUTH_REGION = 0x8000
+MAX_STREAM_ROWS = 16384
+
+
+def download(base: str, key: str, root: Path) -> tuple[Path, str]:
+    assert ".." not in key.split("/") and key and not key.startswith("/")
+    url = base.rstrip("/") + "/" + quote(key, safe="/")
+    destination = root.joinpath(*key.split("/"))
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha256()
+    with urlopen(Request(url, headers={"User-Agent": "Rust-test-MWR-retail-probe/1.0",
+                                      "Accept-Encoding": "identity"}), timeout=180) as response:
+        if response.url.split("/", 3)[:3] != url.split("/", 3)[:3]:
+            raise ValueError("Unexpected redirect outside the original source origin")
+        with destination.open("wb") as f:
+            while True:
+                data = response.read(CHUNK)
+                if not data:
+                    break
+                digest.update(data)
+                f.write(data)
+    return destination, digest.hexdigest()
+
+
+def probe_header(file: Path) -> dict:
+    actual = file.stat().st_size
+    with file.open("rb") as f:
+        prefix = f.read(28)
+        if len(prefix) < 28:
+            raise ValueError(f"{file.name}: truncated H1 header")
+        magic, version, _misc, _time, rows = struct.unpack("<8sI4s8sI", prefix)
+        if magic not in (b"S1ff0100", b"S1ffu100"):
+            raise ValueError(f"{file.name}: unsupported magic {magic!r}")
+        if version != 0x42:
+            raise ValueError(f"{file.name}: H1 version {version:#x} differs from verified 0x42")
+        if rows > MAX_STREAM_ROWS:
+            raise ValueError(f"{file.name}: unbounded stream row count {rows}")
+        offsets = 28 + rows * 24
+        f.seek(offsets)
+        sizes = f.read(16)
+        if len(sizes) < 16:
+            raise ValueError(f"{file.name}: truncated size pair")
+        base_size, total_size = struct.unpack("<QQ", sizes)
+        auth_offset = offsets + 16
+        signed = magic == b"S1ff0100"
+        f.seek(auth_offset)
+        auth_magic = f.read(8) if signed else b""
+        if signed and auth_magic != b"S1ffs100":
+            raise ValueError(f"{file.name}: incorrect signed auth marker {auth_magic!r} at {auth_offset:#x}")
+        if base_size != actual:
+            raise ValueError(f"{file.name}: base size {base_size} != original file size {actual}")
+        if total_size < base_size:
+            raise ValueError(f"{file.name}: total size smaller than base")
+        potential_stream = auth_offset + (AUTH_REGION if signed else 0)
+        f.seek(potential_stream)
+        payload_head = f.read(128)
+        data = {
+            "magic": magic.decode(), "version": version,
+            "header_flags_raw_hex": _misc.hex(),
+            "rows": rows, "actual_bytes": actual,
+            "base_file_len": base_size, "total_file_len": total_size,
+            "auth_offset": auth_offset, "auth_magic": auth_magic.decode() if signed else None,
+            "candidate_stream_offset": potential_stream,
+            "candidate_stream_prefix_hex": payload_head[:64].hex(" "),
+            "candidate_stream_u32": struct.unpack("<8I",payload_head[:32]) if len(payload_head) >= 32 else [],
+        }
+        # The following is only a candidate LZ4 framing test. The signed
+        # hash-block layout and compression header must be verified per source.
+        if len(payload_head) >= 4:
+            blocks = struct.unpack_from("<I", payload_head, 0)[0]
+            data["candidate_lz4_block_count"] = blocks
+        return data
+
+
+def scan_lz4_first_block(file: Path, potential_stream: int) -> dict:
+    try:
+        import lz4.block
+    except ImportError:
+        return {"status": "lz4_library_unavailable"}
+    with file.open("rb") as f:
+        f.seek(potential_stream)
+        sample = f.read(min(2 * 1024 * 1024, file.stat().st_size-potential_stream))
+    results = []
+    # Various signed S1 variants place a block-count and tiny preamble
+    # before [compressed length, uncompressed length, LZ4 bytes].
+    for offset in range(0, min(8192,len(sample)-8), 2):
+        compressed, decompressed = struct.unpack_from("<II",sample,offset)
+        if not (8 <= compressed <= 1024*1024 and 8 <= decompressed <= 16*1024*1024):
+            continue
+        if offset + 8 + compressed > len(sample):
+            continue
+        packed = sample[offset+8:offset+8+compressed]
+        try:
+            raw = lz4.block.decompress(packed, uncompressed_size=decompressed)
+        except (ValueError, RuntimeError, OverflowError):
+            continue
+        if len(raw)==decompressed:
+            results.append({
+                "relative_header_offset":offset,
+                "compressed_bytes":compressed,
+                "decompressed_bytes":decompressed,
+                "decoded_prefix_hex":raw[:48].hex(" "),
+                "decoded_ascii_preview":"".join(chr(c) if 32<=c<127 else "." for c in raw[:48]),
+            })
+            if len(results)>=3:
+                break
+    return {"status":"matching_candidate" if results else "no_candidate_yet","candidates":results}
+
+
+def main()->int:
+    p=argparse.ArgumentParser()
+    p.add_argument("--stem",default="mp_crash_snow")
+    p.add_argument("--origin",default="https://r2.houseofkublai.com")
+    p.add_argument("--r2-prefix",default="h1/h1_full_files/zone")
+    p.add_argument("--output-dir",type=Path,required=True)
+    p.add_argument("--include-primary",action="store_true")
+    p.add_argument("--report",type=Path,required=True)
+    args=p.parse_args()
+    stem=args.stem
+    if not stem.startswith("mp_") or not stem.replace("_","").isalnum():
+        p.error("stem must be a simple mp_* identifier")
+    files=[f"{stem}_load.ff",f"{stem}_path.ff",f"patch_{stem}.ff",
+           f"english/eng_{stem}.ff",f"english/eng_patch_{stem}.ff",
+           f"techsets_{stem}.ff"]
+    if args.include_primary:
+        files.insert(0,f"{stem}.ff")
+    objects={}
+    for name in files:
+        key=f"{args.r2_prefix.rstrip('/')}/{name}"
+        try:
+            local,sha=download(args.origin,key,args.output_dir)
+            header=probe_header(local)
+            header["sha256"]=sha
+            # Probe the main and smaller path archive with real raw LZ4
+            # candidates, but never claim decompression success without bytes.
+            if name in (f"{stem}.ff",f"{stem}_path.ff"):
+                header["lz4_probe"]=scan_lz4_first_block(local,header["candidate_stream_offset"])
+            objects[name]=header
+            print(f"{name} {header['actual_bytes']} bytes sha256={sha} "
+                  f"magic={header['magic']} version={header['version']:#x} "
+                  f"stream_rows={header['rows']} candidate={header['candidate_stream_offset']:#x}",flush=True)
+        except Exception as exc:
+            objects[name]={"ERROR":str(exc)}
+            print(f"FAILED {name}: {exc}",file=sys.stderr,flush=True)
+    report={"game":"MWR/H1","source_stem":stem,
+            "file_count":len(files),"source_files":objects}
+    args.report.parent.mkdir(parents=True,exist_ok=True)
+    args.report.write_text(json.dumps(report,indent=2)+"\n")
+    return 1 if any("ERROR" in v for v in objects.values()) else 0
+
+if __name__=="__main__":
+    sys.exit(main())
