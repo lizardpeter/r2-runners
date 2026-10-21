@@ -126,6 +126,99 @@ def inspect_path_nodes(data: bytes) -> dict:
             decoded_links += 1
         link_cursor = next_offset
     accepted=(decoded_links == links and invalid_targets==0 and invalid_distances==0)
+    # Authenticate complete source-ordered PathData, not only its header
+    # and node links. The 24-byte pathnode_tree_t records follow the exact
+    # original visibility blob; leaf node lists follow the entire tree array.
+    ptr=lambda at: pointer_kind(struct.unpack_from("<Q",hdr,at)[0])
+    vis_bytes=struct.unpack_from("<I",hdr,28)[0]
+    tree_count=struct.unpack_from("<I",hdr,40)[0]
+    groups=struct.unpack_from("<I",hdr,56)[0]
+    exposure_bytes=struct.unpack_from("<I",hdr,72)[0]
+    nopeek_bytes=struct.unpack_from("<I",hdr,88)[0]
+    zones_bytes=struct.unpack_from("<I",hdr,108)[0]
+    dynamic_bytes=struct.unpack_from("<I",hdr,120)[0]
+    if groups!=0 or zones_bytes!=0 or dynamic_bytes!=0:
+        raise ValueError("original PathData dynamic groups/zones need separate loader closure")
+    cursor=link_cursor
+    if vis_bytes and ptr(32) not in ("follows","insert"):
+        raise ValueError("source path-visibility buffer unexpectedly missing")
+    cursor+=vis_bytes
+    tree_start=cursor
+    tree_end=cursor+tree_count*24
+    if tree_end>len(data):
+        raise ValueError("authored tree array outside XFile")
+    trees=[struct.unpack_from("<ifQQ",data,tree_start+i*24)
+           for i in range(tree_count)]
+    cursor=tree_end
+    edges=[]
+    unique_leaves=set()
+    leaf_count=0
+    leaf_ref_count=0
+    for tree_index,(axis,split,a,b) in enumerate(trees):
+        if axis>=0:
+            if axis>2 or not math.isfinite(split):
+                raise ValueError("spatial split is not a finite authored XYZ plane")
+            if pointer_kind(a)!="alias" or pointer_kind(b)!="alias":
+                raise ValueError("original tree child is not a packed source pointer")
+            edges.extend([a & 0xffffffff, b & 0xffffffff])
+        elif axis==-1:
+            count=a & 0xffffffff
+            if count>node_count or pointer_kind(b) not in ("follows","insert"):
+                raise ValueError("leaf node array invalid")
+            end=cursor+count*2
+            if end>len(data):
+                raise ValueError("original leaf byte array outside PathData source")
+            for pos in range(cursor,end,2):
+                index=struct.unpack_from("<H",data,pos)[0]
+                if index>=node_count or index in unique_leaves:
+                    raise ValueError("duplicate or out-of-bounds authored leaf reference")
+                unique_leaves.add(index)
+            leaf_count+=1
+            leaf_ref_count+=count
+            cursor=end
+        else:
+            raise ValueError("unrecognized source tree axis")
+    if len(unique_leaves)!=node_count or leaf_ref_count!=node_count:
+        raise ValueError("original tree leaf lists do not partition all PathData nodes")
+    tree_base=min((p-1 for p in edges),default=0)
+    targets=[]
+    for p in edges:
+        offset=p-1-tree_base
+        if offset<0 or offset%24!=0 or offset//24>=tree_count:
+            raise ValueError("original tree child packed address is out of range")
+        targets.append(offset//24)
+    missing_roots=sorted(set(range(tree_count))-set(targets))
+    if len(targets)!=tree_count-1 or len(set(targets))!=tree_count-1 or len(missing_roots)!=1:
+        raise ValueError("spatial tree does not form unique authored-parent topology")
+    for offset,size,field in (
+        (80,exposure_bytes,"exposure"),
+        (96,nopeek_bytes,"no-peek"),
+        (112,zones_bytes,"zones"),
+        (128,dynamic_bytes,"dynamic states"),
+    ):
+        if size and ptr(offset) not in ("follows","insert"):
+            raise ValueError(f"original {field} buffer unexpectedly not inline")
+        cursor+=size
+        if cursor>len(data):
+            raise ValueError(f"original {field} buffer extends beyond XFile")
+    # Second original XAsset is RawFile. Verify its source fields, authored
+    # name, packed bytes, and EXACT decoded FastFile EOF.
+    raw_start=cursor
+    if raw_start+24>len(data):
+        raise ValueError("path zone trailing original RawFile missing")
+    nameptr,packed,dataref=struct.unpack_from("<QQQ",data,raw_start)
+    if pointer_kind(nameptr) not in ("follows","insert") or pointer_kind(dataref) not in ("follows","insert"):
+        raise ValueError("path zone final RawFile pointers are not source-inline")
+    name_end=data.find(bytes([0]),raw_start+24,raw_start+24+4096)
+    if name_end<0:
+        raise ValueError("unterminated source RawFile name")
+    name_bytes=data[raw_start+24:name_end]
+    if name_bytes!=b"mp_alien_town_path":
+        raise ValueError("original path RawFile identity mismatch")
+    cursor=name_end+1+packed
+    if cursor!=len(data):
+        raise ValueError(f"PathData + RawFile source closure failed: {cursor} vs {len(data)}")
+    tree_verified=True
     return {
         "status": "original_IW6_path_links_validated" if accepted else "original_IW6_path_links_not_validated",
         "candidate_source_link_end":link_cursor,
@@ -135,6 +228,18 @@ def inspect_path_nodes(data: bytes) -> dict:
         "self_link_count":self_links,
         "max_link_distance":link_max_distance,
         "source_link_layout_accepted":accepted,
+        "pathdata_source_closed":tree_verified,
+        "spatial_tree_nodes":tree_count,
+        "spatial_tree_leaf_records":leaf_count,
+        "spatial_tree_leaf_indexes":leaf_ref_count,
+        "spatial_tree_root":missing_roots[0],
+        "spatial_tree_child_edges":len(edges),
+        "visibility_source_bytes":vis_bytes,
+        "exposure_source_bytes":exposure_bytes,
+        "nopeek_source_bytes":nopeek_bytes,
+        "final_rawfile_source_offset":raw_start,
+        "original_full_XFile_bytes":len(data),
+        "exact_file_eof":cursor,
 
         "pathdata_header_source_offset": hdr_off,
         "path_node_array_file_offset": pos,
