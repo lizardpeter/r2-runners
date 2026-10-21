@@ -65,7 +65,7 @@ jobs:
             --output-dir "$RUNNER_TEMP/t6" \
             --expected-size "$SOURCE_BYTES"
           cd "$RUNNER_TEMP/t6/base-parts"
-          test "$(find . -name 'base.ipak.part-*' | wc -l)" -eq 4
+          test "$(find . -name 'base.ipak.part-*' | wc -l)" -eq 7
           sha256sum --check parts.sha256
           cat base.ipak.part-* | sha256sum
           cat > README.txt <<'EOS'
@@ -117,6 +117,33 @@ jobs:
         with:
           name: t6-base-ipak-part-03
           path: ${{ runner.temp }}/t6/base-parts/base.ipak.part-03
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Publish base archive part 04
+        if: matrix.archive == 'base'
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-base-ipak-part-04
+          path: ${{ runner.temp }}/t6/base-parts/base.ipak.part-04
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Publish base archive part 05
+        if: matrix.archive == 'base'
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-base-ipak-part-05
+          path: ${{ runner.temp }}/t6/base-parts/base.ipak.part-05
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+      - name: Publish base archive part 06
+        if: matrix.archive == 'base'
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-base-ipak-part-06
+          path: ${{ runner.temp }}/t6/base-parts/base.ipak.part-06
           if-no-files-found: error
           compression-level: 0
           retention-days: 30
