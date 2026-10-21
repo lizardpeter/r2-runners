@@ -51,8 +51,20 @@ def main():
    next_model=models[i+1]["source_header"] if i+1<len(models) else len(z)
    upper=min(next_model,name_end+8192)
    items=candidates(z,name_end,upper)
+   # A T7 loader's first inline LOD body follows its source model name
+   # within a small authored child prelude. Require full structural
+   # validity and uniqueness; later LOD bodies are NOT inferred.
+   first=[x for x in items if
+          x["offset"]<name_end+128 and
+          x["original_flags"]==0 and
+          x["surface_base"]==0 and
+          x["near"]<=x["far"] and
+          x["surface_ref"]=="0xffffffffffffffff" and
+          x["mesh_ref"]=="0xffffffffffffffff"]
    verified.append({
     "model":model["model"],
+    "unique_first_original_lod":len(first)==1,
+    "first_original_lod_source":first[0] if len(first)==1 else None,
     "name_end":name_end,"next_model_offset":next_model,
     "authored_num_lods":model["num_lods"],
     "candidate_original_lod_records":len(items),
@@ -61,6 +73,11 @@ def main():
   report={"file":zone_name,"original_source_sha256":sha,
           "model_count":len(models),
           "candidates_total":sum(m["candidate_original_lod_records"] for m in verified),
+          "unique_first_source_lod_records":sum(m["unique_first_original_lod"] for m in verified),
+          "proven_first_source_surface_count":sum(
+             m["first_original_lod_source"]["count"] for m in verified
+             if m["unique_first_original_lod"]
+          ),
           "parents":verified}
   print(json.dumps(report,sort_keys=True),flush=True)
   (root/"bo3_model_lod_child_structure_candidates.json").write_text(
