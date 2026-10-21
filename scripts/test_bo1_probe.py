@@ -52,6 +52,15 @@ class T5SourceProbeTests(unittest.TestCase):
         self.assertEqual(report["iwi_members"], 1)
         self.assertEqual(report["iwi_uncompressed_bytes"], 4)
 
+    def test_preserves_unknown_original_iwd_bytes_without_claiming_iwi(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "iw_01.iwd"
+            archive.write_bytes(b"BO1_SOURCE_UNRECOGNIZED")
+            report = bo1_probe.probe_iwd(archive)
+        self.assertEqual(report["container_status"], "unrecognized_not_zip")
+        self.assertIsNone(report["iwi_members"])
+        self.assertTrue(report["source_bytes_preserved"])
+
     def test_selects_only_source_manifest_paths(self):
         manifest = {"files": [
             {"path": "zone/Common/mp_nuked.ff"},
