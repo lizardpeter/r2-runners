@@ -66,6 +66,14 @@ def main():
   base=directory["asset_table"]["table_offset"]
   row_count=directory["asset_count"]
   material_headers=[ptr for kind,ptr in (struct.unpack_from("<QQ",z,base+16*i) for i in range(row_count)) if kind==6]
+  # T7 ZoneFormat source contract: 0x30-byte XAssetList is raw-read,
+  # then block-5 cursor begins at zero. With zero dependent-package
+  # entries, the original stream runs from 0x30 to this physical XAsset
+  # table and is 8-byte aligned before table allocation.
+  dependency_count=struct.unpack_from("<I",z,0x10)[0]
+  logical_asset_table_start=((base-0x30+7)//8)*8 if dependency_count==0 else None
+  type6_rows=[i for i in range(row_count)
+     if struct.unpack_from("<Q",z,base+16*i)[0]==6]
   material_ref_counts={f"0x{x:016x}":material_headers.count(x) for x in set(material_headers)}
   result=[]
   for i,m in enumerate(models):
@@ -89,12 +97,16 @@ def main():
     ptrs=[struct.unpack_from("<Q",z,at+16+u*8)[0] for u in range(count)]
     rows=[]
     for ptr in ptrs:
-     if (ptr>>56)!=0x50:break
+     if (ptr>>56)!=0x50 or logical_asset_table_start is None:break
      logical=(ptr&0x00ffffffffffffff)-1
-     if logical%16 or logical//16>=row_count:break
-     ty,marker=struct.unpack_from("<QQ",z,base+logical)
+     # Each root row contains the 8-byte XAssetType then its
+     # 8-byte source header pointer. A Material* points to the
+     # pointer field (+8), NOT the start of its 16-byte row.
+     relative=logical-logical_asset_table_start-8
+     if relative<0 or relative%16 or relative//16>=row_count:break
+     ty,marker=struct.unpack_from("<QQ",z,base+relative)
      rows.append({"model_material_pointer":f"0x{ptr:016x}",
-                  "asset_row_index":logical//16,
+                  "asset_row_index":relative//16,
                   "typed_asset_kind":ty,"asset_header_ref":f"0x{marker:016x}"})
     if len(rows)==count:
      material_pointer_proofs.append({
@@ -147,6 +159,9 @@ def main():
           "surface_tokens_in_unique_complete_owners":sum(
              len(m["complete_first_lod_material_handle_arrays"][0]["per_surface_source_handles"])
              for m in result if m["unique_complete_first_lod_handle_owner"]),
+          "source_dependency_count":dependency_count,
+          "logical_block5_asset_table_start":logical_asset_table_start,
+          "source_typed_material_row_indices":type6_rows,
           "typed_source_material_xasset_pointers":material_ref_counts,
           "typed_source_material_xasset_count":len(material_headers),
           "data":result}
