@@ -270,3 +270,32 @@ without writing placeholder animations. Original data-array compression,
 quaternion tracks, translations, bone-pose playback and SndBank samples
 are still **not** decoded. Other original animation XAsset rows and
 other FastFiles need the same source-grounded treatment.
+
+
+### BO1 real-client inline-index animated delta recovery
+
+The [actual original compressed animation-source regression
+#39691429771](https://github.com/lizardpeter/r2-runners/actions/runs/39691429771)
+PASSED reading the real `common_mp.ff`. The BO1 XAnim nested delta loader
+must not treat original `XAnimPartTransFrames.indices` or
+`XAnimDeltaPartQuatDataFrames.indices` as a packed pointer: they are
+source-inline, size-dependent frame-number arrays.
+
+- **383** authentic nonempty nested root-motion delta records inspected;
+  **365** have exactly closed source serialization and **18** remain
+  unresolved, not silently skipped.
+- **265** recovered animated root translation tracks (11 authored u8
+  component tracks, 254 authored u16 tracks), with original frame indices,
+  min/scale XYZ, raw packed components and decoded source-space positions.
+- **96** recovered signed original XQuat2 two-component rotation tracks
+  with their actual source frame indices; quaternion expansion and
+  host coordinate conventions are not guessed.
+- Combined with the separate 1,686 byte-closed flat-delta channels,
+  **2,051** original animation records have complete authenticated source
+  payload boundaries. Runtime bone animation/pose playback is NOT finished.
+
+The verified original `p_handheldradio_idle` compressed translation
+indices are `[0,17,133]` and 8-bit XYZ frames
+`[251,255,0], [0,19,0], [0,19,0]`. All original source file bytes are
+processed on the runner, not replaced by JSON reports. The JSON source
+audit is accompanying evidence for raw binary decoding.
