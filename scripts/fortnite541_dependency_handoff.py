@@ -81,13 +81,24 @@ def collect_frontier(log: str, scope: str) -> tuple[list[str], dict]:
     }
 
 def normalized_content_path(index_path: str) -> str | None:
+    # Original 5.41 PAKs use three authenticated mount-root conventions,
+    # proved by the native importer: full FortniteGame/Content paths,
+    # Content-relative paths, and paths directly relative to Content.
+    # Previously the workbench indexed only full paths, which recovered
+    # Blueprint classes in the main PAK but 0 mesh imports from split PAKs.
     path = index_path.replace("\\", "/").lstrip("/")
-    marker = PREFIX.lower()
     lower = path.lower()
+    marker = PREFIX.lower()
     at = lower.find(marker)
-    if at < 0 or (at > 0 and path[at - 1] != "/"):
+    if at >= 0 and (at == 0 or lower[at - 1] == "/"):
+        return lower[at + len(marker):]
+    if lower.startswith("content/"):
+        return lower[len("content/"):]
+    if lower.startswith("engine/content/") or lower.startswith("../"):
         return None
-    return lower[at + len(marker):]
+    # Source PAK v7 mount ../../../FortniteGame/Content/ stores the
+    # authenticated index entry names directly under content root.
+    return lower
 
 def authenticated_archive_index():
     # These public tools perform original PAK v7 footer, encrypted-index AES,
@@ -249,6 +260,9 @@ def self_test() -> None:
     assert census["architectural_class_placements"] == 5
     assert f_name_package("/Game/Walls/Factory#19::Factory_18_C") == "/Game/Walls/Factory_18"
     assert normalized_content_path("/FortniteGame/Content/Props/SM_A.uasset") == "props/sm_a.uasset"
+    assert normalized_content_path("Content/Props/SM_A.uasset") == "props/sm_a.uasset"
+    assert normalized_content_path("Props/SM_A.uasset") == "props/sm_a.uasset"
+    assert normalized_content_path("Engine/Content/Props/SM_A.uasset") is None
     for invalid in ("/Engine/SM_A::SM_A", "/Game/../Trap::Trap", "/Game/A\\Trap"):
         try:
             f_name_package(invalid)
