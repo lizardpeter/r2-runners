@@ -45,6 +45,7 @@ jobs:
           BO1_IWD_COUNT: ${{ inputs.iwd_count || 4 }}
         run: |
           python3 scripts/bo1_full_game_range.py \
+            --full-download \
             --preset "$BO1_PRESET" \
             --iwd-start "$BO1_IWD_START" \
             --iwd-count "$BO1_IWD_COUNT" \
