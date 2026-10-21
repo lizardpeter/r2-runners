@@ -69,6 +69,43 @@ def inspect_bank(name):
         if 608<=alternative_table and alternative_table+stride*3<=SIZES[name]:
             other=original_range(name,alternative_table,min(3,entries)*stride)
             out["secondary_0x30_record_samples"]=[record_sample(other[i*stride:(i+1)*stride]) for i in range(min(3,entries))]
+    if entries:
+        original=original_range(name,table,span)
+        physical_bounds=0
+        playable_audio=0
+        rates={}
+        channel_sizes={}
+        flac_examples=[]
+        bad=[]
+        for i in range(entries):
+            raw=original[i*stride:(i+1)*stride]
+            key,size,frames,_reserved=struct.unpack_from("<IIII",raw,0)
+            file_offset=struct.unpack_from("<Q",raw,0x10)[0]
+            flags=struct.unpack_from("<I",raw,0x18)[0]
+            rate=flags&0xff
+            channels=(flags>>8)&0xff
+            physical=(size==0 or (file_offset>=608 and file_offset+size<=table))
+            if physical:
+                physical_bounds+=1
+            else:
+                bad.append({"ordinal":i,"source_offset":file_offset,"source_size":size})
+            if size and physical and 0<=rate<=8 and channels in (1,2,4,6,8):
+                playable_audio+=1
+            rates[str(rate)]=rates.get(str(rate),0)+1
+            channel_sizes[str(channels)]=channel_sizes.get(str(channels),0)+1
+            if size>=4 and physical and len(flac_examples)<3:
+                source_magic=original_range(name,file_offset,4)
+                flac_examples.append({"record":i,"magic_ascii":source_magic.decode("latin1"),
+                    "is_fLaC":source_magic==b"fLaC","source_bytes":size,
+                    "original_offset":file_offset,"frame_count":frames,
+                    "source_key":f"0x{key:08x}"})
+        out["original_entry_index_sha256"]=hashlib.sha256(original).hexdigest()
+        out["full_source_audio_entry_bound_count"]=physical_bounds
+        out["source_audio_entries_with_plausible_metadata"]=playable_audio
+        out["sample_rate_index_histogram"]=rates
+        out["channel_histogram"]=channel_sizes
+        out["invalid_source_audio_byte_ranges"]=bad[:12]
+        out["first_source_payload_flac_samples"]=flac_examples
     return out
 
 def main():
@@ -78,7 +115,10 @@ def main():
         "nonempty_index_banks":sum(x["v15_records_declared"]>0 for x in records),
         "zero_entry_banks":sum(x["v15_records_declared"]==0 for x in records),
         "source_audio_records_declared":sum(x["v15_records_declared"] for x in records),
-        "note":"Index records authenticated; audio payload decode and names not yet verified.",
+        "source_entries_with_bounded_payloads":sum(x.get("full_source_audio_entry_bound_count",0) for x in records),
+        "source_audio_entries_with_plausible_metadata":sum(x.get("source_audio_entries_with_plausible_metadata",0) for x in records),
+        "sampled_first_audio_payload_flac_headers":sum(e["is_fLaC"] for x in records for e in x.get("first_source_payload_flac_samples",[])),
+        "note":"Original source entry byte ranges/FLAC signatures verified; full decoded PCM playback and sound alias ownership remain separate.",
     }
     out={"summary":summary,"banks":records}
     print(json.dumps(out,sort_keys=True),flush=True)
