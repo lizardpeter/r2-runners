@@ -1,0 +1,32 @@
+name: IW5 original FastFile stream and source artifact
+on:
+  push:
+    branches: [main, "work/iw5-stream-source-20261021"]
+    paths:
+      - ".github/workflows/iw5-stream-original.yml"
+      - "scripts/iw5_stream_original.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  decode-original-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install streaming ZIP decoder
+        run: |
+          python3 -m venv "$RUNNER_TEMP/iw5-env"
+          "$RUNNER_TEMP/iw5-env/bin/pip" -q install stream-unzip
+      - name: Stream original 18.4 GB ZIP and capture actual MW3 FastFiles
+        run: |
+          "$RUNNER_TEMP/iw5-env/bin/python" scripts/iw5_stream_original.py "$RUNNER_TEMP/iw5"
+      - name: Export source inventory and actual original bytes for local analysis
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iw5-original-ff-source
+          path: ${{ runner.temp }}/iw5/
+          if-no-files-found: warn
+          retention-days: 2
+          compression-level: 0
