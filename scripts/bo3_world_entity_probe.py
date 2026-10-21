@@ -76,6 +76,23 @@ def main():
             origin_list.append((i,e.get("classname","<absent>"),xyz))
         spawn_labels=[{"entity_index":i,"classname":c,"original_origin":xyz}
            for i,c,xyz in origin_list if "spawn" in c.lower()][:12]
+        source_model_placements=[{
+             "source_entity_index":i,
+             "source_model_identity":e.get("model"),
+             "source_origin":e.get("origin"),
+             "source_angles":e.get("angles"),
+             "source_model_scale":e.get("modelscale"),
+             "source_targetname":e.get("targetname")
+          } for i,e in enumerate(entities)
+          if e.get("classname")=="script_model" and e.get("model")][:15]
+        source_spawn_placements=[{
+             "source_entity_index":i,
+             "classname":e.get("classname"),
+             "source_origin":e.get("origin"),
+             "source_angles":e.get("angles")
+          } for i,e in enumerate(entities)
+          if e.get("classname") in ("info_player_start","mp_tdm_spawn","mp_tdm_spawn_allies_start",
+                                        "mp_tdm_spawn_axis_start")][:12]
         candidates.append({
            "original_map_identity":m.group()[:-1].decode(),
            "physical_source_name_offset":m.start(),
@@ -89,6 +106,8 @@ def main():
            "field_counts":dict(key_counts.most_common(25)),
            "entities_with_valid_origins":len(origin_list),
            "spawn_named_source_entities":spawn_labels,
+           "source_model_placement_samples":source_model_placements,
+           "source_player_spawn_placement_samples":source_spawn_placements,
            "first_entity_field_keys":list(entities[0])[:20] if entities else [],
         })
     out={"zone":name,"original_sha256":sha,"original_map_ents_root_rows":mapents_rows,
