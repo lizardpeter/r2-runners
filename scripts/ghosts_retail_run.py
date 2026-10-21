@@ -91,8 +91,8 @@ def emit_report(data: dict) -> None:
     if summary:
         with open(summary, "a", encoding="utf-8") as out:
             out.write(
-                f"- \`{data['object_key']}\`: **{data['input_bytes']:,} bytes**; "
-                f"SHA-256 \`{data['source_sha256']}\`; "
+                f"- `{data['object_key']}`: **{data['input_bytes']:,} bytes**; "
+                f"SHA-256 `{data['source_sha256']}`; "
                 f"{data.get('xasset_count', 'not checked')} XAssets\n"
             )
 
@@ -142,6 +142,20 @@ def main() -> int:
                             or original["decoded_sha256"] != digest
                             or original["unverified_partial_tail_bytes"] != 0):
                         raise ValueError(f"Authenticated retail-source contract failed for {name}")
+                if name == "mp_alien_town_path.ff":
+                    probe = subprocess.run(
+                        [sys.executable, "scripts/iw6_pathdata_source.py",
+                         str(checkout / "tools" / "fastfile"), str(target)],
+                        capture_output=True, text=True, timeout=180, check=False,
+                    )
+                    if probe.returncode:
+                        raise RuntimeError(
+                            "Original PathData node probe failed: " + probe.stderr[-2000:]
+                        )
+                    node_data = json.loads(probe.stdout.strip().splitlines()[-1])
+                    if node_data["decoded_sha256"] != original["decoded_sha256"]:
+                        raise ValueError("Original PathData nodes came from a different decoded FastFile")
+                    data["original_pathnode_evidence"] = node_data
                 data.update({
                     "authenticated_blocks": original["authenticated_sha256_blocks"],
                     "decoded_bytes": original["decoded_size"],
