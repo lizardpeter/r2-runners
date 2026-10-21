@@ -19,6 +19,7 @@ from mwr_h1_image_streams import analyze_stream_table
 from mwr_h1_gfxworld_probe import GfxWorldCandidateScanner
 from mwr_h1_world_geometry_root import GfxWorldGeometryScanner
 from mwr_h1_world_vertex_probe import WorldVertexRunScanner
+from mwr_h1_world_vertex_verify import verify_source_vertex_array
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -273,6 +274,14 @@ def main()->int:
             if args.full_decode:
                 try:
                     header["whole_zone_decode"]=decode_lz4_zone(local,header,args.analyze_directory,stem if args.probe_gfxworld and name==f"{stem}.ff" else None)
+                    if args.probe_gfxworld and name==f"{stem}.ff":
+                        scanned=header["whole_zone_decode"]
+                        roots=scanned["gfxworld_geometry_source_root_scan"]["candidates"]
+                        if len(roots)==1:
+                            scanned["world_vertex_exact_window_verification"]=verify_source_vertex_array(
+                                local,header,LogicalSignedStream,
+                                scanned["gfxworld_vertex_source_candidate_scan"],
+                                roots[0]["vertex_count"])
                 except Exception as exc:
                     header["whole_zone_decode"]={"status":"failed","reason":str(exc)}
                     print(f"H1 full decode not yet validated for {name}: {exc}",file=sys.stderr,flush=True)
