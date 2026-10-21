@@ -1,0 +1,105 @@
+name: CS2 original material texture source handoff
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cs2-material-source-handoff.yml"
+      - "scripts/cs2_material_source_handoff.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire-exact-source:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Check out isolated source-handoff workspace
+        uses: actions/checkout@v4
+
+      - name: Set up Python for bounded VPK parsing
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Test exact VPK parsing, preload handling, and CRC validation
+        shell: pwsh
+        run: python scripts/cs2_material_source_handoff.py self-test
+
+      - name: Download official SteamRE DepotDownloader
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'cs2-vmat-source'
+          New-Item -ItemType Directory -Force -Path $root | Out-Null
+          $tool = Join-Path $root 'SteamRE'
+          New-Item -ItemType Directory -Force -Path $tool | Out-Null
+          $zip = Join-Path $root 'DepotDownloader.zip'
+          Invoke-WebRequest -Uri 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-windows-x64.zip' -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $tool -Force
+          $exe = Join-Path $tool 'DepotDownloader.exe'
+          if (-not (Test-Path -LiteralPath $exe)) { throw 'Official SteamRE DepotDownloader executable was not found' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_SOURCE_ROOT=$root"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_DEPOTDOWNLOADER_EXE=$exe"
+
+      - name: Download only the original base VPK directory index
+        shell: pwsh
+        run: |
+          $root = $env:CS2_SOURCE_ROOT
+          $filelist = Join-Path $root 'base-index-filelist.txt'
+          'game/csgo/pak01_dir.vpk' | Set-Content -LiteralPath $filelist -Encoding ascii
+          & $env:CS2_DEPOTDOWNLOADER_EXE -app 730 -depot 2347770 -filelist $filelist -dir $root -max-downloads 4
+          if ($LASTEXITCODE -ne 0) { throw 'Anonymous Steam download of pak01_dir.vpk failed' }
+          $index = Join-Path $root 'game/csgo/pak01_dir.vpk'
+          if (-not (Test-Path -LiteralPath $index)) { throw 'Original game/csgo/pak01_dir.vpk was not downloaded' }
+
+      - name: Resolve exact archive segments for missing VMAT texture dependencies
+        shell: pwsh
+        run: |
+          $root = $env:CS2_SOURCE_ROOT
+          $index = Join-Path $root 'game/csgo/pak01_dir.vpk'
+          $segments = Join-Path $root 'texture-segment-filelist.txt'
+          $plan = Join-Path $root 'source-plan.json'
+          python scripts/cs2_material_source_handoff.py plan --vpk-index $index --filelist $segments --report $plan
+          if ($LASTEXITCODE -ne 0) { throw 'Could not resolve exact source texture entries' }
+          $needed = @(Get-Content -LiteralPath $segments | Where-Object { $_.Trim() })
+          if ($needed.Count -gt 0) {
+            Write-Host "Downloading only required original VPK segments: $($needed -join ', ')"
+            & $env:CS2_DEPOTDOWNLOADER_EXE -app 730 -depot 2347770 -filelist $segments -dir $root -max-downloads 4
+            if ($LASTEXITCODE -ne 0) { throw 'Anonymous Steam download of required VPK segments failed' }
+          } else {
+            Write-Host 'All requested texture entries are stored inline in pak01_dir.vpk; no segments required.'
+          }
+
+      - name: Extract and CRC-verify the original compiled VTEX files
+        shell: pwsh
+        run: |
+          $root = $env:CS2_SOURCE_ROOT
+          $index = Join-Path $root 'game/csgo/pak01_dir.vpk'
+          $output = Join-Path $root 'output'
+          $manifest = Join-Path $output 'source_manifest.json'
+          python scripts/cs2_material_source_handoff.py extract --vpk-index $index --source-root $root --output-dir $output --report $manifest
+          if ($LASTEXITCODE -ne 0) { throw 'Original texture extraction or VPK CRC verification failed' }
+
+      - name: Publish exact source texture resources and SHA-256 evidence
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-original-missing-vtex-source
+          path: ${{ runner.temp }}/cs2-vmat-source/output/**
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 1
+
+      - name: Preserve acquisition diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-vmat-source-acquisition-diagnostics
+          path: |
+            ${{ runner.temp }}/cs2-vmat-source/source-plan.json
+            ${{ runner.temp }}/cs2-vmat-source/base-index-filelist.txt
+            ${{ runner.temp }}/cs2-vmat-source/texture-segment-filelist.txt
+          if-no-files-found: warn
+          retention-days: 7
