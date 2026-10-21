@@ -52,6 +52,7 @@ def parse_zlib_zone(path: Path) -> tuple[bytearray, dict]:
     source_size = path.stat().st_size
     decoded = bytearray()
     blocks = []
+    alignment_markers = []
     with path.open("rb") as reader:
         header = reader.read(0x248)
         if len(header) != 0x248 or header[:8] != b"TAff0000":
@@ -73,8 +74,18 @@ def parse_zlib_zone(path: Path) -> tuple[bytearray, dict]:
             if span == 0:
                 status="end_marker"
                 break
-            if stored_pos != pos or not compressed or not plain_len or span < compressed:
+            if stored_pos != pos or not compressed or span < compressed:
                 raise ValueError(f"Bad T7 block {number}: ({compressed},{plain_len},{span},{stored_pos}) at {pos:#x}")
+            if plain_len == 0:
+                # T7's zero-output block announces the next 8 MiB boundary.
+                # This is a source-alignment marker, not missing compression.
+                next_boundary = (pos + 16 + 0x7fffff) & ~0x7fffff
+                if next_boundary <= pos or next_boundary > source_size:
+                    raise ValueError(f"Invalid 8MiB BO3 block alignment marker at {pos:#x}")
+                alignment_markers.append({"source_offset":pos,"next_source_offset":next_boundary,
+                                          "raw_compressed_word":compressed,"raw_span_word":span})
+                pos = next_boundary
+                continue
             if compressed > 128 * 1024 * 1024 or plain_len > 128 * 1024 * 1024:
                 raise ValueError("BO3 block expansion exceeds safety limit")
             if pos + 16 + span > source_size:
@@ -96,6 +107,7 @@ def parse_zlib_zone(path: Path) -> tuple[bytearray, dict]:
         "status":status, "block_count":len(blocks),
         "decoded_bytes":len(decoded), "source_bytes":source_size,
         "first_blocks":blocks[:5], "last_block":blocks[-1] if blocks else None,
+        "alignment_markers":alignment_markers[:16],
     }
 
 def align8(n:int)->int:
