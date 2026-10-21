@@ -37,6 +37,21 @@ def zlib_source(packed:bytes,expected:int):
 
 
 def read_source_payload(data:bytes,kind:int,at:int):
+    if kind==59:
+        # H1 NetConstStrings: ptr name, u32 stringType, u32 sourceType,
+        # u32 entryCount, u32 native padding, ptr stringList = 0x20.
+        if at+32>len(data):raise ValueError("truncated H1 NetConstStrings")
+        ptr,kind_id,source_id,count,pad,names_ptr=struct.unpack_from("<QIIIIQ",data,at)
+        if ptr!=MARKER or pad!=0:
+            raise ValueError("invalid H1 NetConstStrings source name/padding")
+        name,cursor=inline_name(data,at+32)
+        if count or names_ptr:
+            raise ValueError(f"nonempty H1 NetConstStrings list requires indexed-pointer decoding: {name} ({count} entries)")
+        return cursor,{
+            "kind":"NetConstStrings","name":name,
+            "source_type":source_id,"string_type":kind_id,
+            "entry_count":count,
+        }
     if kind==49:
         # Original H1 ScriptFile: name, compressedLen, len, bytecodeLen,
         # native padding, char* source buffer, char* compiled bytecode
@@ -156,7 +171,7 @@ def inspect_sequential_source_files(data:bytes,verified:dict):
     records=[]
     for index in range(count):
         kind=struct.unpack_from("<I",data,start+16*index)[0]
-        if kind not in (48,49):
+        if kind not in (48,49,59):
             addon=inspect_addon_map_ents_prefix(data,cursor) if kind==58 else None
             return {"status":"stopped_at_other_asset_type","decoded_source_files":len(records),
                     "addon_map_ents_preview":addon,
