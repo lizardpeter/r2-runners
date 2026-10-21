@@ -36,6 +36,88 @@ def original_script_strings(zone):
         else:raise ValueError(f"original source script string {i} uses nonfollowing")
     return names,cursor
 
+def verify_original_compressed_payloads(zone:bytes,entries:list[dict]):
+    # T5 original zonecode serialization is:
+    # name,boneIDs,notetracks,deltaPart,dataByte,dataShort,dataInt,
+    # randomShort,randomByte,randomInt,frameIndices.
+    # Only an independently verified NEXT inline XAnimParts source header
+    # certifies a terminal offset. Do not stop at arbitrary FF FF FF FF.
+    verified_source_positions={entry["source_header_offset"] for entry in entries}
+    recovered=0
+    payload_bytes=0
+    refused=Counter()
+    first_bomb=None
+    for entry in entries:
+        h=entry["source_header_offset"]
+        counts=struct.unpack_from("<5H",zone,h+4)
+        randshort=u32(zone,h+40)
+        indexcount=u32(zone,h+44)
+        frames=entry["numframes"]
+        ptrs=entry["source_array_pointers"]
+        start=(h+104+len(entry["name"])+1
+               +2*len(entry["source_script_indices"])
+               +8*len(entry["source_notetrack_events"]))
+        if ptrs[9]==0xffffffff:
+            if start+8>len(zone):raise ValueError("Original XAnimDeltaPart truncated")
+            delta_pair=struct.unpack_from("<II",zone,start)
+            start+=8
+        elif ptrs[9]==0:delta_pair=(0,0)
+        else:
+            refused["unresolved_packed_delta_pointer"]+=1
+            continue
+        if delta_pair!=(0,0):
+            refused["nested_delta_trans_or_quat"]+=1
+            continue
+        stream_start=start
+        sizes=[
+            counts[0],counts[1]*2,counts[2]*4,
+            randshort*2,counts[3],counts[4]*4,
+            indexcount*(1 if frames<256 else 2),
+        ]
+        channels={}
+        for key,pointer,size in zip(
+                ("byte","short","int","randomShort","randomByte","randomInt","indices"),
+                ptrs[1:8],sizes):
+            if pointer==0 and size==0:
+                channels[key]={"source_offset":None,"source_bytes":0,"sha256":None}
+            elif pointer==0xffffffff and size<=64*1024*1024:
+                end=start+size
+                if end>len(zone):raise ValueError("Original T5 channel extends past source FF")
+                payload=zone[start:end]
+                channels[key]={
+                    "source_offset":start,"source_bytes":size,
+                    "sha256":hashlib.sha256(payload).hexdigest(),
+                }
+                start=end
+            else:
+                refused["missing_or_unverified_source_channel_pointer"]+=1
+                break
+        else:
+            if start not in verified_source_positions:
+                refused["terminal_not_verified_original_header"]+=1
+                continue
+            if sum(sizes)!=start-stream_start:
+                raise ValueError("Original channel source-length closure failed")
+            recovered+=1
+            payload_bytes+=sum(sizes)
+            entry["original_raw_compressed_channels"]={
+                "start":stream_start,"end":start,
+                "raw_bytes":sum(sizes),"channels":channels,
+                "delta_children":[0,0],
+                "per_bone_transform_keyframes_decoded":False,
+            }
+            if entry["name"]=="pb_stand_bombplant":
+                first_bomb=entry["original_raw_compressed_channels"]
+    if recovered!=1686 or payload_bytes!=13468886:
+        raise ValueError(f"Original source compressed arrays changed: {recovered} clips, {payload_bytes} bytes, reasons={refused}")
+    if first_bomb is None or first_bomb["start"]!=0x46e2b1 or first_bomb["end"]!=0x471abe:
+        raise ValueError("Original bombplant compressed stream source range does not match retail client")
+    print(f"PASS authentic T5 source compressed data arrays: "
+          f"{recovered} complete XAnim payloads, {payload_bytes:,} raw channel bytes, "
+          f"original named bone/script/notify and six typed raw stream families validated. "
+          f"Not pose-track reconstructed; {len(entries)-recovered} require nested delta or allocator replay.")
+    return recovered,payload_bytes,refused
+
 def verify(path:Path,out:Path):
     original=path.read_bytes()
     zone=source_zone(original)
@@ -135,7 +217,11 @@ def verify(path:Path,out:Path):
         raise ValueError("Original bombplant ScriptString bone names differ")
     if len(test["source_notetrack_events"])!=10 or test["source_notetrack_events"][0]["source_name"]!="sndnt#fly_bomb_buttons_npc" or test["source_notetrack_events"][-1]["source_name"]!="end":
         raise ValueError("Original bombplant XAnim sound/end notetrack IDs differ")
+    decoded_streams,decoded_bytes,stream_limitations=verify_original_compressed_payloads(zone,entries)
     result={
+        "original_source_compressed_streams_decoded":decoded_streams,
+        "original_source_compressed_stream_bytes":decoded_bytes,
+        "original_source_stream_replay_limitations":dict(stream_limitations),
         "original_fastfile_sha256":hashlib.sha256(original).hexdigest(),
         "source_expanded_bytes":len(zone),
         "source_xasset_type4_rows":3355,
