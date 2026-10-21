@@ -33,6 +33,10 @@ class WorldVertexRunScanner:
         if not all(math.isfinite(n) and abs(n)<2_000_000 for n in (x,y,z)):return False
         u,v,lu,lv=struct.unpack_from("<ffff",b,at+20)
         if not all(math.isfinite(n) and abs(n)<100_000 for n in (u,v,lu,lv)):return False
+        packed_normal,packed_tangent=struct.unpack_from("<II",b,at+36)
+        if packed_normal==0 and packed_tangent==0:
+            # All-zero memory is not authenticated world geometry.
+            return False
         return True
     def push(self,raw):
         b=self.carry+raw
