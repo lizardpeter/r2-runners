@@ -68,7 +68,7 @@ def main():
     with TemporaryDirectory(prefix="bo3-material-image-link-") as tmp:
         path=Path(tmp)/NAME
         got,digest,_=download(BASE+NAME,path)
-        if got!=SIZES[NAME]:raise ValueError("BO3 source FF length changed")
+        if got!=SIZES[NAME]:raise ValueError(f"BO3 source FF length changed: got={got!r} expected={SIZES[NAME]!r}")
         data,blocks=parse_zlib_zone(path)
         result=source_links(data,set(keys))
         result.update({"source_file":NAME,"source_sha256":digest,
