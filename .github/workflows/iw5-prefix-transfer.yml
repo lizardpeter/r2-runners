@@ -1,0 +1,26 @@
+name: IW5 original source prefix transfer
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/iw5-prefix-transfer.yml"
+      - "scripts/iw5_prefix_transfer.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-prefix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stream original IW5 source ZIP prefix to temporary runner disk
+        run: python3 scripts/iw5_prefix_transfer.py --output-dir "$RUNNER_TEMP/iw5-prefix"
+      - name: Export original source sample and identity report
+        uses: actions/upload-artifact@v4
+        with:
+          name: iw5-source-prefix-raw
+          path: ${{ runner.temp }}/iw5-prefix/*
+          retention-days: 2
+          compression-level: 0
+          if-no-files-found: error
