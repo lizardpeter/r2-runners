@@ -7,6 +7,7 @@ on:
       - ".github/workflows/iw5-original-source.yml"
       - "scripts/iw5_retail_range.py"
       - "scripts/bo1_full_game_range.py"
+      - "scripts/iw5_r2_access_diag.py"
   workflow_dispatch:
     inputs:
       preset:
@@ -25,6 +26,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Compare bounded public R2 access patterns
+        run: python3 scripts/iw5_r2_access_diag.py
       - name: Inspect original MW3 zip over R2 HTTP ranges
         env:
           IW5_PRESET: ${{ inputs.preset || 'focused' }}
