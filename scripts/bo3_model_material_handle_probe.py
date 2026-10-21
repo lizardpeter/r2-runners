@@ -12,7 +12,7 @@ import hashlib,json,os,struct,sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from r2_download import download
-from bo3_zone_decode import parse_zlib_zone
+from bo3_zone_decode import parse_zlib_zone,parse_directory
 from bo3_model_material_fields import inspect,BASE,NAMES
 from bo3_xmodel_lod_walk import candidates
 ZONE="en_core_common.ff"
@@ -62,6 +62,11 @@ def main():
   if size!=NAMES[ZONE]:raise ValueError("Source BO3 FF length changed")
   z,_=parse_zlib_zone(p)
   models=inspect(z)
+  directory=parse_directory(bytearray(z))
+  base=directory["asset_table"]["table_offset"]
+  row_count=directory["asset_count"]
+  material_headers=[ptr for kind,ptr in (struct.unpack_from("<QQ",z,base+16*i) for i in range(row_count)) if kind==6]
+  material_ref_counts={f"0x{x:016x}":material_headers.count(x) for x in set(material_headers)}
   result=[]
   for i,m in enumerate(models):
    n=m["source_header"]+0x188+len(m["model"])+1
@@ -81,6 +86,8 @@ def main():
      "child":probe(z,n,valid[0],next_model),
    })
   report={"zone":ZONE,"original_sha256":sha,"total_models":len(result),
+          "typed_source_material_xasset_pointers":material_ref_counts,
+          "typed_source_material_xasset_count":len(material_headers),
           "data":result}
   print(json.dumps(report,sort_keys=True),flush=True)
   (root/"bo3_xmodel_material_handles_source_probe.json").write_text(
