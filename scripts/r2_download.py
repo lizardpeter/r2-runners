@@ -28,7 +28,7 @@ def validate_key(key: str) -> str:
     return key
 
 
-def download(url: str, dest: Path, max_bytes: int) -> tuple[int, str, str]:
+def download(url: str, dest: Path) -> tuple[int, str, str]:
     part = dest.with_suffix(".part")
     for attempt in range(3):
         digest = hashlib.sha256()
@@ -40,14 +40,11 @@ def download(url: str, dest: Path, max_bytes: int) -> tuple[int, str, str]:
                 final_host = urlsplit(response.url).hostname
                 if final_host != origin_host:
                     raise ValueError(f"Unexpected redirect host: {final_host}")
-                size_header = response.headers.get("Content-Length")
-                if size_header and int(size_header) > max_bytes:
-                    raise ValueError(f"Object size {size_header} exceeds max {max_bytes}")
+                # Stream the complete response; no application-level size cap.
+                # The caller can verify an expected exact length afterwards.
                 content_type = response.headers.get("Content-Type", "")
                 while chunk := response.read(1024 * 1024):
                     count += len(chunk)
-                    if count > max_bytes:
-                        raise ValueError(f"Downloaded object exceeds limit of {max_bytes} bytes")
                     digest.update(chunk)
                     output.write(chunk)
             os.replace(part, dest)
@@ -66,21 +63,16 @@ def main() -> int:
     parser.add_argument("--key", required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--expected-size", type=int)
-    parser.add_argument("--max-bytes", type=int, default=10 * 1024 * 1024 * 1024,
-                        help="Maximum object size; bounded by runner disk and artifact limits")
     args = parser.parse_args()
 
     key = validate_key(args.key)
     base = urlsplit(args.base_url)
     if base.scheme != "https" or not base.netloc or base.username or base.password or base.path.rstrip("/"):
         parser.error("--base-url must be an HTTPS origin with no path or credentials")
-    if args.max_bytes <= 0:
-        parser.error("Byte limits must be valid")
-
     url = args.base_url.rstrip("/") + "/" + quote(key, safe="/")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     output_file = args.output_dir / "downloaded-object.bin"
-    byte_count, sha256, content_type = download(url, output_file, args.max_bytes)
+    byte_count, sha256, content_type = download(url, output_file)
 
     if args.expected_size is not None and byte_count != args.expected_size:
         raise ValueError(f"Size mismatch: expected {args.expected_size}, downloaded {byte_count}")
