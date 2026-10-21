@@ -16,6 +16,7 @@ from bo3_zone_decode import parse_zlib_zone,parse_directory
 from bo3_model_material_fields import inspect,BASE,NAMES
 from bo3_xmodel_lod_walk import candidates
 from bo3_material_binding_probe import analyze as source_material_tables
+from bo3_first_mesh_walk import valid_mesh,decode_authentic_rigid_geometry
 ZONE="en_core_common.ff"
 KNOWN_POINTERS={0,0xffffffffffffffff,0xfffffffffffffffe}
 def kind(n):
@@ -165,11 +166,35 @@ def main():
       "per_surface_source_handles":[f"0x{h:016x}" for h in handles],
       "resolved_original_material_names":typed,
      })
+   # The first LOD's +0x70 mesh owner is inline. Search only the
+   # owning XModel's physical child region, demand the exact original
+   # XModelMesh name with _lod0, and verify surface cardinality. This
+   # reports possible nested mesh bodies; only actual geometry bytes
+   # that pass source bounds can be called decoded.
+   nested_meshes=[]
+   begin=valid[0]["offset"]+0x78
+   end=min(next_model,begin+65536)
+   at=begin
+   while at<end:
+    p=z.find(b"\\xff"*8,at,end)
+    if p<0:break
+    at=p+1
+    info=valid_mesh(z,p)
+    if info is None:continue
+    if info["name"]!=m["model"]+"_lod0":continue
+    nested_meshes.append({
+      "original_mesh_header_offset":p,
+      "mesh_name":info["name"],
+      "surface_count":info["surface_count"],
+      "matches_model_first_lod_surface_count":info["surface_count"]==valid[0]["count"],
+      "surface_pointer":f"0x{info['source_surface_pointer']:016x}",
+    })
    result.append({
      "model":m["model"],
      "source_model_header":m["source_header"],
      "first_lod_surface_count":valid[0]["count"],
      "material_owner_ptr":m["material_handle_source_pointer"],
+     "nested_first_lod_mesh_candidates":nested_meshes,
      "source_model_material_array_candidates":material_pointer_proofs,
      "first_source_owner_candidate_handles":first_raw_handles,
      "complete_first_lod_material_handle_arrays":complete_owners,
@@ -181,6 +206,10 @@ def main():
           "surface_tokens_in_unique_complete_owners":sum(
              len(m["complete_first_lod_material_handle_arrays"][0]["per_surface_source_handles"])
              for m in result if m["unique_complete_first_lod_handle_owner"]),
+          "models_with_one_named_local_first_lod_mesh":sum(
+              len(m["nested_first_lod_mesh_candidates"])==1 and
+              m["nested_first_lod_mesh_candidates"][0]["matches_model_first_lod_surface_count"]
+              for m in result),
           "source_dependency_count":dependency_count,
           "logical_block5_asset_table_start":logical_asset_table_start,
           "source_typed_material_row_indices":type6_rows,
