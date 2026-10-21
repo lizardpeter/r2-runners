@@ -1,0 +1,89 @@
+name: Fortnite 5.41 exact SkyDome phase source closure
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/fortnite541-sky-phases.yml"]
+
+permissions:
+  contents: read
+jobs:
+  retail-sky-phases:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/r2-runners
+          path: workbench
+          persist-credentials: false
+      - name: Recover all four true original retail SkyDome MIC pairs, preserving exact bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/athena-sky-phase-original"
+          report="$RUNNER_TEMP/athena-sky-phase-reports"
+          mkdir -p "$root" "$report"
+          python3 - <<'PY'
+          import sys,json
+          from pathlib import Path
+          sys.path.insert(0,"workbench/scripts")
+          from fortnite541_dependency_handoff import authenticated_archive_index,fetch_verified,PREFIX
+          base,ranged,index,indexes=authenticated_archive_index()
+          root=Path("/tmp") # artifact paths supplied below via environment
+          import os
+          root=Path(os.environ["RUNNER_TEMP"])/"athena-sky-phase-original"
+          report=Path(os.environ["RUNNER_TEMP"])/"athena-sky-phase-reports"
+          stems=["morn","day","eve","night"]
+          targets=[
+            "packages/fortress_sky/skydome/materialinstances/skydomebasic01/"+stem+"_m_skydome_inst_basic01"
+            for stem in stems
+          ]
+          sources=[]
+          for p in targets:
+              for ext in (".uasset",".uexp"):
+                  key=p+ext
+                  matches=index.get(key,[])
+                  distinct={(x[2][2],x[2][4]) for x in matches}
+                  if not matches or len(distinct)!=1:
+                      raise RuntimeError(f"sky phase source not uniquely authenticated: {key}; found {len(matches)}")
+                  source=sorted(matches,key=lambda x:(x[0],x[1]))[0]
+                  # Filename casing comes from authenticated PAK source key.
+                  stored=source[1].replace("\\","/")
+                  at=stored.lower().find("fortnitegame/content/")
+                  if at>=0:
+                      relative=stored[at:]
+                  elif stored.lower().startswith("content/"):
+                      relative="FortniteGame/"+stored
+                  else:
+                      relative=PREFIX+stored.lstrip("/")
+                  target=root/relative
+                  rec=fetch_verified(source,target,base,ranged)
+                  rec["path"]=relative
+                  sources.append(rec)
+                  print("ORIGINAL_541_SKY_PHASE",relative,rec["bytes"],rec["sha1"],flush=True)
+          (report/"source-provenance.json").write_text(json.dumps({"source":sources,"indexes":indexes},indent=2)+"\n")
+          print("ORIGINAL_541_FOUR_PHASE_SKY_COMPLETE",len(sources),sum(x["bytes"] for x in sources),flush=True)
+          PY
+      - name: Upload all exact original four-phase sky cooked source files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-sky-phases-original-byte-files-${{ github.run_id }}
+          path: ${{ runner.temp }}/athena-sky-phase-original/
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Upload original source cryptographic provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-sky-phases-source-checks-${{ github.run_id }}
+          path: ${{ runner.temp }}/athena-sky-phase-reports/
+          if-no-files-found: warn
+          retention-days: 90
