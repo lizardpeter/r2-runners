@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/bo1-full-game.yml"
       - "scripts/bo1_full_game_range.py"
+      - "scripts/test_bo1_full_game_range.py"
       - "scripts/bo1_probe.py"
   workflow_dispatch:
     inputs:
@@ -25,6 +26,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Validate seekable original ZIP64 range-reader boundaries
+        run: python3 -m unittest discover -s scripts -p "test_bo1_full_game_range.py" -v
       - name: Read original BO1 ZIP64 central directory over verified R2 byte ranges
         env:
           BO1_PRESET: ${{ inputs.preset || 'both' }}
