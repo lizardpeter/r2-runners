@@ -1,0 +1,50 @@
+name: Public R2 binary download test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/r2-download.yml"
+      - "scripts/r2_download.py"
+  workflow_dispatch:
+    inputs:
+      object_key:
+        description: "Object key within the public houseofkublai R2 bucket"
+        required: true
+        type: string
+        default: "Downloads/HOK_Gamerpics/512_HK_Holder.png"
+
+permissions:
+  contents: read
+
+jobs:
+  download-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out runner workbench
+        uses: actions/checkout@v4
+
+      - name: Fetch and validate actual R2 binary
+        shell: bash
+        env:
+          R2_OBJECT_KEY: ${{ inputs.object_key || 'Downloads/HOK_Gamerpics/512_HK_Holder.png' }}
+        run: |
+          expected=()
+          if [[ "$R2_OBJECT_KEY" == "Downloads/HOK_Gamerpics/512_HK_Holder.png" ]]; then
+            expected=(--expected-size 164176)
+          fi
+          python3 scripts/r2_download.py \
+            --base-url https://r2.houseofkublai.com \
+            --key "$R2_OBJECT_KEY" \
+            --output-dir "$RUNNER_TEMP/r2" \
+            "${expected[@]}"
+
+      - name: Publish verification and sample bytes
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: r2-verified-download
+          path: ${{ runner.temp }}/r2/artifact/
+          if-no-files-found: error
+          retention-days: 7
