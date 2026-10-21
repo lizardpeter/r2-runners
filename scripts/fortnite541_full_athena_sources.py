@@ -21,6 +21,12 @@ from fortnite541_dependency_handoff import (
 )
 
 WORLD_ROOTS={
+    # All ACTUAL original UWorlds immediately under Athena/Maps.
+    # These include Athena_Terrain, Athena_POI_Foundations and
+    # Athena_Streaming_Grid, which the in-game source importer needs to
+    # place authentic detailed POIs on the correct island positions.
+    # A family filter that includes only /POI/ or /Landscape/ omits these.
+    "root":("athena/maps/",),
     "poi":("athena/maps/poi/",),
     "streaming":("athena/maps/streaming/",),
     "buildings":("athena/maps/buildings/",),
@@ -56,6 +62,10 @@ def package_family(relative:str,family:str)->bool:
     if family=="shaders":
         return (lower.endswith(SHADER_FILES) and
                 ("shader" in lower or "pcd3d_sm5" in lower))
+    if family == "root":
+        return (lower.startswith("athena/maps/") and
+                lower.endswith(".umap") and
+                "/" not in lower[len("athena/maps/"):])
     if family in WORLD_ROOTS:
         return lower.endswith(".umap") and any(
             lower.startswith(root) for root in WORLD_ROOTS[family]
@@ -132,6 +142,11 @@ def test_logic():
     found,report=build_plan(idx,"poi",0,1)
     assert len(found)==2 and not report["unresolved"]
     assert package_family(base+".umap","poi")
+    assert package_family("Athena/Maps/Athena_POI_Foundations.umap","root")
+    assert package_family("Athena/Maps/Athena_Terrain.umap","root")
+    assert package_family("Athena/Maps/Athena_Streaming_Grid.umap","root")
+    assert not package_family("Athena/Maps/POI/City.umap","root")
+    assert not package_family("Athena/Maps/Landscape/Tile.umap","root")
     assert not package_family(base+".uexp","poi")
     assert not package_family("athena/maps/poi/Other.uasset","poi")
     assert original_relative("../../../FortniteGame/Content/Athena/Maps/POI/A.umap")=="Athena/Maps/POI/A.umap"
