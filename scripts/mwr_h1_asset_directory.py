@@ -108,6 +108,57 @@ def analyze_script_string_run(data: bytes, script_count: int) -> dict:
     return {"next_word_after_pointer_vector":f"{expected:016x}",
             "candidate_string_runs":runs}
 
+
+
+def decode_source_script_slots(data: bytes, count: int) -> dict:
+    """Recover H1 XAssetList's authored script indices from inline strings.
+
+    The first 8 bytes after the pointer array are the source inline marker,
+    followed by N null-terminated strings in slot order. Preserve empty
+    strings distinctly from null slots.
+    """
+    if not 0 <= count <= 100000:
+        raise ValueError("invalid H1 script count")
+    if count == 0:
+        return {"status":"no_script_strings","slots":0}
+    pointer_end=104+count*8
+    if len(data)<pointer_end+8:
+        raise ValueError("truncated H1 script string pointer vector")
+    pointers=[u64(data,104+i*8) for i in range(count)]
+    if u64(data,pointer_end)!=MARKER:
+        raise ValueError("missing H1 inline script-string blob marker")
+    cursor=pointer_end+8
+    names=[]
+    for i,pointer in enumerate(pointers):
+        if pointer==0:
+            names.append(None)
+            continue
+        if pointer!=MARKER:
+            raise ValueError(f"unrecognized H1 script pointer tag at index {i}: {pointer:#x}")
+        terminator=data.find(b"\0",cursor)
+        if terminator<0:
+            raise ValueError(f"unterminated H1 inline script string at index {i}")
+        if terminator-cursor>4096:
+            raise ValueError(f"unreasonable inline script string length at index {i}")
+        value=data[cursor:terminator].decode("utf-8")
+        names.append(value)
+        cursor=terminator+1
+    import hashlib
+    # Encoded name+index boundary is retained, so null versus empty remain
+    # distinguishable under the digest.
+    serialized=b"".join(struct.pack("<I",i)+(b"\xff" if name is None
+                else name.encode("utf-8")+b"\0") for i,name in enumerate(names))
+    return {
+        "status":"full_script_string_table_recovered",
+        "slots":len(names),
+        "inline_strings":sum(v is not None for v in names),
+        "null_slots":sum(v is None for v in names),
+        "empty_inline_strings":sum(v=="" for v in names if v is not None),
+        "inline_blob_end_offset":cursor,
+        "indexed_names_sha256":hashlib.sha256(serialized).hexdigest(),
+        "first_indexed_names":[{"index":i,"name":v} for i,v in list(enumerate(names))[:15]],
+    }
+
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
@@ -127,6 +178,7 @@ def inspect_prefix(data: bytes) -> dict:
                      "tagged" if (p>>48)==0xFDFD else "other" for p in ptrs)
         result["script_pointer_vector_at_104_hypothesis"]=dict(hist)
         result["inline_script_string_run_analysis"]=analyze_script_string_run(data,script_count)
+        result["decoded_indexed_script_strings"]=decode_source_script_slots(data,script_count)
         result["sample_words_following_pointer_vector"]=[
             f"{u64(data,p):016x}" for p in range(104+script_count*8,
                                                   min(len(data)-8,104+script_count*8+64),8)]
