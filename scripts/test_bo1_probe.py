@@ -61,6 +61,27 @@ class T5SourceProbeTests(unittest.TestCase):
         self.assertIsNone(report["iwi_members"])
         self.assertTrue(report["source_bytes_preserved"])
 
+    def test_original_iwd2_exact_stride_and_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "iw_01.iwd"
+            archive.write_bytes(
+                b"IWD2" + struct.pack("<II", 2, 2) +
+                struct.pack("<III", 17, 31, 42) +
+                struct.pack("<III", 18, 43, 55)
+            )
+            report = bo1_probe.probe_iwd(archive)
+        self.assertEqual(report["container_status"], "original_t5_iwd2_record_table")
+        self.assertEqual(report["record_count"], 2)
+        self.assertEqual(report["record_stride_bytes"], 12)
+        self.assertFalse(report["raw_field_semantics_verified"])
+
+    def test_original_iwd2_rejects_invalid_record_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            archive = Path(tmp) / "iw_02.iwd"
+            archive.write_bytes(b"IWD2" + struct.pack("<II", 2, 3) + bytes(24))
+            with self.assertRaises(ValueError):
+                bo1_probe.probe_iwd(archive)
+
     def test_selects_only_source_manifest_paths(self):
         manifest = {"files": [
             {"path": "zone/Common/mp_nuked.ff"},
