@@ -1,0 +1,92 @@
+name: Fortnite 5.41 full Athena POI original mesh and material closure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fortnite541-all-poi-closure.yml"
+      - "scripts/fortnite541_all_poi_closure.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-all-poi-dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    steps:
+      - name: Checkout public PAK v7 original source reader
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          persist-credentials: false
+      - name: Checkout isolated R2 original binary handoff
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/r2-runners
+          path: r2-workbench
+          persist-credentials: false
+      - name: Recover exact original Athena roots, all POI UWorlds, all nested buildings
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/fortnite541-complete-poi-originals"
+          report="$RUNNER_TEMP/fortnite541-complete-poi-originals-report"
+          mkdir -p "$root" "$report"
+          python3 r2-workbench/scripts/fortnite541_all_poi_closure.py --self-test
+          for family in root poi buildings; do
+            python3 r2-workbench/scripts/fortnite541_full_athena_sources.py \
+              --family "$family" --shards 1 --shard 0 \
+              --destination "$root" --reports "$report" \
+              2>&1 | tee "$report/$family-source-acquisition.log"
+          done
+      - name: Recover authentic all-POI Blueprint to mesh to material to texture imports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 r2-workbench/scripts/fortnite541_all_poi_closure.py \
+            --source-root "$RUNNER_TEMP/fortnite541-complete-poi-originals" \
+            --reports "$RUNNER_TEMP/fortnite541-complete-poi-originals-report" \
+            --rounds 4 \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-complete-poi-originals-report/all-original-POI-imports.log"
+      - name: Inventory source file bytes even if downstream decode fails
+        if: always()
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          root=Path(os.environ["RUNNER_TEMP"])/"fortnite541-complete-poi-originals"
+          reports=Path(os.environ["RUNNER_TEMP"])/"fortnite541-complete-poi-originals-report"
+          reports.mkdir(parents=True,exist_ok=True)
+          files=[]
+          for path in sorted(root.rglob("*")) if root.exists() else []:
+              if not path.is_file():continue
+              h=hashlib.sha256()
+              with path.open("rb") as f:
+                  for block in iter(lambda:f.read(1024*1024),b""):h.update(block)
+              files.append({"path":path.relative_to(root).as_posix(),"bytes":path.stat().st_size,
+                            "sha256":h.hexdigest()})
+          (reports/"original-file-inventory.json").write_text(
+              json.dumps({"verified_original_files":files},indent=2)+"\n")
+          print("FORTNITE541_ALL_POI_EXACT_FILES",len(files),sum(f["bytes"] for f in files),flush=True)
+          PY
+      - name: Deliver actual original Athena POI world and all decoded dependent binary source files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-complete-poi-original-files-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-complete-poi-originals/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+      - name: Deliver original source dependency graphs and authenticated checksums
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-complete-poi-dependency-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-complete-poi-originals-report/
+          if-no-files-found: warn
+          retention-days: 90
