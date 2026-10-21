@@ -45,13 +45,15 @@ def inspect_bank(name):
     if stride!=0x24 or entries>2_000_000:
         raise ValueError(f"Unsupported original SAB record stride or count {name}")
     span=entries*stride
-    if table<608 or table+span>SIZES[name] or (entries>0 and table+span>name_table):
+    if table<608 or table+span>SIZES[name] :
         raise ValueError(f"Original SAB table bounds fail {name}: entries={entries}, stride={stride}, table={table}, end={table+span}, name_offset={name_table}, size={SIZES[name]}")
     out={
       "bank":name,"file_bytes":SIZES[name],"v15_records_declared":entries,
       "record_bytes":stride,"entry_table_offset":table,
       "entry_table_end":table+span,"names_table_offset":name_table,
       "table_in_original_source_bounds":True,
+      "name_table_overlap_bytes":max(0,table+span-name_table) if name_table else 0,
+      "name_table_may_not_follow_index":table+span>name_table if name_table else False,
       "sampled_records":[],
     }
     if entries:
