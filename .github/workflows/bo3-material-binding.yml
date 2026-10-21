@@ -1,0 +1,32 @@
+name: BO3 original material texture binding proof
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-material-binding.yml"
+      - "scripts/bo3_material_binding_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  material-ownership:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find exact T7 MaterialImage binding arrays and original semantic fields
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-mat
+          BO3_MATERIAL_PRESET: en_core_common.ff
+        run: python3 scripts/bo3_material_binding_probe.py
+      - name: Store provenance without source material or pixel bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-material-binding-provenance
+          path: ${{ runner.temp }}/bo3-mat/*.json
+          retention-days: 7
+          if-no-files-found: warn
