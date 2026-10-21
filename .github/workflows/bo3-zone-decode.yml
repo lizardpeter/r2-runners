@@ -1,0 +1,39 @@
+name: BO3 original decoded XAsset survey
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-zone-decode.yml"
+      - "scripts/bo3_zone_decode.py"
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Authentic BO3 FastFiles to decode"
+        required: true
+        type: choice
+        options: [small, ui, all]
+        default: small
+
+permissions:
+  contents: read
+
+jobs:
+  source-archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode original BO3 compressed zone and survey asset table
+        env:
+          BO3_ZONE_PRESET: ${{ inputs.preset || 'small' }}
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-source
+        run: python3 scripts/bo3_zone_decode.py
+      - name: Upload metadata only, never game source bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-asset-directory-evidence
+          path: ${{ runner.temp }}/bo3-source/*.json
+          retention-days: 7
+          if-no-files-found: warn
