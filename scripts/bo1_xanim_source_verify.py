@@ -118,6 +118,52 @@ def verify_original_compressed_payloads(zone:bytes,entries:list[dict]):
           f"Not pose-track reconstructed; {len(entries)-recovered} require nested delta or allocator replay.")
     return recovered,payload_bytes,refused
 
+def verify_original_static_delta_translations(zone:bytes,entries:list[dict]):
+    # T5 source XAnimDeltaPart: (u32 trans,u32 quat) pointers.
+    # Original XAnimPartTrans size==0 has source-authored float[3] frame0.
+    recovered=[]
+    for entry in entries:
+        pointers=entry["source_array_pointers"]
+        if pointers[9]!=0xffffffff:continue
+        offset=(entry["source_header_offset"]+104+len(entry["name"])+1
+                +len(entry["source_script_indices"])*2
+                +len(entry["source_notetrack_events"])*8)
+        trans,quat=struct.unpack_from("<II",zone,offset)
+        if trans!=0xffffffff:continue
+        trans_at=offset+8
+        size=struct.unpack_from("<H",zone,trans_at)[0]
+        if size:continue
+        small=zone[trans_at+2]
+        if small not in (0,1):
+            raise ValueError(f"Invalid source delta smallTrans for {entry['name']}")
+        xyz=list(struct.unpack_from("<3f",zone,trans_at+4))
+        if not all(math.isfinite(v) and abs(v)<100000 for v in xyz):
+            raise ValueError(f"Original {entry['name']} nonfinite/out of source bounds delta frame0")
+        recovered.append({
+            "name":entry["name"],
+            "source_xanim_offset":entry["source_header_offset"],
+            "source_delta_at":offset,
+            "source_trans_struct_at":trans_at,
+            "constant_root_translation_xyz":xyz,
+            "original_delta_quat_pointer":quat,
+            "fully_decoded_animated_root_transform":False,
+        })
+    if len(recovered)!=52:raise ValueError(
+        f"Original static root delta source layout changed: {len(recovered)} != 52"
+    )
+    known=next(x for x in recovered if
+        x["name"]=="pb_standmg42gunner_aim_45right_15up")
+    if known["source_trans_struct_at"]!=0xdf3d0f or any(
+        abs(a-b)>0.0001 for a,b in zip(
+            known["constant_root_translation_xyz"],
+            (-14.1801138,2.6242592,-55.41215))
+    ):
+        raise ValueError("Original MG42 aim source root motion vec3 changed")
+    print("PASS 52 exact original XAnimPartTrans size=0 frame0 root vectors "
+          "validated against authentic source float bytes (nested animated "
+          "delta translations and quaternions remain unresolved).")
+    return recovered
+
 def verify(path:Path,out:Path):
     original=path.read_bytes()
     zone=source_zone(original)
@@ -218,7 +264,10 @@ def verify(path:Path,out:Path):
     if len(test["source_notetrack_events"])!=10 or test["source_notetrack_events"][0]["source_name"]!="sndnt#fly_bomb_buttons_npc" or test["source_notetrack_events"][-1]["source_name"]!="end":
         raise ValueError("Original bombplant XAnim sound/end notetrack IDs differ")
     decoded_streams,decoded_bytes,stream_limitations=verify_original_compressed_payloads(zone,entries)
+    static_root_deltas=verify_original_static_delta_translations(zone,entries)
     result={
+        "original_constant_root_translations":static_root_deltas,
+        "original_static_root_vector_count":len(static_root_deltas),
         "original_source_compressed_streams_decoded":decoded_streams,
         "original_source_compressed_stream_bytes":decoded_bytes,
         "original_source_stream_replay_limitations":dict(stream_limitations),
