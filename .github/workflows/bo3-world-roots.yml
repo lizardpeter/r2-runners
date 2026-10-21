@@ -1,0 +1,35 @@
+name: BO3 original T7 world-root and map admission proof
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_world_root_probe.py
+      - .github/workflows/bo3-world-roots.yml
+  workflow_dispatch:
+    inputs:
+      zones:
+        description: Comma-separated original core zone filenames from authenticated source manifest
+        type: string
+        default: core_frontend.ff
+permissions:
+  contents: read
+jobs:
+  original-world-roots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode original T7 source GfxWorld/ClipMap/MapEnts directory roots
+        env:
+          BO3_WORLD_ZONES: ${{ inputs.zones || 'core_frontend.ff' }}
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-world-proof
+          BO3_MAX_DECODED: '1073741824'
+        run: python3 scripts/bo3_world_root_probe.py
+      - name: Preserve source-index evidence without original world bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-t7-world-root-evidence
+          path: ${{ runner.temp }}/bo3-world-proof/*.json
+          retention-days: 7
+          if-no-files-found: warn
