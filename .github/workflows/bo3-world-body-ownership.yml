@@ -1,0 +1,30 @@
+name: BO3 original world body ownership evidence
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_world_name_body_probe.py
+      - .github/workflows/bo3-world-body-ownership.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-world-body:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original BO3 source world-name pointer neighborhoods
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-world-ownership
+          BO3_WORLD_ZONE: core_frontend.ff
+          BO3_MAX_DECODED: '1073741824'
+        run: python3 scripts/bo3_world_name_body_probe.py
+      - name: Keep only bounded metadata evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-world-body-name-ownership-evidence
+          path: ${{ runner.temp }}/bo3-world-ownership/*.json
+          if-no-files-found: warn
+          retention-days: 7
