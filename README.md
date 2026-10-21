@@ -211,3 +211,36 @@ not replacements for original game assets. Original generated/composite
 image names are distinct from literal IWD images and require engine image
 composition / zone loader replay. The remaining packed image aliases also
 require further T5 virtual allocation reconstruction.
+
+
+## BO1 complete original game content and weapon relationships
+
+The [full original client 43-class XAsset workflow](.github/workflows/bo1-complete-xasset-catalog.yml)
+**passed** [run #39680290853](https://github.com/lizardpeter/r2-runners/actions/runs/39680290853).
+It downloaded the exact original 11.16GB client ZIP and inspected **all 158
+original FastFiles**, including MP, SP, Zombies and language-specific zones.
+Every original XAsset table was structurally decoded: **100,275 source
+XAsset records**, **zero unresolved zones**. Crucially, all **158 byte-exact
+original FF files** were also published in **seven transferable binary
+artifacts**, not substituted by JSON. The 43 original T5 type IDs are
+retained with exact zone, ordinal, source pointer and table offset. Type
+counts are zone-scoped records, not distinct finished in-game assets.
+
+The [authentic original weapon-source workflow](.github/workflows/bo1-original-weapons.yml)
+**passed** [run #39681313463](https://github.com/lizardpeter/r2-runners/actions/runs/39681313463).
+It fetched the complete genuine `main/iw_00.iwd` archive (rather than
+parsing a filename list), verified its SHA256, decoded **1,160 WEAPONFILE**
+plus **5 FLAMETABLEFILE** entries including the two CP1252 files, and
+validated all **751 original parentWeaponName** references (including 14
+distinct authored killstreak parent groups). The text itself includes
+3,209 model, 20,351 animation, 12,012 sound, 5,173 UI icon, 3,743 FX
+and 194 alternate-weapon named source reference fields. These are original
+reference *occurrences*, not unique decoded runtime resources.
+
+The `Rust-test` BO1 importer has a corresponding generic
+`full_game_catalog`, `full_game_targets` and `weapon_source` API.
+Attachments, camos, calling cards and killstreaks are not standalone T5
+XAsset types, so their actual contents must be reconstructed from weapon,
+table, model, image, material and UI dependencies. No original resource is
+marked playable simply because its source XAsset row or reference was
+indexed. Rust-test full cargo and in-game playability still need validation.
