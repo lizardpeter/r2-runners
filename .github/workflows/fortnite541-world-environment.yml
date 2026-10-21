@@ -1,0 +1,119 @@
+name: Fortnite 5.41 full Athena world/environment source discovery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fortnite541-world-environment.yml"
+      - "scripts/fortnite541_full_athena_sources.py"
+      - "scripts/fortnite541_world_actor_census.py"
+  workflow_dispatch:
+    inputs:
+      family:
+        type: choice
+        description: "Retail source family; all runs every family"
+        required: true
+        default: all
+        options: [all, poi, streaming, buildings, background, vegetation, atmosphere, terrain]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fortnite541-world-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  original-world-environment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 110
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [poi, streaming, buildings, background, vegetation, atmosphere, terrain]
+        shard: [0, 1]
+    if: github.event_name == 'push' || inputs.family == 'all' || inputs.family == matrix.family
+    steps:
+      - name: Checkout public retail PAK authenticator
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          persist-credentials: false
+      - name: Checkout isolated source recovery workbench
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/r2-runners
+          path: r2-workbench
+          persist-credentials: false
+      - name: Download complete authentic shard of original Athena world/environment packages
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/fortnite541-world-$FAMILY-$SHARD"
+          report="$RUNNER_TEMP/fortnite541-world-$FAMILY-$SHARD-report"
+          mkdir -p "$root" "$report"
+          python3 r2-workbench/scripts/fortnite541_full_athena_sources.py \
+            --family "$FAMILY" --shard "$SHARD" --shards 2 \
+            --destination "$root" --reports "$report" \
+            2>&1 | tee "$report/authenticated-source-download.log"
+      - name: Decode exact actor names, authored lights, vegetation and atmosphere classes from UWorlds
+        if: matrix.family == 'poi' || matrix.family == 'streaming' || matrix.family == 'buildings' || matrix.family == 'background'
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/fortnite541-world-$FAMILY-$SHARD"
+          report="$RUNNER_TEMP/fortnite541-world-$FAMILY-$SHARD-report"
+          python3 r2-workbench/scripts/fortnite541_world_actor_census.py \
+            --root "$root" --reports "$report" \
+            2>&1 | tee "$report/world-actor-census.log"
+      - name: Generate complete original-byte inventory (also on errors)
+        if: always()
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          SHARD: ${{ matrix.shard }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib,json,os
+          family,shard=os.environ["FAMILY"],os.environ["SHARD"]
+          root=Path(os.environ["RUNNER_TEMP"])/f"fortnite541-world-{family}-{shard}"
+          report=Path(os.environ["RUNNER_TEMP"])/f"fortnite541-world-{family}-{shard}-report"
+          report.mkdir(parents=True,exist_ok=True)
+          census=[]
+          for p in sorted(root.rglob("*")) if root.exists() else []:
+              if not p.is_file():continue
+              h=hashlib.sha256()
+              with p.open("rb") as f:
+                  for block in iter(lambda:f.read(1024*1024),b""):h.update(block)
+              census.append({"source":p.relative_to(root).as_posix(),
+                             "bytes":p.stat().st_size,"sha256":h.hexdigest()})
+          (report/"exact-original-files.json").write_text(
+              json.dumps({"original_source_files":census},indent=2)+"\n")
+          print("ATHENA_COMPLETE_SHARD_BYTES",family,shard,
+                len(census),sum(x["bytes"] for x in census),flush=True)
+          PY
+      - name: Preserve all verified original asset bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-${{ matrix.family }}-shard${{ matrix.shard }}-exact-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-world-${{ matrix.family }}-${{ matrix.shard }}/
+          if-no-files-found: warn
+          retention-days: 90
+          compression-level: 0
+      - name: Preserve actor-name/light/fog/vegetation census plus SHA diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-${{ matrix.family }}-shard${{ matrix.shard }}-source-report-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-world-${{ matrix.family }}-${{ matrix.shard }}-report/
+          if-no-files-found: warn
+          retention-days: 90
