@@ -138,6 +138,31 @@ def probe_iwd(path: Path) -> dict:
     # them as IWI containers or claim to have decoded textures from them.
     with path.open("rb") as stream:
         prefix = stream.read(32)
+    if prefix[:4] == b"IWD2":
+        declared_first, declared_second = struct.unpack_from("<II", prefix, 4)
+        size = path.stat().st_size
+        if declared_first != declared_second:
+            raise ValueError("Original T5 IWD2 duplicate record-count words disagree")
+        if declared_first > 2_000_000 or size != 12 * (declared_first + 1):
+            raise ValueError("Original T5 IWD2 record table length does not close")
+        records = []
+        with path.open("rb") as stream:
+            stream.seek(12)
+            for _ in range(declared_first):
+                entry = stream.read(12)
+                if len(entry) != 12:
+                    raise ValueError("T5 IWD2 original 12-byte record truncated")
+                records.append(struct.unpack("<III", entry))
+        return {
+            "container_status": "original_t5_iwd2_record_table",
+            "record_count": declared_first,
+            "record_stride_bytes": 12,
+            "record_samples_hex": [[f"{word:08x}" for word in row]
+                                   for row in records[:6]],
+            "distinct_first_word_count": len(set(row[0] for row in records)),
+            "raw_field_semantics_verified": False,
+            "source_bytes_preserved": True,
+        }
     if not zipfile.is_zipfile(path):
         return {"container_status": "unrecognized_not_zip",
                 "signature_hex": prefix.hex(),
