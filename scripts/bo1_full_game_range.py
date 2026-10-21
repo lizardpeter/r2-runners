@@ -19,8 +19,9 @@ from urllib.request import Request, urlopen
 from urllib.parse import quote
 
 from bo1_probe import probe_ff, probe_iwd
+from r2_download import download
 
-R2_BASE = "https://r2.houseofkublai.com/"
+R2_BASES = ("https://r2.houseofkublai.com/", "https://r2.xeniea.com/")
 BO1_ZIP_KEY = "downloads/games/pluto_t5_full_game.zip"
 EXPECTED_SIZE = 11_161_080_622
 BLOCK_SIZE = 2 * 1024 * 1024
@@ -63,7 +64,11 @@ class HttpRangeObject(io.RawIOBase):
         })
         with urlopen(request, timeout=90) as response:
             if response.status != 206:
-                raise RuntimeError("R2 server did not honor HTTP Range (must be 206)")
+                raise RuntimeError(
+                    f"R2 server did not honor Range: HTTP {response.status}, "
+                    f"Content-Range={response.headers.get('Content-Range')}, "
+                    f"Content-Length={response.headers.get('Content-Length')}"
+                )
             returned = response.headers.get("Content-Range", "")
             if returned != f"bytes {start}-{end}/{self.size}":
                 raise RuntimeError(f"Unexpected R2 Content-Range: {returned}")
@@ -152,12 +157,42 @@ def run(preset: str, output_dir: Path) -> dict:
     output_dir.mkdir(parents=True, exist_ok=True)
     reports = output_dir / "report"
     reports.mkdir(exist_ok=True)
-    url = R2_BASE + quote(BO1_ZIP_KEY, safe="/")
     report = {"source_r2_key": BO1_ZIP_KEY, "source_zip_expected_bytes": EXPECTED_SIZE,
               "preset": preset, "member_report": [], "complete": False}
     path = reports / "bo1-full-game-range-report.json"
     try:
-        with HttpRangeObject(url, EXPECTED_SIZE) as source:
+        failures = []
+        source = None
+        for base in R2_BASES:
+            try:
+                source = HttpRangeObject(base + quote(BO1_ZIP_KEY, safe="/"), EXPECTED_SIZE)
+                report["source_mode"] = "bounded_http_ranges"
+                report["source_host"] = base
+                break
+            except Exception as error:
+                failures.append(f"{base}: {error}")
+        report["range_probe_results"] = failures
+        if source is None:
+            # GitHub runners provide temporary storage, not a repo checkout.
+            # Never attempt an 11 GB GET if there is insufficient scratch disk.
+            available = shutil.disk_usage(output_dir).free
+            required = EXPECTED_SIZE + MAX_EXTRACT + 768 * 1024 * 1024
+            if available < required:
+                raise RuntimeError(
+                    f"R2 Range failed and scratch has only {available} free "
+                    f"(needs {required}); range failures: {failures}"
+                )
+            full_source = output_dir / "original-full-game.zip"
+            url = R2_BASES[0] + quote(BO1_ZIP_KEY, safe="/")
+            transferred, digest, _ = download(url, full_source, EXPECTED_SIZE)
+            if transferred != EXPECTED_SIZE:
+                raise RuntimeError(
+                    f"Full original ZIP download size {transferred} != {EXPECTED_SIZE}"
+                )
+            report["source_mode"] = "verified_full_runner_local_zip"
+            report["original_zip_sha256"] = digest
+            source = full_source.open("rb")
+        with source:
             with zipfile.ZipFile(source) as archive:
                 selected, catalog = choose_entries(archive.infolist(), preset)
                 report["catalog"] = catalog
