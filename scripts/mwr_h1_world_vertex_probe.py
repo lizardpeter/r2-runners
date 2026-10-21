@@ -23,6 +23,7 @@ class WorldVertexRunScanner:
         self.signatures_valid=0
         self.top_blocks=[]
         self.run_histo={}
+        self.long_run_break_reasons=[]
     @staticmethod
     def is_vertex(b,at):
         if at<0 or at+STRIDE>len(b):return False
@@ -54,6 +55,28 @@ class WorldVertexRunScanner:
                 sample_count+=1
             longest=max(longest,sample_count)
             if sample_count>=MIN_CANDIDATE_VERTICES:
+                if sample_count>=32 and len(self.long_run_break_reasons)<24:
+                    stop=start+sample_count*STRIDE
+                    after=[]
+                    for j in range(4):
+                        p=stop+j*STRIDE
+                        if p+STRIDE>len(b):break
+                        xyz=struct.unpack_from("<fff",b,p)
+                        sign=struct.unpack_from("<f",b,p+12)[0]
+                        uv=struct.unpack_from("<ffff",b,p+20)
+                        after.append({
+                            "delta_vertices":j,
+                            "position":[round(v,6) for v in xyz],
+                            "binormal_sign":round(sign,7) if math.isfinite(sign) else None,
+                            "uv_lightmap":[round(v,5) for v in uv],
+                            "valid_strict":self.is_vertex(b,p),
+                        })
+                    self.long_run_break_reasons.append({
+                        "run_source_offset":base+start,
+                        "consecutive_strict_vertices":sample_count,
+                        "end_offset":base+stop,
+                        "next_four_vertices_at_same_stride":after,
+                    })
                 self.signatures_valid+=1
                 absolute=base+start
                 if absolute>=0:
@@ -88,5 +111,6 @@ class WorldVertexRunScanner:
           "source_run_clusters":len(merged),
           "longest_clusters":sorted(merged,key=lambda v:-v["potential_vertices"])[:20],
           "longest_single_decode_blocks":self.top_blocks[:16],
+          "sampled_strict_vertex_run_boundaries":self.long_run_break_reasons[:20],
           "note":"Candidates are exact-stride source checks, not vertex/index offset certification."
         }
