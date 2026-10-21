@@ -38,7 +38,8 @@ jobs:
             --r2-prefix h1/h1_full_files/zone \
             --output-dir "$RUNNER_TEMP/h1-original" \
             --report "$RUNNER_TEMP/h1-report.json" \
-            --include-primary
+            --include-primary \
+            --full-decode
           cat "$RUNNER_TEMP/h1-report.json"
           echo '### Verified H1 retail probe' >> "$GITHUB_STEP_SUMMARY"
           echo 'Original source bytes remained only in ephemeral runner scratch storage.' >> "$GITHUB_STEP_SUMMARY"
