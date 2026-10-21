@@ -131,8 +131,15 @@ def decode_zlib_fastfile_sample(payload: bytes, file_bytes: int) -> dict:
         block["decoded_sha256"] = hashlib.sha256(raw).hexdigest()
         report["verified_blocks"].append(block)
         decoded.extend(raw[:max(0, 256 - len(decoded))])
-        pos = end
+        if block_size < compressed:
+            report["block_status"] = "block_span_smaller_than_compressed_payload"
+            break
+        pos += 16 + block_size
     report["decoded_prefix_hex"] = bytes(decoded[:128]).hex()
+    if len(decoded) >= 36:
+        report["source_script_string_count"] = struct.unpack_from("<i", decoded, 0)[0]
+        report["source_xasset_count"] = struct.unpack_from("<i", decoded, 32)[0]
+    report["verified_decoded_bytes"] = sum(b["decoded_bytes"] for b in report["verified_blocks"])
     return report
 
 def inspect(key: str, payload: bytes, meta: dict) -> dict:
