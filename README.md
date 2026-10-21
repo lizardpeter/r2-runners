@@ -122,3 +122,25 @@ For whole-bucket discovery, use an explicit manifest or the connected Cloudflare
 Find the matching workflow run under [Actions](https://github.com/lizardpeter/r2-runners/actions), open its **Artifacts**, and select the `*-exact-source-*` artifact. A development agent with GitHub access can use the Actions artifact API or GitHub connector to list and download these ZIP artifacts. The ZIP is transport packaging; files inside remain unchanged and should be checked against the report's hashes.
 
 **Success means the exact requested files are actually available for subsequent local decoding**, not simply that a download command or source-count audit executed.
+
+
+## BO1 real-client packed material texture verification
+
+[BO1 real client first-two texture alias replay](.github/workflows/bo1-second-alias-validation.yml)
+is an actual binary validation task, not a report generator. It retrieves the
+complete original BO1 **Nuketown and Firing Range client FastFiles** from an
+existing exact-source workflow artifact, verifies their original SHA-256,
+decompresses their authentic T5 source zones and replays the first two original
+GfxWorld material texture allocations.
+
+The independent [successful real-original-byte run #39650670394](https://github.com/lizardpeter/r2-runners/actions/runs/39650670394)
+verified **205 packed texture-slot references** to the genuine first/second
+original material image-pointer fields (Nuketown 43+35; Firing Range 10+117).
+The source `.ff` bytes are retrieved and processed locally by the runner.
+No JSON summaries are substituted for source files.
+
+The default transfer artifact comes from run `39637661371` and will eventually
+expire under GitHub's artifact retention policy. To rerun later, use a fresh
+full-client binary-transfer run and provide its ID to the manual workflow
+dispatcher. The Rust-test importer is generic; the names and offsets in this
+validation test are source-specific regression fixtures, not importer rules.
