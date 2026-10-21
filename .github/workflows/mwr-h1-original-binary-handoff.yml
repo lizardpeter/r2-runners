@@ -1,0 +1,60 @@
+name: MWR H1 exact original sources for local importer testing
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mwr-h1-original-binary-handoff.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Download original seven H1 FastFiles and verify original SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/mwr-original/zone"
+          mkdir -p "$root/english"
+          while IFS=' ' read -r rel bytes digest; do
+            [[ -z "$rel" ]] && continue
+            dest="$root/$rel"
+            mkdir -p "$(dirname "$dest")"
+            curl --fail --show-error --silent --location --retry 5 --retry-all-errors --retry-delay 3 --connect-timeout 25 --max-time 1800 \
+              --output "$dest" "https://r2.houseofkublai.com/h1/h1_full_files/zone/$rel"
+            test "$(stat -c%s "$dest")" = "$bytes"
+            printf '%s  %s\n' "$digest" "$dest" | sha256sum --check
+          done <<'SOURCES'
+          mp_crash_snow.ff 343800140 8c88dd68e52610f6256cf8bad6743b09d346ef1d81e39852ff388b1ab82590a0
+          mp_crash_snow_load.ff 671788 4cfc95a0747aa5b5edfcbe321a1c72ccb7622360faf73ab9039d814f412fdc15
+          mp_crash_snow_path.ff 213036 b74258919fe8d3d63c94568ad4addfb4138252cf17b6f361605e493bc233f0eb
+          patch_mp_crash_snow.ff 81964 28c30689f0e9c7b9691ff5053b53708eb182d4906ce34756b9c2804cf120cc3e
+          english/eng_mp_crash_snow.ff 49196 0168b1197174c52a9443b934be8752ee26272318a2983941c3551d6f6c208591
+          english/eng_patch_mp_crash_snow.ff 49196 c91c0d9c2d3c5a9fc3414842c47ddb32e78509a0e4bd666f5a468dfea5509d1f
+          techsets_mp_crash_snow.ff 31735852 21016c08957bb8e0d5e7ea6ef821c82f6594f653a42c42d22977e492d733f1b9
+          SOURCES
+          (cd "$RUNNER_TEMP/mwr-original" && find zone -type f -print0 | sort -z | xargs -0 sha256sum) > "$RUNNER_TEMP/mwr-original/SHA256SUMS"
+          echo "All seven complete original H1 files verified."
+      - name: Handoff original main map FastFile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mwr-h1-original-main-fastfile
+          path: ${{ runner.temp }}/mwr-original/zone/mp_crash_snow.ff
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: warn
+      - name: Handoff original supporting FastFiles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mwr-h1-original-supporting-fastfiles
+          path: |
+            ${{ runner.temp }}/mwr-original/zone/**/*.ff
+            !${{ runner.temp }}/mwr-original/zone/mp_crash_snow.ff
+            ${{ runner.temp }}/mwr-original/SHA256SUMS
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: warn
