@@ -63,7 +63,10 @@ def recover(zone:bytes,spec:dict):
             for j in range(tex_count):
                 tex=zone[cursor+16*j:cursor+16*j+16]
                 if len(tex)!=16:raise ValueError("truncated original MaterialTextureDef")
-                texture.append({"semantic":tex[7],"pointer":word(tex,12),"name":None})
+                texture.append({
+                    "semantic":tex[7],"pointer":word(tex,12),"name":None,
+                    "name_hash":word(tex,0),"name_start":tex[4],"name_end":tex[5],
+                })
             cursor+=16*tex_count
             for t in texture:
                 if t["pointer"]!=0xffffffff:continue
@@ -91,6 +94,48 @@ def recover(zone:bytes,spec:dict):
         materials.append({"name":name,"textures":texture,"constant_count":const_count,"state_count":state_count})
     return materials
 
+def original_material_sampler_hash(text:str)->int:
+    # Source T5 R_HashString(name,0), wrapping u32 and ASCII case folding.
+    value=0
+    for char in text.encode("ascii"):
+        value=((value*33)^(char|0x20))&0xffffffff
+    return value
+
+def verify_original_shader_material_sampler_names(zone:bytes,materials:list[dict],mapname:str)->int:
+    source_vocabulary={
+        "colorMap":2, "colorMap1":2, "colorMap2":2, "colorMap3":2,
+        "normalMap":5, "normalMap1":5, "normalMap2":5,
+        "specularMap":8, "specularMap1":8, "specularMap2":8,
+    }
+    lookup={original_material_sampler_hash(n):(n,sem) for n,sem in source_vocabulary.items()}
+    assert len(lookup)==len(source_vocabulary)
+    mapped=0
+    missing={}
+    for material in materials:
+        for slot in material["textures"]:
+            h=slot["name_hash"]
+            if h in lookup:
+                name,semantic=lookup[h]
+                if slot["semantic"]!=semantic:
+                    raise ValueError(f"source sampler {name} has unexpected semantic {slot['semantic']}")
+                if (slot["name_start"],slot["name_end"]) != (ord(name[0]),ord(name[-1])):
+                    raise ValueError(f"source sampler {name} original first/last bytes do not match")
+                root=name.rstrip("0123456789")
+                number=name[len(root):]
+                ctab_name=f"{root}Sampler{number}".encode()+b"\\0"
+                if ctab_name not in zone:
+                    raise ValueError(f"original SM3 CTAB sampler {ctab_name!r} not found in source")
+                mapped+=1
+            else:
+                missing[h]=missing.get(h,0)+1
+    expected=707 if mapname=="mp_nuked.ff" else 1883
+    if mapped!=expected or sum(missing.values())!= (4 if expected==707 else 6):
+        raise ValueError(f"{mapname}: unexpected source sampler hash coverage {mapped}, unresolved={missing}")
+    print(f"VERIFIED {mapname}: {mapped} original named MaterialTextureDef slots "
+          f"identified by exact R_HashString + source SM3 shader sampler strings; "
+          f"{sum(missing.values())} special source slots unresolved")
+    return mapped
+
 def verify_map(original_file:Path,source:dict):
     size=original_file.stat().st_size
     digest=hashlib.sha256(original_file.read_bytes()).hexdigest()
@@ -101,6 +146,7 @@ def verify_map(original_file:Path,source:dict):
     zone=zlib.decompress(raw[12:])
     if len(zone)>MAX_ZONE:raise ValueError("expanded original source unexpectedly large")
     materials=recover(zone,source)
+    verify_original_shader_material_sampler_names(zone,materials,original_file.name)
     owners=defaultdict(list)
     for i,m in enumerate(materials):
         for j,t in enumerate(m["textures"]):
