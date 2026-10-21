@@ -1,0 +1,102 @@
+name: CS2 exact original smoke and environmental VPCF source
+
+on:
+  push:
+    branches:
+      - work/cs2-compiled-smoke-effects-source-20261021
+      - main
+    paths:
+      - "scripts/cs2_original_environment_vpcf.py"
+      - ".github/workflows/cs2-original-environment-vpcf.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-compiled-particle-graphs:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Validate original VPK selection
+        shell: pwsh
+        run: |
+          python scripts/cs2_material_source_handoff.py self-test
+          if ($LASTEXITCODE -ne 0) { throw 'Source 2 VPK parser self-test failed' }
+          python scripts/cs2_original_environment_vpcf.py self-test
+          if ($LASTEXITCODE -ne 0) { throw 'Source 2 VPCF file selection self-test failed' }
+
+      - name: Install official Steam DepotDownloader
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'cs2-original-environment-particles'
+          $tool = Join-Path $root 'steamre'
+          New-Item -ItemType Directory -Force -Path $tool | Out-Null
+          $zip = Join-Path $root 'DepotDownloader.zip'
+          Invoke-WebRequest -Uri 'https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-windows-x64.zip' -OutFile $zip
+          Expand-Archive -LiteralPath $zip -DestinationPath $tool -Force
+          $exe = Join-Path $tool 'DepotDownloader.exe'
+          if (-not (Test-Path -LiteralPath $exe)) { throw 'Official SteamRE downloader was not installed' }
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_EFFECT_SOURCE=$root"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Value "CS2_EFFECT_DOWNLOADER=$exe"
+
+      - name: Acquire original CS2 pak01_dir.vpk index
+        shell: pwsh
+        run: |
+          $root=$env:CS2_EFFECT_SOURCE
+          $names=Join-Path $root 'index-filelist.txt'
+          'game/csgo/pak01_dir.vpk' | Set-Content -LiteralPath $names -Encoding ascii
+          & $env:CS2_EFFECT_DOWNLOADER -app 730 -depot 2347770 -filelist $names -dir $root -max-downloads 4
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download authentic CS2 base VPK directory' }
+
+      - name: Discover exact original environment VPCF resource identities
+        shell: pwsh
+        run: |
+          $root=$env:CS2_EFFECT_SOURCE
+          python scripts/cs2_original_environment_vpcf.py plan --index (Join-Path $root 'game/csgo/pak01_dir.vpk') --output $root
+          if ($LASTEXITCODE -ne 0) { throw 'Failed VPCF source selection' }
+
+      - name: Acquire original compiled particle VPK physical segments
+        shell: pwsh
+        run: |
+          $root=$env:CS2_EFFECT_SOURCE
+          $list=Join-Path $root 'original-particle-vpk-segments.txt'
+          $files=@(Get-Content -LiteralPath $list | Where-Object { $_.Trim() })
+          if ($files.Count -gt 0) {
+            Write-Host "Authentic source segments needed for $($files.Count) particle archives"
+            & $env:CS2_EFFECT_DOWNLOADER -app 730 -depot 2347770 -filelist $list -dir $root -max-downloads 4
+            if ($LASTEXITCODE -ne 0) { throw 'Could not download all physically required original VPK segments' }
+          }
+
+      - name: Decode original VPCF resource bytes and CRC-verify each graph
+        shell: pwsh
+        run: |
+          $root=$env:CS2_EFFECT_SOURCE
+          python scripts/cs2_original_environment_vpcf.py extract --index (Join-Path $root 'game/csgo/pak01_dir.vpk') --source-root $root --output (Join-Path $root 'original-vpcf-output')
+          if ($LASTEXITCODE -ne 0) { throw 'Original compiled VPCF extraction or CRC failed' }
+
+      - name: Upload original VPCF files and their full provenance
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-original-environment-smoke-vpcf-source
+          path: ${{ runner.temp }}/cs2-original-environment-particles/original-vpcf-output/**
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 1
+
+      - name: Retain exact source index and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cs2-original-environment-vpcf-provenance-plan
+          path: |
+            ${{ runner.temp }}/cs2-original-environment-particles/original-particle-plan.json
+            ${{ runner.temp }}/cs2-original-environment-particles/original-particle-vpk-segments.txt
+          if-no-files-found: warn
+          retention-days: 7
