@@ -37,6 +37,41 @@ def zlib_source(packed:bytes,expected:int):
 
 
 def read_source_payload(data:bytes,kind:int,at:int):
+    if kind==59:
+        # H1 NetConstStrings: ptr name, u32 stringType, u32 sourceType,
+        # u32 entryCount, u32 native padding, ptr stringList = 0x20.
+        if at+32>len(data):raise ValueError("truncated H1 NetConstStrings")
+        ptr,kind_id,source_id,count,pad,names_ptr=struct.unpack_from("<QIIIIQ",data,at)
+        if ptr!=MARKER or pad!=0:
+            raise ValueError("invalid H1 NetConstStrings source name/padding")
+        name,cursor=inline_name(data,at+32)
+        names=[]
+        if count:
+            if count>32768 or names_ptr!=MARKER:
+                raise ValueError(f"H1 NetConstStrings invalid source pointer/count: {name} ({count} entries)")
+            if cursor+8*count>len(data):
+                raise ValueError(f"H1 NetConstStrings source list truncated: {name}")
+            slots=[u64(data,cursor+8*i) for i in range(count)]
+            cursor+=8*count
+            for index,pointer in enumerate(slots):
+                if pointer==0:
+                    names.append(None)
+                elif pointer==MARKER:
+                    value,cursor=inline_name(data,cursor)
+                    names.append(value)
+                else:
+                    raise ValueError(f"H1 NetConstStrings unsupported string slot {index} {pointer:#x}")
+        elif names_ptr!=0:
+            raise ValueError(f"H1 NetConstStrings empty list has non-null pointer: {name}")
+        return cursor,{
+            "kind":"NetConstStrings","name":name,
+            "source_type":source_id,"string_type":kind_id,
+            "entry_count":count,"recovered_strings":len(names),
+            "inline_strings_sha256":hashlib.sha256(
+                b"".join((x.encode("utf-8")+b"\0") if x is not None else b"\xff" for x in names)
+            ).hexdigest(),
+            "first_strings":names[:8],
+        }
     if kind==49:
         # Original H1 ScriptFile: name, compressedLen, len, bytecodeLen,
         # native padding, char* source buffer, char* compiled bytecode
@@ -156,7 +191,7 @@ def inspect_sequential_source_files(data:bytes,verified:dict):
     records=[]
     for index in range(count):
         kind=struct.unpack_from("<I",data,start+16*index)[0]
-        if kind not in (48,49):
+        if kind not in (48,49,59):
             addon=inspect_addon_map_ents_prefix(data,cursor) if kind==58 else None
             return {"status":"stopped_at_other_asset_type","decoded_source_files":len(records),
                     "addon_map_ents_preview":addon,
