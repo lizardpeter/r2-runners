@@ -61,6 +61,24 @@ def candidate_mesh_stream_info(z,start,end):
         if len(matches)>=4:break
     return matches
 
+def nearby_mesh_info_fields(z,name_end,interval_end):
+    out=[]
+    for step in (0,1,2,3,4,5,6,7,8,12,16,24,32,48,64,80):
+        p=name_end+step
+        if p+44>interval_end:continue
+        verts,weights,faces=struct.unpack_from("<III",z,p+4)
+        ptr=struct.unpack_from("<Q",z,p+16)[0]
+        fields=struct.unpack_from("<IIIII",z,p+24)
+        out.append({
+            "distance_after_name":step,
+            "flag":z[p],
+            "vertex_count":verts,"weight_count":weights,
+            "triangle_count":faces,
+            "buffer_ptr_tag":f"0x{ptr:016x}",
+            "buffer_size":fields[0],"data_offsets":list(fields[1:]),
+        })
+    return out
+
 def survey(z):
     d=parse_directory(bytearray(z))
     if d["status"]!="t7_asset_table_layout_verified":
@@ -104,6 +122,7 @@ def survey(z):
         stream_candidates=candidate_mesh_stream_info(z,name_end,next_at)
         records.append({
             "candidate_source_mesh_info":stream_candidates,
+            "early_mesh_info_field_probes":nearby_mesh_info_fields(z,name_end,next_at) if k<4 else [],
             "xasset_row":k,
             "original_decoded_offset":x["offset"],
             "bytes_until_next_header":size if k+1<len(candidates) else None,
