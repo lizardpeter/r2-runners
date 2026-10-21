@@ -36,7 +36,7 @@ def candidate_mesh_stream_info(z,start,end):
     matches=[]
     for pos in range(start,min(end-44,start+384)):
         flag=z[pos]
-        if flag & 0xfc:continue
+        if flag & 0xe0:continue
         verts,weights,faces=struct.unpack_from("<III",z,pos+4)
         pointer=struct.unpack_from("<Q",z,pos+16)[0]
         size,p_off,uv_off,f_off,w_off=struct.unpack_from("<IIIII",z,pos+24)
@@ -44,7 +44,9 @@ def candidate_mesh_stream_info(z,start,end):
                 and weights<verts*4 and 0<size<=128*1024*1024):
             continue
         if not tagged(pointer):continue
-        if p_off+verts*12>size or uv_off+verts*16>size or f_off+faces*6>size:
+        # Retail BO3 MeshInfo.FaceCount is a count of 16-bit indices.
+        # Individual XSurface.FacesCount is a triangle count.
+        if faces%3!=0 or p_off+verts*12>size or uv_off+verts*16>size or f_off+faces*2>size:
             continue
         if weights and w_off+weights*12>size:
             continue
@@ -59,6 +61,22 @@ def candidate_mesh_stream_info(z,start,end):
                  ("absent" if pointer==0 else "block_ref")),
         })
         if len(matches)>=4:break
+    return matches
+
+def find_original_surface_records(z,begin,end,expected_count,mesh_vertices,mesh_indices):
+    """Require actual T7 XSurface 0x60-byte vertices, triangle and index bounds."""
+    matches=[]
+    if expected_count>128:return matches
+    for offset in range(begin,max(begin,end-0x60+1)):
+        vc,tri=struct.unpack_from("<HH",z,offset+4)
+        vb,ib=struct.unpack_from("<II",z,offset+8)
+        if not (0<vc<=mesh_vertices and 0<tri and
+                vb+vc<=mesh_vertices and ib+tri*3<=mesh_indices):
+            continue
+        matches.append({"original_offset":offset,"source_vertices":vc,
+                        "authored_triangles":tri,"vertex_base":vb,"index_base":ib,
+                        "weight_flags":list(z[offset:offset+4])})
+        if len(matches)>=8:break
     return matches
 
 def nearby_mesh_info_fields(z,name_end,interval_end):
@@ -120,6 +138,18 @@ def survey(z):
         surfaces_total+=x["surface_count"]
         name_end=x["offset"]+0x78+len(x["name"])+1
         stream_candidates=candidate_mesh_stream_info(z,name_end,next_at)
+        for info in stream_candidates:
+            inline_begin=info["original_decoded_offset"]+0x50
+            inline_end=inline_begin+info["source_buffer_bytes"]
+            if (info["buffer_ptr_kind"]=="inline" and
+                inline_end <= next_at):
+                info["original_inline_buffer_offset"]=inline_begin
+                info["original_inline_buffer_end"]=inline_end
+                info["buffer_sha256"]=hashlib.sha256(z[inline_begin:inline_end]).hexdigest()
+                info["surface_records_after_buffer"]=find_original_surface_records(
+                    z,inline_end,min(next_at,inline_end+768),
+                    x["surface_count"],info["vertex_count"],info["face_count"]
+                )
         records.append({
             "candidate_source_mesh_info":stream_candidates,
             "early_mesh_info_field_probes":nearby_mesh_info_fields(z,name_end,next_at) if k<4 else [],
@@ -145,6 +175,7 @@ def survey(z):
         "first_root_body_exactly_after_table":True,
         "surface_count_total":surfaces_total,
         "leading_meshes_with_plausible_stream_structs":sum(bool(x["candidate_source_mesh_info"]) for x in records),
+        "leading_meshes_with_bounded_inline_mesh_buffers":sum(any("original_inline_buffer_offset" in c for c in x["candidate_source_mesh_info"]) for x in records),
         "source_order_digest_sha256":hashlib.sha256(
             "\n".join(x["model_name"] for x in records).encode()).hexdigest(),
         "first_15_mesh_placements":records[:15],
