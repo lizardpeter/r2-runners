@@ -45,10 +45,17 @@ def inspect_candidate_indices(data,at,constraints,limit,full=False):
                 a,b,c=row[i:i+3]
                 if a!=b and b!=c and c!=a:nondegenerate+=1
                 inspected+=1
-    if full and inspected>0 and nondegenerate<inspected//2:return None
+    if full and inspected>0:
+        # Original triangle-list faces almost never repeat the SAME source
+        # vertex inside one triangle. Misaligned +2-byte candidates can
+        # satisfy local index ranges yet create hundreds of thousands of
+        # triangles with duplicate corners. This is source topology, not
+        # a map-specific offset or magic byte fingerprint.
+        if nondegenerate/inspected < 0.995:return None
     return {"nondegenerate_triangles":nondegenerate,
             "total_triangles_checked":inspected,
-            "maximum_local_index":max_local}
+            "maximum_local_index":max_local,
+            "nondegenerate_fraction":round(nondegenerate/inspected,8) if inspected else None}
 
 def verify_original_index_bytes(ff_file,ff_header,stream_class,world,verts,surfs):
     if verts.get("status")!="complete" or surfs.get("status")!="complete_original_surface_struct_array_verified":
@@ -125,11 +132,18 @@ def verify_original_index_bytes(ff_file,ff_header,stream_class,world,verts,surfs
         if len(checked)>1_500_000:
             return {"status":"too_many_unresolved_source_index_seeds",
                     "seed_matches":seed_matches,"positions_checked":len(checked)}
+    complete_original_source_adjacency = source_begin + world["vertex_layer_bytes"]
+    passed_original_adjacency=[hit for hit in passed
+        if hit["decoded_index_start"]==complete_original_source_adjacency]
+    if len(passed_original_adjacency)==1:
+        passed=passed_original_adjacency
     return {
         "status":"complete_original_index_array_verified" if len(passed)==1 else "index_buffer_unresolved",
         "world_header_index_count":index_count,
         "source_surface_total_index_count":total,
         "source_range_scanned":[source_begin,surf_start],
+        "source_order_expected_index_start":complete_original_source_adjacency,
+        "original_vertex_layer_bytes":world["vertex_layer_bytes"],
         "seed_regex_matches":seed_matches,
         "candidate_positions_checked":len(checked),
         "first_surface_three_record_checks_passed":stage1,
