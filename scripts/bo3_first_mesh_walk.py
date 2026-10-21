@@ -31,6 +31,36 @@ def valid_mesh(z,p):
             "source_surface_pointer":ptr,
             "source_auxiliary_pointer":struct.unpack_from("<Q",z,p+0x70)[0]}
 
+def candidate_mesh_stream_info(z,start,end):
+    """Test source-owned 44-byte BO3 mesh stream header, no guessed payload."""
+    matches=[]
+    for pos in range(start,min(end-44,start+384)):
+        flag=z[pos]
+        if flag & 0xfc:continue
+        verts,weights,faces=struct.unpack_from("<III",z,pos+4)
+        pointer=struct.unpack_from("<Q",z,pos+16)[0]
+        size,p_off,uv_off,f_off,w_off=struct.unpack_from("<IIIII",z,pos+24)
+        if not (0<verts<100_000 and 0<faces<200_000
+                and weights<verts*4 and 0<size<=128*1024*1024):
+            continue
+        if not tagged(pointer):continue
+        if p_off+verts*12>size or uv_off+verts*16>size or f_off+faces*6>size:
+            continue
+        if weights and w_off+weights*12>size:
+            continue
+        matches.append({
+            "original_decoded_offset":pos,"relative_to_name_end":pos-start,
+            "status_flag":flag,"vertex_count":verts,"weights_count":weights,
+            "face_count":faces,"source_buffer_bytes":size,
+            "position_stream_offset":p_off,"uv_stream_offset":uv_off,
+            "face_stream_offset":f_off,"weight_stream_offset":w_off,
+            "buffer_ptr_kind":"inline" if pointer==0xffffffffffffffff else
+                ("resident" if pointer==0xfffffffffffffffe else
+                 ("absent" if pointer==0 else "block_ref")),
+        })
+        if len(matches)>=4:break
+    return matches
+
 def survey(z):
     d=parse_directory(bytearray(z))
     if d["status"]!="t7_asset_table_layout_verified":
@@ -70,7 +100,10 @@ def survey(z):
         size=next_at-x["offset"]
         if size<=0 or size>8*1024*1024:raise ValueError("T7 source mesh region unbounded")
         surfaces_total+=x["surface_count"]
+        name_end=x["offset"]+0x78+len(x["name"])+1
+        stream_candidates=candidate_mesh_stream_info(z,name_end,next_at)
         records.append({
+            "candidate_source_mesh_info":stream_candidates,
             "xasset_row":k,
             "original_decoded_offset":x["offset"],
             "bytes_until_next_header":size if k+1<len(candidates) else None,
@@ -92,6 +125,7 @@ def survey(z):
         "remaining_mesh_header_candidates_unassigned":all_header_count-len(candidates),
         "first_root_body_exactly_after_table":True,
         "surface_count_total":surfaces_total,
+        "leading_meshes_with_plausible_stream_structs":sum(bool(x["candidate_source_mesh_info"]) for x in records),
         "source_order_digest_sha256":hashlib.sha256(
             "\n".join(x["model_name"] for x in records).encode()).hexdigest(),
         "first_15_mesh_placements":records[:15],
