@@ -165,17 +165,17 @@ def inspect_path_nodes(data: bytes) -> dict:
             count=a & 0xffffffff
             if count>node_count or pointer_kind(b) not in ("follows","insert"):
                 raise ValueError("leaf node array invalid")
-            end=cursor+count*2
-            if end>len(data):
+            leaf_end=cursor+count*2
+            if leaf_end>len(data):
                 raise ValueError("original leaf byte array outside PathData source")
-            for pos in range(cursor,end,2):
-                index=struct.unpack_from("<H",data,pos)[0]
+            for leaf_at in range(cursor,leaf_end,2):
+                index=struct.unpack_from("<H",data,leaf_at)[0]
                 if index>=node_count or index in unique_leaves:
                     raise ValueError("duplicate or out-of-bounds authored leaf reference")
                 unique_leaves.add(index)
             leaf_count+=1
             leaf_ref_count+=count
-            cursor=end
+            cursor=leaf_end
         else:
             raise ValueError("unrecognized source tree axis")
     if len(unique_leaves)!=node_count or leaf_ref_count!=node_count:
@@ -220,7 +220,7 @@ def inspect_path_nodes(data: bytes) -> dict:
         raise ValueError(f"PathData + RawFile source closure failed: {cursor} vs {len(data)}")
     tree_verified=True
     return {
-        "status": "original_IW6_path_links_validated" if accepted else "original_IW6_path_links_not_validated",
+        "status": "original_IW6_full_path_zone_closed" if accepted and tree_verified else "original_IW6_path_links_not_validated",
         "candidate_source_link_end":link_cursor,
         "decoded_link_slots":decoded_links,
         "invalid_target_indices":invalid_targets,
