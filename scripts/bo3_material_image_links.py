@@ -13,6 +13,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from r2_download import download
 from bo3_base_index import read_base_index
+from bo3_all_xpak_indices import read_index as read_other_source_index
 from bo3_images_probe import scan_images
 from bo3_material_binding_probe import analyze,SIZES,BASE
 from bo3_zone_decode import parse_zlib_zone
@@ -65,6 +66,10 @@ def main():
     root=Path(os.environ.get("BO3_REPORT_DIR","reports/bo3"))
     root.mkdir(parents=True,exist_ok=True)
     index_info,keys=read_base_index()
+    sources=["en_initial.xpak","en_base.xpak","base_patch_tu32.xpak"]
+    for src in sources:
+        _meta,extra=read_other_source_index(src)
+        keys.update(extra)
     with TemporaryDirectory(prefix="bo3-material-image-link-") as tmp:
         path=Path(tmp)/NAME
         got,digest,_=download(BASE+NAME,path)
