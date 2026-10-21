@@ -1,0 +1,37 @@
+name: Rust Linux toolchain R2 handoff
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/rust-toolchain-handoff.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deliver:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Retrieve persistent Rust toolchain from public R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-toolchain"
+          curl --fail --show-error --silent --location --retry 5 \
+            --retry-all-errors --retry-delay 3 --connect-timeout 25 --max-time 1200 \
+            --output "$RUNNER_TEMP/rust-toolchain/rust-1.99.1-x86_64-unknown-linux-gnu.tar" \
+            "https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar"
+          stat -c 'Downloaded %s bytes from persistent R2 toolchain' "$RUNNER_TEMP/rust-toolchain/"*.tar
+          test "$(stat -c%s "$RUNNER_TEMP/rust-toolchain/"*.tar)" = "210515736"
+          tar -tf "$RUNNER_TEMP/rust-toolchain/"*.tar | grep -E '/(bin/(cargo|rustc)|install.sh)$' | head -20
+      - name: Expose original toolchain archive for container handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-linux-x86-64-complete-toolchain
+          path: ${{ runner.temp }}/rust-toolchain/*.tar
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: error
