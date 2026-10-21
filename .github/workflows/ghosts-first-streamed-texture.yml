@@ -1,0 +1,52 @@
+name: Ghosts authentic PAK mip decode
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ghosts-first-streamed-texture.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-source-mip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Decode exact original IW6 streamed-image PAK range
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,urllib.request,zlib
+          # Original Point of Contact mp_alien_town.ff streamed GfxImage
+          # row 0 (source-owned fileIndex=1; offset/end authenticated).
+          start,end=88778934,88788527
+          req=urllib.request.Request(
+              "https://r2.houseofkublai.com/ghosts/DUMP/imagefile1.pak",
+              headers={"Range":f"bytes={start}-{end-1}",
+                       "Accept-Encoding":"identity"})
+          with urllib.request.urlopen(req,timeout=90) as response:
+              if response.status!=206:
+                  raise RuntimeError(f"R2 did not honor source byte-range: {response.status}")
+              content_range=response.headers.get("Content-Range","")
+              if not content_range.startswith(f"bytes {start}-{end-1}/"):
+                  raise RuntimeError(f"Wrong source range: {content_range}")
+              packed=response.read(end-start+1)
+          if len(packed)!=end-start:
+              raise RuntimeError("original PAK range byte count mismatch")
+          dec=zlib.decompressobj()
+          image=dec.decompress(packed,16385)
+          if not dec.eof or len(image)!=16384:
+              raise RuntimeError(f"authored first mip size mismatch, decoded {len(image)}")
+          print(json.dumps({
+              "original_archive":"imagefile1.pak",
+              "authenticated_source_span":[start,end],
+              "compressed_bytes":len(packed),
+              "source_format":"IW6 GfxImage stream / DXGI_FORMAT_BC3_UNORM",
+              "authored_resolution":[128,128],
+              "decoded_bytes":len(image),
+              "decoded_sha256":hashlib.sha256(image).hexdigest(),
+              "status":"original_bc3_mip_exact_span_verified",
+          }))
+          PY
