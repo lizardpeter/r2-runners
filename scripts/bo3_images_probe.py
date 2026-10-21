@@ -31,7 +31,8 @@ FF_PRESETS={
 }
 def source_inline_mip_chain(width:int,height:int,fmt:int,byte_len:int)->int|None:
     """Prove complete resident DXGI/BCn mip byte ownership without guesswork."""
-    if fmt in (28,29): unit,compressed=4,False
+    if fmt in (24,28,29): unit,compressed=4,False
+    elif fmt==49:unit,compressed=2,False
     elif fmt in (61,62):unit,compressed=1,False
     elif fmt in (71,72,80,81):unit,compressed=8,True
     elif fmt in (74,75,77,78,83,84,95,96,98,99):unit,compressed=16,True
