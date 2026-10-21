@@ -1,0 +1,30 @@
+name: BO3 first original MapEnts text + origin source proof
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_world_entity_probe.py
+      - .github/workflows/bo3-world-entities.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-entity-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode authenticated original BO3 MapEnts string and original entity positions
+        env:
+          BO3_WORLD_ZONE: core_frontend.ff
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-source-map-entities
+          BO3_MAX_DECODED: '1073741824'
+        run: python3 scripts/bo3_world_entity_probe.py
+      - name: Preserve bounded original entity-source metadata, not retail map body
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-map-ents-validation
+          path: ${{ runner.temp }}/bo3-source-map-entities/*.json
+          retention-days: 7
+          if-no-files-found: warn
