@@ -47,6 +47,10 @@ jobs:
           ref: 74613f9e7f74dd020f0af111f3750828ac7c9ac8
           path: research
           persist-credentials: false
+          filter: blob:none
+          sparse-checkout: |
+            tools/fastfile
+          fetch-depth: 1
 
       - name: Download actual R2 originals and verify source decoder
         env:
