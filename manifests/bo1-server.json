@@ -1,0 +1,399 @@
+{
+  "version": 1,
+  "created_from": "authenticated Cloudflare R2 object listing",
+  "bucket": "houseofkublai",
+  "origin": "https://r2.houseofkublai.com",
+  "key_prefix": "bo1/exes/Call of Duty - Black Ops PC Server/",
+  "files": [
+    {
+      "path": "main/iw_00.iwd",
+      "bytes": 3471624,
+      "etag": "b80a50499b4498d7dc9d86e2eda12573"
+    },
+    {
+      "path": "main/iw_01.iwd",
+      "bytes": 11868,
+      "etag": "44b6e9540f2bff476866391393e7cdf1"
+    },
+    {
+      "path": "main/iw_02.iwd",
+      "bytes": 6216,
+      "etag": "fff3ddfbbabef15db58c0e2d0ff26987"
+    },
+    {
+      "path": "main/iw_03.iwd",
+      "bytes": 7212,
+      "etag": "a7b2a6f60a0985b0c84f7e2ca93fc072"
+    },
+    {
+      "path": "main/iw_04.iwd",
+      "bytes": 26676,
+      "etag": "028a1a4c9b7e34f15141c19e1898e55b"
+    },
+    {
+      "path": "main/iw_05.iwd",
+      "bytes": 22188,
+      "etag": "573075a0f9d00f1f44b33bea6f178cc4"
+    },
+    {
+      "path": "main/iw_06.iwd",
+      "bytes": 10572,
+      "etag": "7fdd45120c806f485eba528ca12afba7"
+    },
+    {
+      "path": "main/iw_07.iwd",
+      "bytes": 6408,
+      "etag": "f1c31606c094868540f6b493e05353e0"
+    },
+    {
+      "path": "main/iw_08.iwd",
+      "bytes": 16692,
+      "etag": "4f77a9157a2a02ea25dfde288d1b55e5"
+    },
+    {
+      "path": "main/iw_09.iwd",
+      "bytes": 17220,
+      "etag": "600ea07af7b933f3430acc0863916a55"
+    },
+    {
+      "path": "main/iw_10.iwd",
+      "bytes": 18876,
+      "etag": "6b4e4b000bcbc5ff5f4f842641a0c23f"
+    },
+    {
+      "path": "main/iw_11.iwd",
+      "bytes": 12252,
+      "etag": "b3d379dd0b1ae48d587ff6c03253217d"
+    },
+    {
+      "path": "main/iw_12.iwd",
+      "bytes": 8832,
+      "etag": "88ece9efc7f7459319147ab8beec69cd"
+    },
+    {
+      "path": "main/iw_13.iwd",
+      "bytes": 8040,
+      "etag": "00f49fbd348be221bc808635d0c6bf11"
+    },
+    {
+      "path": "main/iw_14.iwd",
+      "bytes": 3576,
+      "etag": "32b756c8e668a28076d3dc1698c427d7"
+    },
+    {
+      "path": "main/iw_15.iwd",
+      "bytes": 5844,
+      "etag": "56137610824074344cd271b4b4ada47b"
+    },
+    {
+      "path": "main/iw_16.iwd",
+      "bytes": 4176,
+      "etag": "4c71c6a6db632b8fb854d9d0dc0ff426"
+    },
+    {
+      "path": "main/iw_17.iwd",
+      "bytes": 2112,
+      "etag": "7e060c13726cb8be04b3aee48fabb5cd"
+    },
+    {
+      "path": "main/iw_18.iwd",
+      "bytes": 612,
+      "etag": "3b6fcb97a0f59736e82a724453910dd9"
+    },
+    {
+      "path": "main/iw_19.iwd",
+      "bytes": 900,
+      "etag": "7e7e927730290d0e8d9e5f263f916388"
+    },
+    {
+      "path": "main/iw_20.iwd",
+      "bytes": 732,
+      "etag": "9b2e9624a94bac70a8bdb72d69b103d2"
+    },
+    {
+      "path": "main/iw_21.iwd",
+      "bytes": 600,
+      "etag": "1985c33dec7968064eadbe6d327b0417"
+    },
+    {
+      "path": "main/iw_22.iwd",
+      "bytes": 636,
+      "etag": "81c07d5482040ffe6f585e655add5eed"
+    },
+    {
+      "path": "main/iw_23.iwd",
+      "bytes": 29184,
+      "etag": "5fed46bffeb3c583cd2424a8e1e74979"
+    },
+    {
+      "path": "main/iw_24.iwd",
+      "bytes": 3648,
+      "etag": "81423d1661520c63037cb81f61f26c63"
+    },
+    {
+      "path": "main/iw_25.iwd",
+      "bytes": 1980,
+      "etag": "564b4984ecfcdc70f92fa915dea2543a"
+    },
+    {
+      "path": "main/iw_26.iwd",
+      "bytes": 14688,
+      "etag": "6fb92ac514eacdd83d798f4c9b7aa90d"
+    },
+    {
+      "path": "main/iw_27.iwd",
+      "bytes": 1656,
+      "etag": "eb4a2e74b486ffe58f8d6b5f921f930c"
+    },
+    {
+      "path": "main/iw_28.iwd",
+      "bytes": 1200,
+      "etag": "c37510ee3c96868f77c75dd14bfc5702"
+    },
+    {
+      "path": "main/iw_29.iwd",
+      "bytes": 10848,
+      "etag": "699eb55481f233965dddc7d0191868f2"
+    },
+    {
+      "path": "main/iw_30.iwd",
+      "bytes": 13212,
+      "etag": "044618eadac9610b1c05527fcc51ac89"
+    },
+    {
+      "path": "main/iw_31.iwd",
+      "bytes": 1044,
+      "etag": "0123dc13d2eebb058803a4e370dc763b"
+    },
+    {
+      "path": "main/iw_32.iwd",
+      "bytes": 2688,
+      "etag": "82ca4f53b0fc4e08c2010202aa20e83c"
+    },
+    {
+      "path": "main/iw_33.iwd",
+      "bytes": 12684,
+      "etag": "2ff35334443012c4e7881f2ca86949e2"
+    },
+    {
+      "path": "main/iw_34.iwd",
+      "bytes": 6144,
+      "etag": "353104a580f047ee95ab200ce9504e98"
+    },
+    {
+      "path": "main/iw_35.iwd",
+      "bytes": 2052,
+      "etag": "387eaff8f07215a6111d22cfd65b602e"
+    },
+    {
+      "path": "main/iw_36.iwd",
+      "bytes": 5352,
+      "etag": "109e14f201051bf73e948c52f3b9c37d"
+    },
+    {
+      "path": "main/iw_37.iwd",
+      "bytes": 900,
+      "etag": "534e56ae95ded84fc0eb11c8539931af"
+    },
+    {
+      "path": "main/iw_38.iwd",
+      "bytes": 12732,
+      "etag": "bc52c0006d68cad9d7eddf51f703e400"
+    },
+    {
+      "path": "main/iw_39.iwd",
+      "bytes": 156,
+      "etag": "ba4a2d67542a8381c7a21cb9957a461f"
+    },
+    {
+      "path": "main/iw_40.iwd",
+      "bytes": 612,
+      "etag": "74790d6bc1a5acce8ec959546e64e53c"
+    },
+    {
+      "path": "main/iw_41.iwd",
+      "bytes": 84,
+      "etag": "8a33f17a6cff4f2ecfb0817cb196d819"
+    },
+    {
+      "path": "zone/Common/code_post_gfx_mp.ff",
+      "bytes": 941376,
+      "etag": "c841a331e45e5d8e67932afe47867216"
+    },
+    {
+      "path": "zone/Common/code_post_gfx.ff",
+      "bytes": 2232992,
+      "etag": "2e15170c03c68c303b282e2836ab9e6f"
+    },
+    {
+      "path": "zone/Common/code_pre_gfx_mp.ff",
+      "bytes": 38048,
+      "etag": "d4c1530d748fc3760ab180676d6cf624"
+    },
+    {
+      "path": "zone/Common/code_pre_gfx.ff",
+      "bytes": 12512,
+      "etag": "93ec873af1e6a0b73898b21c5a4aba3f"
+    },
+    {
+      "path": "zone/Common/common_mp.ff",
+      "bytes": 57188576,
+      "etag": "0012649959ad9dfcf7bb2ffa5c04b24c"
+    },
+    {
+      "path": "zone/Common/frontend.ff",
+      "bytes": 40995296,
+      "etag": "cb13b76dc72109e84d5c6abf1b876c65"
+    },
+    {
+      "path": "zone/Common/mp_area51.ff",
+      "bytes": 42778144,
+      "etag": "b45cfee16c5051ea19ca0e70393a27d6"
+    },
+    {
+      "path": "zone/Common/mp_array.ff",
+      "bytes": 42699584,
+      "etag": "a24f030759d394689b634bfd15691665"
+    },
+    {
+      "path": "zone/Common/mp_berlinwall2.ff",
+      "bytes": 39629696,
+      "etag": "d60a9412fab143bafca0c368848fbd94"
+    },
+    {
+      "path": "zone/Common/mp_cairo.ff",
+      "bytes": 39856704,
+      "etag": "a435ddb262809490e375a5be50bbcfe0"
+    },
+    {
+      "path": "zone/Common/mp_cosmodrome.ff",
+      "bytes": 40599232,
+      "etag": "a48c4488d388054aea8d9ff073b8ade1"
+    },
+    {
+      "path": "zone/Common/mp_cracked.ff",
+      "bytes": 40868256,
+      "etag": "99f7c1d4eda7b4fad1d921244584d4f7"
+    },
+    {
+      "path": "zone/Common/mp_crisis.ff",
+      "bytes": 41168512,
+      "etag": "fb624064f325f50b38f25799bf1b3e07"
+    },
+    {
+      "path": "zone/Common/mp_discovery.ff",
+      "bytes": 40051296,
+      "etag": "b0a41bf1101b1673ff9174eb17f2dc6d"
+    },
+    {
+      "path": "zone/Common/mp_drivein.ff",
+      "bytes": 41128768,
+      "etag": "dfb5b4ea609f91266a867dbf933393aa"
+    },
+    {
+      "path": "zone/Common/mp_duga.ff",
+      "bytes": 39053760,
+      "etag": "45137503e1e231f9440b81f8ae06e3d3"
+    },
+    {
+      "path": "zone/Common/mp_firingrange.ff",
+      "bytes": 37999616,
+      "etag": "32f249a7b0cfa1cc3c6228a5785797fa"
+    },
+    {
+      "path": "zone/Common/mp_golfcourse.ff",
+      "bytes": 42010016,
+      "etag": "621269af6bf7232c6994492c4d7ede78"
+    },
+    {
+      "path": "zone/Common/mp_gridlock.ff",
+      "bytes": 41763328,
+      "etag": "682d9103bf8d957e6ecfa9ed77c43bae"
+    },
+    {
+      "path": "zone/Common/mp_hanoi.ff",
+      "bytes": 40849184,
+      "etag": "6d2727c61c9c5b2b79d28de5a2ee8944"
+    },
+    {
+      "path": "zone/Common/mp_havoc.ff",
+      "bytes": 39572928,
+      "etag": "b080819549f6ae71cbd7aca40b685e64"
+    },
+    {
+      "path": "zone/Common/mp_hotel.ff",
+      "bytes": 39513824,
+      "etag": "60d7716fe697f88efc23b12e0be99a58"
+    },
+    {
+      "path": "zone/Common/mp_kowloon.ff",
+      "bytes": 37526016,
+      "etag": "0c88d18a887787aa7c9b12056d01423e"
+    },
+    {
+      "path": "zone/Common/mp_mountain.ff",
+      "bytes": 37344704,
+      "etag": "affb4ebff8ff6379fc413bc2ab3a6164"
+    },
+    {
+      "path": "zone/Common/mp_nuked.ff",
+      "bytes": 37475776,
+      "etag": "1b74e6ec206b3828a15db758e895bad1"
+    },
+    {
+      "path": "zone/Common/mp_outskirts.ff",
+      "bytes": 40057952,
+      "etag": "7cd10b826ceefc7cfdd174197d7cdd91"
+    },
+    {
+      "path": "zone/Common/mp_radiation.ff",
+      "bytes": 38441024,
+      "etag": "b2ca4d810ba5e1c2cd29cab11c62a2e3"
+    },
+    {
+      "path": "zone/Common/mp_russianbase.ff",
+      "bytes": 40946432,
+      "etag": "ff5c0795bab61285154147f8f860f46c"
+    },
+    {
+      "path": "zone/Common/mp_silo.ff",
+      "bytes": 43213536,
+      "etag": "2f2ba01a6da88c9b8f6a0ccac7310097"
+    },
+    {
+      "path": "zone/Common/mp_stadium.ff",
+      "bytes": 36094208,
+      "etag": "e35a01678951e8c54bb89c13e808f7f0"
+    },
+    {
+      "path": "zone/Common/mp_villa.ff",
+      "bytes": 36491040,
+      "etag": "27ccb8013f7f7a7c91e044c2ac2ee94e"
+    },
+    {
+      "path": "zone/Common/mp_zoo.ff",
+      "bytes": 38580928,
+      "etag": "73f128a9c4301863880c454a02ae6d4e"
+    },
+    {
+      "path": "zone/Common/patch_mp.ff",
+      "bytes": 2909536,
+      "etag": "a1bdaa39343a0ab8d76c09ded30aaf27"
+    },
+    {
+      "path": "zone/Common/patch_ui_mp.ff",
+      "bytes": 732160,
+      "etag": "9f5c1e851e2e1c562f17ae4cbea5eee7"
+    },
+    {
+      "path": "zone/Common/patch.ff",
+      "bytes": 1368064,
+      "etag": "4a4da1c83b24fc523e27336e090aed18"
+    },
+    {
+      "path": "zone/Common/ui_mp.ff",
+      "bytes": 1383264,
+      "etag": "d3677bc186cf7c9f12d0b9837c1e0f94"
+    }
+  ]
+}
