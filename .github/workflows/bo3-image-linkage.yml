@@ -1,0 +1,38 @@
+name: BO3 GfxImage original source linkage
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-image-linkage.yml"
+      - "scripts/bo3_images_probe.py"
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Full original zone set to scan"
+        type: choice
+        options: [small, expanded]
+        default: small
+
+permissions:
+  contents: read
+
+jobs:
+  image-linkage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Match original BO3 GfxImage structures to original XPAK resources
+        env:
+          BO3_IMAGE_PRESET: ${{ inputs.preset || 'small' }}
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-image-validation
+        run: python3 scripts/bo3_images_probe.py
+      - name: Preserve verification metadata
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-gfximage-source-keys
+          path: ${{ runner.temp }}/bo3-image-validation/*.json
+          retention-days: 7
+          if-no-files-found: warn
