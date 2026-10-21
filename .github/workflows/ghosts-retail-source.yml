@@ -1,0 +1,67 @@
+name: Ghosts retail-source R2 decoder
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ghosts-retail-source.yml"
+      - "scripts/ghosts_retail_run.py"
+  workflow_dispatch:
+    inputs:
+      group:
+        description: "Built-in original Ghosts data group"
+        required: true
+        type: choice
+        options:
+          - point-of-contact
+          - other-maps
+        default: point-of-contact
+      mode:
+        description: "Download/check SHA or decode authenticated IW6 source directories"
+        required: true
+        type: choice
+        options:
+          - iw6-directory
+          - fingerprint
+        default: iw6-directory
+      object_keys:
+        description: "Optional comma-separated R2 keys (overrides the group)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-original-game-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out R2 runner workbench
+        uses: actions/checkout@v4
+
+      - name: Check out public original IW6 research parsers
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/ghosts-decomp
+          ref: 74613f9e7f74dd020f0af111f3750828ac7c9ac8
+          path: research
+          persist-credentials: false
+
+      - name: Download actual R2 originals and verify source decoder
+        env:
+          R2_GROUP: ${{ inputs.group || 'point-of-contact' }}
+          R2_MODE: ${{ inputs.mode || 'iw6-directory' }}
+          R2_OBJECT_KEYS: ${{ inputs.object_keys }}
+          RESEARCH_CHECKOUT: research
+          R2_REPORT_DIR: ${{ runner.temp }}/r2-reports
+        run: python3 scripts/ghosts_retail_run.py
+
+      - name: Publish only metadata and source authentication results
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghosts-original-R2-provenance
+          path: ${{ runner.temp }}/r2-reports/*.json
+          retention-days: 7
+          if-no-files-found: error
