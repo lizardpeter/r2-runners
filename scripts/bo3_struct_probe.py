@@ -77,12 +77,13 @@ def survey(zone:bytes,source:str):
                 meshptr=struct.unpack_from("<Q",zone,p+0x110)[0]
                 model_ptr=struct.unpack_from("<Q",zone,p+0x128)[0]
                 if lod_count>80 or not tagged(meshptr) or not tagged(model_ptr):continue
+                if meshptr in (0,0xfffffffffffffffe):continue
                 props.update({"lod_byte":lod_count,"mesh_pointer":hex(meshptr),
                               "physics_pointer":hex(model_ptr)})
             if label=="xmodelmesh":
                 surfaces=zone[p+0x3c]
                 surfaceptr=struct.unpack_from("<Q",zone,p+0x68)[0]
-                if surfaces>128 or not tagged(surfaceptr):continue
+                if surfaces>128 or not tagged(surfaceptr) or surfaces==0 or surfaceptr==0:continue
                 props.update({"surfaces":surfaces,"surfaceptr":hex(surfaceptr)})
             valid.append(props)
             if len(valid)>=100000:break
