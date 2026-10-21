@@ -13,7 +13,7 @@ def verify(proofs:Path,iwd:Path,out:Path):
     assert len(found)==1 and found[0]["inner_member"]=="images/friendorfoe_self_sp.iwi"
     b=(iwd/found[0]["artifact_file"]).read_bytes()
     assert len(b)==1056 and hashlib.sha256(b).hexdigest()==TARGET_SHA
-    assert found[0]["sha256"]==TARGET_SHA and b[:4]==b"IWi\\x08".replace(b"\\x08",b"\x08")
+    assert found[0]["sha256"]==TARGET_SHA and b[:3]==b"IWi" and b[3]==8
     flags=struct.unpack_from("<I",b,4)[0]
     fmt,width,height,depth=struct.unpack_from("<BxHHH",b,8)
     assert (flags,fmt,width,height,depth)==(0x173,12,32,32,1)
