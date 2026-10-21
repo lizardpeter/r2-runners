@@ -1,0 +1,31 @@
+name: BO3 all original XPAK hash indices
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-all-xpak-indices.yml"
+      - "scripts/bo3_all_xpak_indices.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  all-xpak-indices:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate all 15 retail BO3 KAPI hash directories using exact R2 ranges
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-all-xpak
+        run: python3 scripts/bo3_all_xpak_indices.py
+      - name: Preserve catalog digests without original game bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-all-retail-xpak-hash-catalog
+          path: ${{ runner.temp }}/bo3-all-xpak/*.json
+          if-no-files-found: warn
+          retention-days: 7
