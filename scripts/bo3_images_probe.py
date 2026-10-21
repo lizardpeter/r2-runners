@@ -25,6 +25,25 @@ FF_PRESETS={
     "small":["en_core_common.ff","core_gfx.ff","core_ui.ff"],
     "expanded":list(FILES),
 }
+def source_inline_mip_chain(width:int,height:int,fmt:int,byte_len:int)->int|None:
+    """Prove complete resident DXGI/BCn mip byte ownership without guesswork."""
+    if fmt in (28,29): unit,compressed=4,False
+    elif fmt in (61,62):unit,compressed=1,False
+    elif fmt in (71,72,80,81):unit,compressed=8,True
+    elif fmt in (74,75,77,78,83,84,95,96,98,99):unit,compressed=16,True
+    else:return None
+    done=0
+    count=0
+    w,h=width,height
+    while True:
+        size=((w+3)//4)*((h+3)//4)*unit if compressed else w*h*unit
+        if size>byte_len-done:return None
+        done+=size
+        count+=1
+        if done==byte_len:return count
+        if w==1 and h==1:return None
+        w,h=max(1,w//2),max(1,h//2)
+
 def scan_images(zone:bytes,known_hashes:set[int])->dict:
     hits=[]
     without_pixels=Counter()
@@ -81,12 +100,15 @@ def scan_images(zone:bytes,known_hashes:set[int])->dict:
             raw=zone[end+1:end+1+loaded]
             info["inline_payload_sha256"]=hashlib.sha256(raw).hexdigest()
             info["inline_payload_bytes"]=len(raw)
+            info["exact_mip_chain_levels"]=source_inline_mip_chain(w,h,fmt,len(raw))
         hits.append(info)
     duplicates=Counter(h["name"] for h in hits)
     return {"confirmed_image_descriptions":len(hits),
             "unique_names":len(duplicates),
             "duplicated_names":sum(1 for c in duplicates.values() if c>1),
             "source_kinds":dict(Counter(h["source_kind"] for h in hits)),
+            "inline_exact_mip_chains":sum(1 for h in hits if h["source_kind"]=="inline" and h.get("exact_mip_chain_levels") is not None),
+            "inline_unproven_mip_chains":sum(1 for h in hits if h["source_kind"]=="inline" and h.get("exact_mip_chain_levels") is None),
             "formats":dict(Counter(str(h["source_format"]) for h in hits)),
             "source_size_total":sum(h["source_bytes"] for h in hits),
             "first_20":hits[:20],
