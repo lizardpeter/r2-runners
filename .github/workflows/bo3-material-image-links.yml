@@ -1,0 +1,31 @@
+name: BO3 material to GfxImage retail ownership
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-material-image-links.yml"
+      - "scripts/bo3_material_image_links.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-links:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate original material semantic slots against original GfxImage source ordering
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-material-image-links
+        run: python3 scripts/bo3_material_image_links.py
+      - name: Save verified source metadata only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-source-material-image-edges
+          path: ${{ runner.temp }}/bo3-material-image-links/*.json
+          if-no-files-found: warn
+          retention-days: 7
