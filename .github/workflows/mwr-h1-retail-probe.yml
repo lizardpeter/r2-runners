@@ -5,6 +5,10 @@ on:
     paths:
       - "scripts/mwr_h1_retail_probe.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
+  pull_request:
+    paths:
+      - "scripts/mwr_h1_retail_probe.py"
+      - ".github/workflows/mwr-h1-retail-probe.yml"
   workflow_dispatch:
     inputs:
       map_stem:
