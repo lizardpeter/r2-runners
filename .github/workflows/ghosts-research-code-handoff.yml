@@ -1,0 +1,39 @@
+name: Ghosts IW6 research parser local handoff
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ghosts-research-code-handoff.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  research-python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch public original-IW6 research scripts only
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/ghosts-decomp
+          ref: iw6-fastfile-retail-probes
+          path: ghosts-decomp
+          filter: blob:none
+          sparse-checkout: |
+            tools/fastfile
+          persist-credentials: false
+      - name: Validate original parsing scripts are usable
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q ghosts-decomp/tools/fastfile
+          python3 ghosts-decomp/tools/fastfile/probe_asset_directory.py --test
+      - name: Transfer parsers to local research environment
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghosts-open-source-research-parsers
+          path: ghosts-decomp/tools/fastfile/*.py
+          retention-days: 3
+          if-no-files-found: error
