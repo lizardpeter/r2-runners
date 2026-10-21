@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Match original BO3 GfxImage structures to original XPAK resources
         env:
-          BO3_IMAGE_PRESET: ${{ inputs.preset || 'small' }}
+          BO3_IMAGE_PRESET: ${{ inputs.preset || 'expanded' }}
           BO3_REPORT_DIR: ${{ runner.temp }}/bo3-image-validation
         run: python3 scripts/bo3_images_probe.py
       - name: Preserve verification metadata
