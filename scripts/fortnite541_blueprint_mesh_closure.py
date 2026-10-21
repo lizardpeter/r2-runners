@@ -162,7 +162,8 @@ def main():
     if not args.source_root or not args.report_dir:
         ap.error("--source-root and --report-dir are required")
     paths, source = collect_from_root(args.source_root)
-    report = source_handoff(source_log(paths), "architecture", args.source_root, args.report_dir)
+    report = source_handoff(source_log(paths), "architecture", args.source_root, args.report_dir,
+                            report_filename="original-blueprint-mesh-handoff.json")
     (args.report_dir / "original-blueprint-staticmesh-links.json").write_text(
         json.dumps({"source_imports": source, "verified_mesh_package_census": report["census"],
                     "mesh_package_unresolved": report["unresolved"]}, indent=2) + "\n"
