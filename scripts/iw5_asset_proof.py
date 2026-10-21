@@ -192,7 +192,35 @@ def verify_signed_prefix(path:Path):
         raise ValueError("IW5 source shader pointers changed in original first pass")
     if (per_prim,per_obj,stable,custom_samplers)!=(1,1,4,0):
         raise ValueError("IW5 original shader argument binding census changed")
+    # Actual source MaterialVertexDeclaration is exactly 100 bytes on IW5
+    # x86: name ptr, count/optional flags, 13 (source,dest) route pairs,
+    # and 16 per-format native declaration pointers.
+    original_decl_at=first_technique_at+28
+    vertex_decl=inflated[original_decl_at:original_decl_at+100]
+    if len(vertex_decl)!=100 or struct.unpack_from("<I",vertex_decl)[0]!=INLINE:
+        raise ValueError("IW5 source 100-byte vertex declaration absent")
+    stream_count,optional=vertex_decl[4],vertex_decl[5]
+    if (stream_count,optional)!=(3,0):
+        raise ValueError("IW5 original first material input stream count changed")
+    stream_routes=[
+        {"source":vertex_decl[8+2*i],"dest":vertex_decl[8+2*i+1]}
+        for i in range(stream_count)
+    ]
+    if stream_routes!=[{"source":0,"dest":0},{"source":1,"dest":2},
+                       {"source":2,"dest":5}]:
+        raise ValueError("IW5 original POSITION/COLOR/TEXCOORD routing changed")
+    if any(struct.unpack_from("<16I",vertex_decl,36)):
+        raise ValueError("IW5 source MaterialVertexDecl per-format handles changed")
+    decl_name_end=inflated.find(b"\0",original_decl_at+100,original_decl_at+200)
+    if decl_name_end<0:raise ValueError("IW5 source vertex declaration name missing")
+    decl_name=inflated[original_decl_at+100:decl_name_end].decode("ascii")
+    if decl_name!="ppcc0t0t0":
+        raise ValueError("IW5 original material vertex-decl identity changed")
     render_source={
+        "first_vertex_declaration":{
+            "name":decl_name,"bytes":100,"stream_count":stream_count,
+            "has_optional_source":bool(optional),"source_to_shader_routes":stream_routes
+        },
         "first_inline_technique": {
             "pass_count": technique_passes,
             "flags":technique_flags,
