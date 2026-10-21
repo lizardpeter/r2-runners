@@ -26,6 +26,20 @@ It uses the pinned public `Fortnite-reverse` parser to retrieve genuine retail-c
 - **An exact-source-files artifact:** original `.umap`, `.uexp`, `.uasset`, `.ubulk` payload files, where actually recovered, preserving `FortniteGame/Content/...` paths.
 - **A separate validation/report artifact:** source inventory, checksums, actor/mesh/material diagnostics, and any errors.
 
+### Athena POI exact dependency chain (21 October 2026)
+
+The `poi` workflow is no longer a list of known UWorlds only. It performs the following source-backed dependency closure on the same runner:
+
+1. The pinned **public** UE4 parser retrieves original REC, Warehouses, Pueblo, and nested 3x3/5x5/7x12 UWorld `.umap/.uexp` payloads with per-file authenticated PAK SHA-1.
+2. `scripts/fortnite541_dependency_handoff.py` reads the actual original actor class frontier. It fetches their distinct cooked architectural Blueprint `.uasset/.uexp` packages, along with directly referenced static meshes.
+3. `scripts/fortnite541_blueprint_mesh_closure.py` parses original UE4 FObjectImport/FName/Outer tables in those exact Blueprint bytes, resolves their **source-owned** UStaticMesh package identities, and fetches those original mesh source files. It does not infer mesh identities from prefab names.
+4. `scripts/fortnite541_material_dependency_closure.py` follows original mesh MaterialInterface, original material parent and Texture2D UObject imports to recover actual renderer-facing source assets. Source-missing, ambiguous, encrypted and incompatible records are reported, never replaced.
+5. Every actual file is preserved at its original `FortniteGame/Content/...` path and published as an **exact-source** GitHub Actions artifact; the JSON source validation reports are companion artifacts.
+
+[Verified real-source UWorld → Blueprint → UStaticMesh run](https://github.com/lizardpeter/r2-runners/actions/runs/39638599890): 683 actual source files delivered; 151 architectural Blueprint class packages and 160 original mesh package identities recovered from retail indexes, with zero unresolved entries in both class and mesh passes. The material/texture step is a further dependency frontier and is not implied to be complete until its own report passes.
+
+The private `Rust-test` importer and universal renderer remain in the private repository, never checked out on these public GitHub runners.
+
 This is source-file delivery for real importer implementation; no public-runner result by itself proves that the private Windows Vulkan `Rust-test` game renders correctly. Investigate missing files from the explicit inventory, not by replacing them with approximations.
 
 ## Download a specific public R2 object intact
