@@ -17,6 +17,9 @@ from bo3_model_material_fields import inspect,BASE,NAMES
 from bo3_xmodel_lod_walk import candidates
 from bo3_material_binding_probe import analyze as source_material_tables
 from bo3_first_mesh_walk import valid_mesh,decode_authentic_rigid_geometry
+from bo3_base_index import read_base_index
+from bo3_all_xpak_indices import read_index as read_one_kapi_index
+from bo3_material_image_links import source_links
 ZONE="en_core_common.ff"
 KNOWN_POINTERS={0,0xffffffffffffffff,0xfffffffffffffffe}
 def kind(n):
@@ -201,7 +204,81 @@ def main():
      "unique_complete_first_lod_handle_owner":len(complete_owners)==1,
      "child":child,
    })
+  # Full original material dependency closure: model -> typed Material
+  # XAsset row -> unique source MaterialImage semantic slots -> authentic
+  # GfxImage source ownership. No material/texture names are guessed.
+  base_index,keys=read_base_index()
+  keys=set(keys)
+  for pkg in ("en_initial.xpak","en_base.xpak","base_patch_tu32.xpak"):
+   meta,extra=read_one_kapi_index(pkg)
+   keys.update(extra)
+  images=source_links(z,keys)
+  linked_by_name={m["material"]:m for m in images["linked_materials"]}
+  source_mats={m["name"]:m for m in typed_materials}
+  all_plans=[]
+  failed_plans=[]
+  for record in result:
+   if not record["unique_complete_first_lod_handle_owner"]:
+    failed_plans.append({"model":record["model"],"reason":"first_lod_material_handles_ambiguous_or_missing"})
+    continue
+   owner=record["complete_first_lod_material_handle_arrays"][0]
+   surface_plans=[]
+   error=None
+   for surface in owner["resolved_original_material_names"]:
+    mat_name=surface["material_name"]
+    mat=source_mats.get(mat_name)
+    image_info=linked_by_name.get(mat_name)
+    if mat is None or image_info is None or mat["all_arrays_count"]!=1:
+     error=f"Material {mat_name} not resolved through unique image source table"
+     break
+    original_slots=mat["complete_consecutive_slot_arrays"][0]["slots"]
+    image_edges={e["material_slot"]:e for e in image_info["ordered_material_edges"]}
+    if len(original_slots)!=mat["reported_slots"]:
+     error=f"Incomplete MaterialImage count: {mat_name}"
+     break
+    textures=[]
+    for index,slot in enumerate(original_slots):
+     is_inline=slot["source_pointer"]=="0xffffffffffffffff"
+     edge=image_edges.get(index)
+     if is_inline and (edge is None or edge["source_hash"]!=slot["raw_semantic_hash"]):
+      error=f"Unresolved original source image for {mat_name} slot {index}"
+      break
+     if not is_inline and edge is not None:
+      error=f"Image edge unexpectedly claims nonresident {mat_name} slot {index}"
+      break
+     textures.append({
+       "index":index,"original_semantic":slot["raw_semantic_hash"],
+       "source_image_ptr":slot["source_pointer"],
+       "source_image_name":edge["image_name"] if edge else None,
+     })
+    if error:break
+    surface_plans.append({
+      "ordinal":surface["ordinal"],
+      "source_material_xasset_row":surface["material_xasset_row"],
+      "source_material_name":mat_name,
+      "material_texture_bindings":textures,
+    })
+   if error:
+    failed_plans.append({"model":record["model"],"reason":error})
+   else:
+    all_plans.append({"model":record["model"],
+                      "original_first_lod_surfaces":record["first_lod_surface_count"],
+                      "source_material_surfaces":surface_plans})
+  verified_surface_count=sum(len(x["source_material_surfaces"]) for x in all_plans)
+  verified_texture_slots=sum(len(surf["material_texture_bindings"]) for x in all_plans
+                            for surf in x["source_material_surfaces"])
+  confirmed_image_edges=sum(t["source_image_name"] is not None for x in all_plans
+                      for surf in x["source_material_surfaces"]
+                      for t in surf["material_texture_bindings"])
+  unresolved_image_backrefs=verified_texture_slots-confirmed_image_edges
   report={"zone":ZONE,"original_sha256":sha,"total_models":len(result),
+          "source_model_material_plan_count":len(all_plans),
+          "source_model_material_plans":all_plans,
+          "source_material_plan_unresolved":failed_plans,
+          "verified_model_surface_materials":verified_surface_count,
+          "source_texture_slots_across_model_surfaces":verified_texture_slots,
+          "original_named_gfximage_edges_across_model_surfaces":confirmed_image_edges,
+          "unresolved_source_image_block_backrefs":unresolved_image_backrefs,
           "models_with_unique_complete_first_lod_handles":sum(m["unique_complete_first_lod_handle_owner"] for m in result),
           "surface_tokens_in_unique_complete_owners":sum(
              len(m["complete_first_lod_material_handle_arrays"][0]["per_surface_source_handles"])
