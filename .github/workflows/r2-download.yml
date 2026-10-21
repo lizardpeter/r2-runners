@@ -40,11 +40,11 @@ jobs:
             --output-dir "$RUNNER_TEMP/r2" \
             "${expected[@]}"
 
-      - name: Publish verification and sample bytes
+      - name: Publish complete original R2 object and verification
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: r2-verified-download
           path: ${{ runner.temp }}/r2/artifact/
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 90
