@@ -1,0 +1,50 @@
+name: Public Rust crates for offline importer tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/rust-public-crates-handoff.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vendor-public-crates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Vendor only publicly available Rust dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ghosts-cargo-deps/src"
+          cat > "$RUNNER_TEMP/ghosts-cargo-deps/Cargo.toml" <<'TOML'
+          [package]
+          name = "offline-ghosts-dependencies"
+          version = "0.1.0"
+          edition = "2021"
+          [dependencies]
+          flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+          sha2 = "0.10"
+          ureq = { version = "2.12", default-features = false, features = ["tls"] }
+          serde = { version = "1", features = ["derive", "rc"] }
+          bytemuck = { version = "1", features = ["min_const_generics", "extern_crate_alloc"] }
+          TOML
+          printf '%s\n' 'fn main() {}' > "$RUNNER_TEMP/ghosts-cargo-deps/src/main.rs"
+          cd "$RUNNER_TEMP/ghosts-cargo-deps"
+          cargo generate-lockfile
+          cargo vendor --locked --versioned-dirs vendor > /dev/null
+          test -f Cargo.lock
+          test -d vendor/flate2-*
+          tar -czf "$RUNNER_TEMP/ghosts-public-crates.tar.gz" -C "$RUNNER_TEMP/ghosts-cargo-deps" Cargo.lock vendor
+          du -h "$RUNNER_TEMP/ghosts-public-crates.tar.gz"
+      - name: Publish offline public dependency cache only
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-crates-for-ghosts-offline-tests
+          path: ${{ runner.temp }}/ghosts-public-crates.tar.gz
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: error
