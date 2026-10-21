@@ -22,6 +22,7 @@ from mwr_h1_world_vertex_probe import WorldVertexRunScanner
 from mwr_h1_world_vertex_verify import verify_source_vertex_array
 from mwr_h1_index_candidate_probe import probe_original_index_array
 from mwr_h1_surface_probe import H1SurfaceSourceScanner
+from mwr_h1_surface_verify import verify_source_surface_array
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -295,6 +296,9 @@ def main()->int:
                             if checked.get("status")=="complete":
                                 scanned["world_index_source_order_candidates"]=probe_original_index_array(
                                     local,header,LogicalSignedStream,checked,roots[0])
+                            scanned["world_surface_exact_window_verification"]=verify_source_surface_array(
+                                local,header,LogicalSignedStream,
+                                scanned["gfxworld_surface_source_candidate_scan"],roots[0])
                 except Exception as exc:
                     header["whole_zone_decode"]={"status":"failed","reason":str(exc)}
                     print(f"H1 full decode not yet validated for {name}: {exc}",file=sys.stderr,flush=True)
