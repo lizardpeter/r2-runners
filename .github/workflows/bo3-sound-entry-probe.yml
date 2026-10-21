@@ -1,0 +1,28 @@
+name: BO3 original T7 indexed sound entry proof
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/bo3_audio_entry_probe.py
+      - .github/workflows/bo3-sound-entry-probe.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-audio-entries:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all original T7 SAB v15 sound entry index tables with original R2 ranges
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-sound-entry-source
+        run: python3 scripts/bo3_audio_entry_probe.py
+      - name: Store source index proofs only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-original-audio-index-provenance
+          path: ${{ runner.temp }}/bo3-sound-entry-source/*.json
+          retention-days: 7
+          if-no-files-found: warn
