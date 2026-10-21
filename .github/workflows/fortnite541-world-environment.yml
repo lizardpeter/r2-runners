@@ -32,21 +32,35 @@ jobs:
       matrix:
         family: [poi, streaming, buildings, background, vegetation, atmosphere, terrain]
         shard: [0, 1]
-    if: github.event_name == 'push' || inputs.family == 'all' || inputs.family == matrix.family
     steps:
+      - name: Filter selected original source family
+        id: selected
+        shell: bash
+        env:
+          FAMILY: ${{ matrix.family }}
+          SELECTED: ${{ inputs.family }}
+        run: |
+          if [[ "${{ github.event_name }}" == push || "$SELECTED" == all || "$SELECTED" == "$FAMILY" ]]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Checkout public retail PAK authenticator
+        if: steps.selected.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           repository: lizardpeter/Fortnite-reverse
           ref: 0742a8de70e692d9a994d50480fbce27905f0156
           persist-credentials: false
       - name: Checkout isolated source recovery workbench
+        if: steps.selected.outputs.run == 'true'
         uses: actions/checkout@v4
         with:
           repository: lizardpeter/r2-runners
           path: r2-workbench
           persist-credentials: false
       - name: Download complete authentic shard of original Athena world/environment packages
+        if: steps.selected.outputs.run == 'true'
         shell: bash
         env:
           FAMILY: ${{ matrix.family }}
@@ -61,7 +75,7 @@ jobs:
             --destination "$root" --reports "$report" \
             2>&1 | tee "$report/authenticated-source-download.log"
       - name: Decode exact actor names, authored lights, vegetation and atmosphere classes from UWorlds
-        if: matrix.family == 'poi' || matrix.family == 'streaming' || matrix.family == 'buildings' || matrix.family == 'background'
+        if: steps.selected.outputs.run == 'true' && (matrix.family == 'poi' || matrix.family == 'streaming' || matrix.family == 'buildings' || matrix.family == 'background')
         shell: bash
         env:
           FAMILY: ${{ matrix.family }}
@@ -74,7 +88,7 @@ jobs:
             --root "$root" --reports "$report" \
             2>&1 | tee "$report/world-actor-census.log"
       - name: Generate complete original-byte inventory (also on errors)
-        if: always()
+        if: always() && steps.selected.outputs.run == 'true'
         shell: bash
         env:
           FAMILY: ${{ matrix.family }}
@@ -101,7 +115,7 @@ jobs:
                 len(census),sum(x["bytes"] for x in census),flush=True)
           PY
       - name: Preserve all verified original asset bytes
-        if: always()
+        if: always() && steps.selected.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fortnite541-${{ matrix.family }}-shard${{ matrix.shard }}-exact-source-${{ github.run_id }}
@@ -110,7 +124,7 @@ jobs:
           retention-days: 90
           compression-level: 0
       - name: Preserve actor-name/light/fog/vegetation census plus SHA diagnostics
-        if: always()
+        if: always() && steps.selected.outputs.run == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: fortnite541-${{ matrix.family }}-shard${{ matrix.shard }}-source-report-${{ github.run_id }}
