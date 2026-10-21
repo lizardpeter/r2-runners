@@ -107,12 +107,12 @@ def survey(zone:bytes,source:str):
     if isinstance(table_start,int) and isinstance(record_count,int):
         for row in range(min(record_count,2_000_000)):
             ty,ref=struct.unpack_from("<QQ",zone,table_start+16*row)
-            typed_headers.setdefault(ty,set()).add(ref)
+            typed_headers.setdefault(ty,Counter())[ref]+=1
     xmodels=authenticated_candidates["xmodel"]
-    model_known=sum(int(x["mesh_pointer"],16) in typed_headers.get(5,set()) for x in xmodels)
+    model_known=sum(typed_headers.get(5,Counter()).get(int(x["mesh_pointer"],16),0)==1 and int(x["mesh_pointer"],16) not in PTRS for x in xmodels)
     mats=authenticated_candidates["material"]
-    tech_known=sum(int(x["technique_ptr"],16) in typed_headers.get(8,set()) for x in mats)
-    matched_models=[x for x in xmodels if int(x["mesh_pointer"],16) in typed_headers.get(5,set())]
+    tech_known=sum(typed_headers.get(8,Counter()).get(int(x["technique_ptr"],16),0)==1 and int(x["technique_ptr"],16) not in PTRS for x in mats)
+    matched_models=[x for x in xmodels if int(x["mesh_pointer"],16) not in PTRS and typed_headers.get(5,Counter()).get(int(x["mesh_pointer"],16),0)==1]
     direct_links={"local_models":len(xmodels),
         "mesh_pointer_exact_xasset_header_matches":model_known,
         "matched_model_examples":[{"name":x["name"],"mesh_pointer":x["mesh_pointer"]} for x in matched_models[:10]],
