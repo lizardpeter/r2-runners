@@ -162,7 +162,32 @@ def verify_signed_prefix(path:Path):
     packed=sum(x not in (0,INLINE) for x in technique_slots)
     if (technique_set_name,inline,absent,packed)!=("mc_ambient_t0c0_nocast",22,14,18):
         raise ValueError("original source technique mapping census regression")
+    # Verify the first original inlined technique's pass-binding table.
+    # The shader objects themselves are separate recursive source assets,
+    # so this is evidence of original links, not shader translation.
+    first_technique_at=end+1
+    technique_name_ptr,technique_flags,technique_passes=struct.unpack_from(
+        "<IHH",inflated,first_technique_at)
+    if technique_name_ptr!=INLINE or technique_passes!=1:
+        raise ValueError("IW5 original inline MaterialTechnique header changed")
+    pass_struct=struct.unpack_from("<III4BI",inflated,first_technique_at+8)
+    declptr,vsptr,psptr,per_prim,per_obj,stable,custom_samplers,argsptr=pass_struct
+    if (declptr,vsptr,psptr,argsptr)!=(INLINE,INLINE,INLINE,INLINE):
+        raise ValueError("IW5 source shader pointers changed in original first pass")
+    if (per_prim,per_obj,stable,custom_samplers)!=(1,1,4,0):
+        raise ValueError("IW5 original shader argument binding census changed")
     render_source={
+        "first_inline_technique": {
+            "pass_count": technique_passes,
+            "flags":technique_flags,
+            "original_vertex_declaration_pointer": f"0x{declptr:08x}",
+            "original_vertex_shader_pointer": f"0x{vsptr:08x}",
+            "original_pixel_shader_pointer": f"0x{psptr:08x}",
+            "shader_args_per_primitive":per_prim,
+            "shader_args_per_object":per_obj,
+            "shader_args_stable":stable,
+            "custom_sampler_flags":custom_samplers
+        },
         "serialized_stringtables":len(stringtable_names),
         "first_table":stringtable_names[0],
         "last_table":stringtable_names[-1],
