@@ -14,6 +14,7 @@ import sys
 from urllib.request import Request, urlopen
 from urllib.parse import quote
 from mwr_h1_asset_directory import inspect_prefix
+from mwr_h1_image_streams import analyze_stream_table
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -237,6 +238,8 @@ def main()->int:
             local,sha=download(args.origin,key,args.output_dir)
             header=probe_header(local)
             header["sha256"]=sha
+            if header["rows"]>0:
+                header["streamed_image_table_evidence"]=analyze_stream_table(local)
             # Probe the main and smaller path archive with real raw LZ4
             # candidates, but never claim decompression success without bytes.
             if name in (f"{stem}.ff",f"{stem}_path.ff"):
