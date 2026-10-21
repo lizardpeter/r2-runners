@@ -61,7 +61,7 @@ def inspect_path_nodes(data: bytes) -> dict:
         raise ValueError(f"Original PathData node array not inline: {ptr_nodes}")
     pos = hdr_off + 136
     if ptr_name in ("follows", "insert"):
-        term = data.find(b"\\x00", pos, pos + 4096)
+        term = data.find(bytes([0]), pos, pos + 4096)
         if term < 0:
             raise ValueError("Original PathData name is not terminated")
         pos = term + 1
