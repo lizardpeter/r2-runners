@@ -6,6 +6,7 @@ on:
       - "scripts/iw5_asset_proof.py"
       - "scripts/iw5_shader_proof.py"
       - "scripts/iw5_complete_material_proof.py"
+      - "scripts/iw5_material_image_link.py"
       - ".github/workflows/iw5-xasset-proof.yml"
   workflow_dispatch:
 permissions:
@@ -24,6 +25,13 @@ jobs:
           run-id: 39636056509
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/original-iw5
+      - name: Recover original IWI from independent R2 nested-IWD run
+        uses: actions/download-artifact@v4
+        with:
+          name: iw5-retail-fof-image
+          run-id: 39676265562
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/original-iw5-image
       - name: Verify actual original IW5 XAsset tables and localization
         run: |
           python3 scripts/iw5_asset_proof.py \
@@ -38,6 +46,12 @@ jobs:
         run: |
           python3 scripts/iw5_complete_material_proof.py \
             --samples "$RUNNER_TEMP/original-iw5/source_samples" \
+            --out "$RUNNER_TEMP/iw5-proof"
+      - name: Prove real IWD BC2 pixels match original FastFile shader material
+        run: |
+          python3 scripts/iw5_material_image_link.py \
+            --proofs "$RUNNER_TEMP/iw5-proof" \
+            --iwd "$RUNNER_TEMP/original-iw5-image" \
             --out "$RUNNER_TEMP/iw5-proof"
       - name: Upload analysis results (no source bytes)
         if: always()
