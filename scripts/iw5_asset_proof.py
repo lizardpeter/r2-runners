@@ -5,7 +5,7 @@ Inputs are original bytes produced by the isolated R2 source runner. Reports
 contain counts and only asset IDs, not serialized game assets or localization.
 """
 from pathlib import Path
-import argparse, json, struct, zlib
+import argparse, hashlib, json, struct, zlib
 from collections import Counter
 
 ENVELOPE_LEN=21
@@ -86,11 +86,36 @@ def scan_full_original_ff(path:Path):
         "all_localization_keys_unique":len(set(names))==len(names),
     }
 
+def verify_signed_prefix(path:Path):
+    data=path.read_bytes()
+    if data[:8] != b"IWff0100" or data[21:29] != b"IWffs100":
+        raise ValueError("not a signed original IW5 FF/auth envelope")
+    block=8192
+    master=data[21+block:21+2*block]
+    payload_start=21+2*block
+    checked=0
+    for slot in range(block//32):
+        part=data[payload_start+slot*block:payload_start+(slot+1)*block]
+        if len(part)<block:
+            break
+        if hashlib.sha256(part).digest()!=master[slot*32:(slot+1)*32]:
+            raise ValueError("source SHA-256 integrity mismatch at signed block "+str(slot))
+        checked+=1
+    if checked==0:
+        raise ValueError("signed source sample lacks a full authenticated block")
+    return {"source":path.name,"sha256_verified_complete_blocks":checked,
+            "authentication_marker":"IWffs100",
+            "publisher_signature_verification":"not performed"}
+
 def main(input_dir:Path, output_dir:Path):
     output_dir.mkdir(parents=True,exist_ok=True)
     results=[]
     errors=[]
+    signed=[]
     for path in sorted(input_dir.glob("*.ff")):
+        if path.read_bytes()[:8]==b"IWff0100":
+            signed.append(verify_signed_prefix(path))
+            continue
         # The original artifact contains prefixes of several large zones;
         # inspect a member only when the entire zlib stream is available.
         try: results.append(scan_full_original_ff(path))
@@ -104,13 +129,15 @@ def main(input_dir:Path, output_dir:Path):
             sum(x["localized_count"] for x in results),
             "verified_packed_string_reference_count":
             sum(x["packed_string_references"] for x in results),
-            "per_fastfile":results,"unverified_prefixes":errors}
+            "per_fastfile":results,"signed_source_prefixes":signed,"unverified_prefixes":errors}
     (output_dir/"iw5_verified_xasset_report.json").write_text(json.dumps(report,indent=2)+"\n")
     print(json.dumps(report,indent=2))
     if len(results)!=7 or report["verified_localization_count"]!=662:
         raise RuntimeError("Unexpected source sample count or XAsset layout regression")
     if sum(tally.values())!=1044:
         raise RuntimeError("IW5 original source asset count regression")
+    if len(signed)!=1 or signed[0]["sha256_verified_complete_blocks"]!=29:
+        raise RuntimeError("IW5 signed source authentication block layout regression")
     return report
 
 if __name__=="__main__":
