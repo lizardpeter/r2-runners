@@ -203,6 +203,25 @@ def probe_xasset_array_after_strings(data: bytes, asset_count: int, script_end: 
                            -r["pointer_tags"].get("inline",0),r["offset"]))
     return out[:8]
 
+
+
+def inspect_post_script_cursor(data: bytes, script_end: int, asset_count: int) -> dict:
+    aligned=(script_end+7)&~7
+    max_bytes=min(384,len(data)-aligned)
+    if max_bytes < 40:
+        return {"status":"not_available"}
+    blob=data[aligned:aligned+max_bytes]
+    words=[struct.unpack_from("<Q",blob,i)[0] for i in range(0,len(blob)-7,8)]
+    dwords=[struct.unpack_from("<I",blob,i)[0] for i in range(0,len(blob)-3,4)]
+    return {
+        "after_script_unaligned":script_end,
+        "after_script_aligned":aligned,
+        "first_192_raw_hex":blob[:192].hex(" "),
+        "first_36_u64":[f"{v:016x}" for v in words[:36]],
+        "first_48_u32":dwords[:48],
+        "asset_count_from_root":asset_count,
+    }
+
 def inspect_prefix(data: bytes) -> dict:
     if len(data) < 104:
         raise ValueError("No complete H1 XAssetList prelude")
@@ -230,6 +249,7 @@ def inspect_prefix(data: bytes) -> dict:
     result["sample_8byte_words_at_112"]=[f"{u64(data,p):016x}" for p in range(112, min(len(data)-8,360),8)]
     end_of_strings=(result.get("decoded_indexed_script_strings") or {}).get("inline_blob_end_offset",112)
     result["xasset_16byte_table_candidate_runs"]=scan_table_candidates(data, asset_count)
+    result["candidate_post_script_globals"]=inspect_post_script_cursor(data,end_of_strings,asset_count)
     result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
         data,asset_count,end_of_strings)
     return result
