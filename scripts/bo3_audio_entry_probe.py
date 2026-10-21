@@ -46,7 +46,7 @@ def inspect_bank(name):
         raise ValueError(f"Unsupported original SAB record stride or count {name}")
     span=entries*stride
     if table<608 or table+span>SIZES[name] or (entries>0 and table+span>name_table):
-        raise ValueError(f"Original SAB table bounds fail {name}")
+        raise ValueError(f"Original SAB table bounds fail {name}: entries={entries}, stride={stride}, table={table}, end={table+span}, name_offset={name_table}, size={SIZES[name]}")
     out={
       "bank":name,"file_bytes":SIZES[name],"v15_records_declared":entries,
       "record_bytes":stride,"entry_table_offset":table,
