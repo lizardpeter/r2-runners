@@ -1,0 +1,46 @@
+name: Fortnite 5.41 original landscape material graph source closure
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fortnite541-landscape-material-source.yml
+      - scripts/fortnite541_landscape_material_source.py
+permissions:
+  contents: read
+jobs:
+  landscape-originals:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/r2-runners
+          path: workbench
+          persist-credentials: false
+      - name: Run importer source collection unit checks
+        run: python3 workbench/scripts/fortnite541_landscape_material_source.py --self-test
+      - name: Retrieve every original Athena landscape material-function dependency
+        run: |
+          PYTHONPATH=workbench/scripts python3 workbench/scripts/fortnite541_landscape_material_source.py \
+            --output "$RUNNER_TEMP/athena-landscape-original" \
+            --report "$RUNNER_TEMP/athena-landscape-source-report"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fortnite541-original-landscape-material-source-${{ github.run_id }}
+          path: ${{ runner.temp }}/athena-landscape-original/
+          retention-days: 90
+          if-no-files-found: warn
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fortnite541-landscape-material-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/athena-landscape-source-report/
+          retention-days: 90
+          if-no-files-found: warn
