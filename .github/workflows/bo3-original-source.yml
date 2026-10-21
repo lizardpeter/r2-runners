@@ -1,0 +1,39 @@
+name: BO3 original T7 archive survey
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-original-source.yml"
+      - "scripts/bo3_probe.py"
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Real BO3 archive sample set"
+        type: choice
+        required: true
+        default: small
+        options: [small, extended]
+
+permissions:
+  contents: read
+
+jobs:
+  original-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe BO3 FastFile and XPAK originals directly from public R2
+        env:
+          BO3_PRESET: ${{ inputs.preset || 'small' }}
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-reports
+        run: python3 scripts/bo3_probe.py
+      - name: Publish metadata only (no original assets)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-t7-original-source-header-evidence
+          path: ${{ runner.temp }}/bo3-reports/*.json
+          if-no-files-found: warn
+          retention-days: 7
