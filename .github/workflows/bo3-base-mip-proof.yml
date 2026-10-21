@@ -1,0 +1,31 @@
+name: BO3 original base XPAK mip decode proof
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-base-mip-proof.yml"
+      - "scripts/bo3_base_mip_probe.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mip-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decode exact streamed BO3 image mip resource spans
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-mips
+        run: python3 scripts/bo3_base_mip_probe.py
+      - name: Preserve original-source fingerprints and size checks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-gfximage-base-original-payload-evidence
+          path: ${{ runner.temp }}/bo3-mips/*.json
+          retention-days: 7
+          if-no-files-found: warn
