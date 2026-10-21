@@ -1,0 +1,42 @@
+name: BO1 complete-game selective R2 ZIP64 probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-full-game.yml"
+      - "scripts/bo1_full_game_range.py"
+      - "scripts/bo1_probe.py"
+  workflow_dispatch:
+    inputs:
+      preset:
+        description: "Map(s) to inspect inside the full BO1 game archive"
+        type: choice
+        required: true
+        default: both
+        options: [nuketown, firingrange, both, all_multiplayer]
+
+permissions:
+  contents: read
+
+jobs:
+  full-game-originals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read original BO1 ZIP64 central directory over verified R2 byte ranges
+        env:
+          BO1_PRESET: ${{ inputs.preset || 'both' }}
+        run: |
+          python3 scripts/bo1_full_game_range.py \
+            --preset "$BO1_PRESET" \
+            --output-dir "$RUNNER_TEMP/bo1-full-game"
+      - name: Upload JSON only; never redistribute original game files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-full-game-source-report
+          path: ${{ runner.temp }}/bo1-full-game/report/*.json
+          if-no-files-found: warn
+          retention-days: 7
