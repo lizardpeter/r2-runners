@@ -1,0 +1,48 @@
+name: H1 Modern Warfare Remastered exact-source probe
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/mwr_h1_retail_probe.py"
+      - ".github/workflows/mwr-h1-retail-probe.yml"
+  workflow_dispatch:
+    inputs:
+      map_stem:
+        description: "MWR map stem, e.g. mp_crash_snow"
+        required: true
+        type: string
+        default: "mp_crash_snow"
+permissions:
+  contents: read
+jobs:
+  exact-source-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install independent LZ4 research tool
+        run: python3 -m pip install --quiet lz4
+      - name: Fetch exact original H1 FastFiles and inspect headers and LZ4 framing
+        shell: bash
+        env:
+          H1_STEM: ${{ inputs.map_stem || 'mp_crash_snow' }}
+        run: |
+          set -euo pipefail
+          python3 scripts/mwr_h1_retail_probe.py \
+            --stem "$H1_STEM" \
+            --origin https://r2.houseofkublai.com \
+            --r2-prefix h1/h1_full_files/zone \
+            --output-dir "$RUNNER_TEMP/h1-original" \
+            --report "$RUNNER_TEMP/h1-report.json" \
+            --include-primary
+          cat "$RUNNER_TEMP/h1-report.json"
+          echo '### Verified H1 retail probe' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Original source bytes remained only in ephemeral runner scratch storage.' >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve structured findings (no original retail binaries)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mwr-h1-source-probe-diagnostics
+          path: ${{ runner.temp }}/h1-report.json
+          if-no-files-found: warn
+          retention-days: 14
