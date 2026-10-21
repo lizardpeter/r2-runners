@@ -103,7 +103,40 @@ def verify_signed_prefix(path:Path):
         checked+=1
     if checked==0:
         raise ValueError("signed source sample lacks a full authenticated block")
+    authenticated=data[payload_start:payload_start+checked*block]
+    inflated=zlib.decompressobj().decompress(authenticated,16*1024*1024)
+    if len(inflated)<60:
+        raise ValueError("signed IW5 decoded prelude is truncated")
+    script_count=u32(inflated,44)
+    script_ptr=u32(inflated,48)
+    asset_count=u32(inflated,52)
+    asset_ptr=u32(inflated,56)
+    if script_count>2000000 or asset_count>2000000 or script_ptr!=INLINE or asset_ptr!=INLINE:
+        raise ValueError("unexpected signed original script or XAsset pointer table")
+    pos=60
+    if any(u32(inflated,pos+4*i)!=INLINE for i in range(script_count)):
+        raise ValueError("unexpected signed original script pointer form")
+    pos+=4*script_count
+    names=[]
+    for _ in range(script_count):
+        end=inflated.find(b"\0",pos,pos+8192)
+        if end<0:
+            raise ValueError("truncated signed original script string")
+        names.append(inflated[pos:end])
+        pos=end+1
+    types=Counter()
+    for i in range(asset_count):
+        kind,ptr=struct.unpack_from("<II",inflated,pos+8*i)
+        if kind>=46 or ptr!=INLINE:
+            raise ValueError("unexpected signed original XAsset table entry")
+        types[kind]+=1
+    if script_count!=330 or asset_count!=670:
+        raise ValueError("signed source script/XAsset census regression")
     return {"source":path.name,"sha256_verified_complete_blocks":checked,
+            "authenticated_inflated_prefix_bytes":len(inflated),
+            "script_string_count":script_count,
+            "xasset_count":asset_count,
+            "asset_type_counts":{str(k):v for k,v in sorted(types.items())},
             "authentication_marker":"IWffs100",
             "publisher_signature_verification":"not performed"}
 
