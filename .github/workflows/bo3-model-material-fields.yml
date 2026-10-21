@@ -1,0 +1,32 @@
+name: BO3 actual XModel LOD and material pointer fields
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo3-model-material-fields.yml"
+      - "scripts/bo3_model_material_fields.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-model-fields:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify genuine BO3 XModel LOD and material-pointer source fields
+        env:
+          BO3_REPORT_DIR: ${{ runner.temp }}/bo3-model-fields
+          BO3_XMODEL_PRESET: en_core_common.ff
+        run: python3 scripts/bo3_model_material_fields.py
+      - name: Save source layout evidence without original retail payload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-real-model-material-pointer-offsets
+          path: ${{ runner.temp }}/bo3-model-fields/*.json
+          if-no-files-found: warn
+          retention-days: 7
