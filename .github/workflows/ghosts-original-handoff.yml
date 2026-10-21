@@ -1,4 +1,4 @@
-name: Ghosts original FastFile local handoff
+name: Ghosts original Point of Contact full FastFile handoff
 
 on:
   push:
@@ -13,25 +13,37 @@ permissions:
 jobs:
   handoff:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 30
     steps:
-      - name: Download original Ghosts path zone
+      - name: Download the four unmodified original Point of Contact FastFiles
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/ghosts-original"
-          curl --fail --show-error --silent --location --retry 3 \
-            --connect-timeout 20 --max-time 300 \
-            -o "$RUNNER_TEMP/ghosts-original/mp_alien_town_path.ff" \
-            "https://r2.houseofkublai.com/ghosts/DUMP/mp_alien_town_path.ff"
-          test "$(stat -c%s "$RUNNER_TEMP/ghosts-original/mp_alien_town_path.ff")" = 385068
+          while read -r file expected_size; do
+            echo "::group::Original $file"
+            curl --fail --show-error --silent --location --retry 4               --retry-all-errors --retry-delay 3 --connect-timeout 25               --max-time 1200               --output "$RUNNER_TEMP/ghosts-original/$file"               "https://r2.houseofkublai.com/ghosts/DUMP/$file"
+            actual_size="$(stat -c%s "$RUNNER_TEMP/ghosts-original/$file")"
+            test "$actual_size" = "$expected_size" || {
+              echo "::error::Original $file is $actual_size bytes; expected $expected_size"
+              exit 1
+            }
+            sha256sum "$RUNNER_TEMP/ghosts-original/$file"
+            echo "::endgroup::"
+          done <<'SOURCES'
+          mp_alien_town_path.ff 385068
+          techsets_mp_alien_town.ff 7479340
+          mp_alien_town_load.ff 1957932
+          mp_alien_town.ff 186301740
+          SOURCES
           echo "e1d4e3294fd1e6f36552ce0fbfd0f1e5268c983d8c34ef58fcef6b9f0cf49dbb  $RUNNER_TEMP/ghosts-original/mp_alien_town_path.ff" | sha256sum --check
-          echo "Original R2 source checksum verified"
-      - name: Make source available for local reverse engineering
+          echo "e5fa1a4b094466e329f5f4f7d035c9afd31d1b1822121ec8086c05174a796d81  $RUNNER_TEMP/ghosts-original/mp_alien_town.ff" | sha256sum --check
+          echo "Original Point of Contact four-file source handoff ready"
+      - name: Handoff original binary sources with one-day retention
         uses: actions/upload-artifact@v4
         with:
-          name: ghosts-path-original-short-retention
-          path: ${{ runner.temp }}/ghosts-original/mp_alien_town_path.ff
+          name: ghosts-poc-four-original-fastfiles
+          path: ${{ runner.temp }}/ghosts-original/*.ff
           compression-level: 0
           retention-days: 1
           if-no-files-found: error
