@@ -1,0 +1,46 @@
+name: BO1 public Rust dependencies for private offline crate build
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bo1-public-cargo-vendor.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  vendor-only-public-crates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Download legitimate public crates for offline BO1 importer compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bo1-public-deps/src"
+          cat > "$RUNNER_TEMP/bo1-public-deps/Cargo.toml" <<'TOML'
+          [package]
+          name = "bo1-public-dependencies-only"
+          version = "0.1.0"
+          edition = "2021"
+          [dependencies]
+          zip = { version = "2.4", default-features = false, features = ["deflate"] }
+          flate2 = { version = "1", default-features = false, features = ["zlib-rs"] }
+          serde = { version = "1", features = ["derive"] }
+          TOML
+          printf '%s\n' 'fn main() {}' > "$RUNNER_TEMP/bo1-public-deps/src/main.rs"
+          cd "$RUNNER_TEMP/bo1-public-deps"
+          cargo generate-lockfile
+          cargo vendor --locked --versioned-dirs vendor > /dev/null
+          for name in zip flate2 zlib-rs serde serde_derive; do
+            find vendor -maxdepth 1 -type d -name "$name-*" | grep -q .
+          done
+          tar -czf "$RUNNER_TEMP/bo1-public-deps.tar.gz" Cargo.lock vendor
+          du -h "$RUNNER_TEMP/bo1-public-deps.tar.gz"
+      - name: Transfer ONLY public package sources for offline BO1 Cargo check
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo1-public-cargo-vendor-${{ github.run_id }}
+          path: ${{ runner.temp }}/bo1-public-deps.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 4
