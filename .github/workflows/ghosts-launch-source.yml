@@ -1,0 +1,43 @@
+name: Ghosts custom launch runtime source handoff
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/ghosts-launch-source.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Fetch original local runtime and initial asset files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ghosts-launch-source"
+          cd "$RUNNER_TEMP/ghosts-launch-source"
+          while read -r name expected_size expected_md5; do
+            mkdir -p "$(dirname "$name")"
+            curl -fLsS --retry 3 --connect-timeout 20 --max-time 300 \
+              "https://r2.houseofkublai.com/ghosts/DUMP/$name" -o "$name"
+            test "$(stat -c%s "$name")" = "$expected_size"
+            echo "$expected_md5  $name" | md5sum -c
+          done <<'SOURCES'
+          amd_ags64.dll 292864 676fbb13efe1bc4422dda32812264e31
+          bink2w64.dll 431616 d14af85de9b49d1f33da757351575786
+          code_pre_gfx_mp.ff 24620 72fbae63e040af8b1fcb472b15b2cf4d
+          patch_code_pre_gfx_mp.ff 24620 ee4461598833d19f32590c3b3472b79d
+          english/eng_code_pre_gfx_mp.ff 24620 762392d82c273e265bb0b24925178c2e
+          english/eng_patch_code_pre_gfx_mp.ff 24620 51e65abd6265b6b5451124189a4aa30c
+          SOURCES
+          find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+      - name: Preserve actual original source bytes
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ghosts-custom-launch-original-sources
+          path: ${{ runner.temp }}/ghosts-launch-source/
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
