@@ -36,6 +36,8 @@ on:
       - "tests/test_mwr_h1_dxbc_probe.py"
       - "scripts/mwr_h1_dxbc_verify.py"
       - "tests/test_mwr_h1_dxbc_verify.py"
+      - "scripts/mwr_h1_clipmap_source.py"
+      - "tests/test_mwr_h1_clipmap_source.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   pull_request:
     paths:
@@ -61,6 +63,8 @@ on:
       - "tests/test_mwr_h1_dxbc_probe.py"
       - "scripts/mwr_h1_dxbc_verify.py"
       - "tests/test_mwr_h1_dxbc_verify.py"
+      - "scripts/mwr_h1_clipmap_source.py"
+      - "tests/test_mwr_h1_clipmap_source.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   workflow_dispatch:
     inputs:
@@ -101,6 +105,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_mwr_h1_dxbc_probe.py
       - name: Test complete original DXBC chunk sizes and content evidence
         run: python3 -m unittest discover -s tests -p test_mwr_h1_dxbc_verify.py
+      - name: Test source-ordered original H1 ClipMap native root reader
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_clipmap_source.py
       - name: Fetch exact original H1 FastFiles and inspect headers and LZ4 framing
         shell: bash
         env:
