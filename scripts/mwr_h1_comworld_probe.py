@@ -33,7 +33,7 @@ def inspect_next_gfximage_at_cursor(raw,at):
         candidate=raw[at+0x68:first_name]
         if all(32<=v<127 for v in candidate):
             name=candidate.decode("ascii")
-    return {
+    result={
         "status":"source_cursor_candidate_not_yet_asset_body_owned",
         "decoded_source_offset":at,
         "dxgi_format":format,"map_type":b[28],
@@ -43,6 +43,38 @@ def inspect_next_gfximage_at_cursor(raw,at):
         "inline_name_candidate":name,
         "fixed_header_hex":b[:0x68].hex(),
     }
+    pixel_ref=struct.unpack_from("<Q",b,56)[0]
+    pixels=struct.unpack_from("<I",b,36)[0]
+    result["source_pixel_pointer"]=f"{pixel_ref:016x}"
+    result["pixel_bytes_field"]=pixels
+    if name:
+        next_at=at+0x68+len(name.encode("ascii"))+1
+        result["cursor_after_fixed_header_and_inline_name"]=next_at
+        if (pixels==0 and pixel_ref==0 and width==0 and height==0
+                and mips==0 and elements==0):
+            result["first_record_source_owned_empty_image"]=True
+            if next_at+0x68<=len(raw):
+                following=raw[next_at:next_at+0x68]
+                following_name_ptr=struct.unpack_from("<Q",following,96)[0]
+                dims=struct.unpack_from("<4H",following,44)
+                fmt=struct.unpack_from("<I",following,24)[0]
+                next_name=None
+                if following_name_ptr==INLINE:
+                    tail=raw[next_at+0x68:next_at+0x68+256]
+                    terminator=tail.find(bytes([0]))
+                    if terminator>0 and all(32<=v<127 for v in tail[:terminator]):
+                        next_name=tail[:terminator].decode("ascii")
+                result["next_image_after_empty_source_image"]={
+                    "source_cursor":next_at,
+                    "native_format_code":fmt,
+                    "dimensions":dims,
+                    "mip_count":following[52],
+                    "streamed":following[53],
+                    "original_name_pointer":f"{following_name_ptr:016x}",
+                    "authored_name_candidate":next_name,
+                    "pixel_source_pointer":f"{struct.unpack_from('<Q',following,56)[0]:016x}",
+                }
+    return result
 
 
 def inspect_comworld_after_prefix(raw,decoded_cursor):
