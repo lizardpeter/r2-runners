@@ -172,7 +172,8 @@ class LogicalSignedStream:
             self.read(padding)
 
 
-def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=None) -> dict:
+def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=None,
+                    inspect_typed_assets=False) -> dict:
     """Bounded, streaming H1 decompression; never writes decoded retail assets."""
     import lz4.block
     with file.open("rb") as f:
@@ -194,7 +195,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         vertex_scanner=WorldVertexRunScanner() if gfx_stem is not None else None
         surface_scanner=H1SurfaceSourceScanner() if gfx_stem is not None else None
         static_draw_scanner=H1StaticModelDrawScanner() if gfx_stem is not None else None
-        typed_asset_scanner=H1TypedBodyScanner() if gfx_stem is not None else None
+        typed_asset_scanner=H1TypedBodyScanner() if (gfx_stem is not None or inspect_typed_assets) else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -257,6 +258,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
             result["gfxworld_vertex_source_candidate_scan"]=vertex_scanner.report()
             result["gfxworld_surface_source_candidate_scan"]=surface_scanner.report()
             result["gfxworld_static_model_draw_source_scan"]=static_draw_scanner.report()
+
+        if typed_asset_scanner is not None:
             result["typed_original_asset_body_source_scan"]=typed_asset_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
@@ -298,7 +301,10 @@ def main()->int:
                 header["lz4_probe"]=scan_lz4_first_block(local,header["candidate_stream_offset"])
             if args.full_decode:
                 try:
-                    header["whole_zone_decode"]=decode_lz4_zone(local,header,args.analyze_directory,stem if args.probe_gfxworld and name==f"{stem}.ff" else None)
+                    header["whole_zone_decode"]=decode_lz4_zone(
+                        local,header,args.analyze_directory,
+                        stem if args.probe_gfxworld and name==f"{stem}.ff" else None,
+                        inspect_typed_assets=(name==f"techsets_{stem}.ff"))
                     if args.probe_gfxworld and name==f"{stem}.ff":
                         scanned=header["whole_zone_decode"]
                         roots=scanned["gfxworld_geometry_source_root_scan"]["candidates"]
