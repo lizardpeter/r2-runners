@@ -28,6 +28,7 @@ from mwr_h1_static_models_probe import H1StaticModelDrawScanner
 from mwr_h1_asset_body_probe import H1TypedBodyScanner
 from mwr_h1_static_model_window_verify import inspect_retained_draw_window
 from mwr_h1_material_window_probe import inspect_material_source_windows
+from mwr_h1_dxbc_probe import H1DXBCSourceScanner
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -197,6 +198,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         surface_scanner=H1SurfaceSourceScanner() if gfx_stem is not None else None
         static_draw_scanner=H1StaticModelDrawScanner() if gfx_stem is not None else None
         typed_asset_scanner=H1TypedBodyScanner() if (gfx_stem is not None or inspect_typed_assets) else None
+        dxbc_scanner=H1DXBCSourceScanner() if inspect_typed_assets else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -233,6 +235,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
                 static_draw_scanner.push(raw)
             if typed_asset_scanner is not None:
                 typed_asset_scanner.push(raw)
+            if dxbc_scanner is not None:
+                dxbc_scanner.push(raw)
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -262,6 +266,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
 
         if typed_asset_scanner is not None:
             result["typed_original_asset_body_source_scan"]=typed_asset_scanner.report()
+        if dxbc_scanner is not None:
+            result["original_DXBC_shader_bytecode_container_census"]=dxbc_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
             result["complete_zone_asset_run_scan"] = asset_scanner.report()
