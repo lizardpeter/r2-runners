@@ -52,7 +52,13 @@ class H1StaticModelDrawScanner:
         data=self.carry+chunk
         base=self.decoded-len(self.carry)
         target=self.expected_count
-        if target is not None and len(data)>=ANCHOR*STRIDE:
+        if target is None:
+            # Before the real GfxWorld supplies its authored count there is
+            # nothing we can validate. Do not rescan multi-MiB history.
+            self.decoded+=len(chunk)
+            self.carry=b""
+            return
+        if len(data)>=ANCHOR*STRIDE:
             pos=0
             while True:
                 hi=data.find(PTR_HIGH,pos)
@@ -80,7 +86,10 @@ class H1StaticModelDrawScanner:
                 else:
                     pos=hi+1
         self.decoded+=len(chunk)
-        self.carry=data[-MAX_CARRY:]
+        # Retain only enough overlap to contain one *whole authored array*
+        # crossing arbitrary H1 LZ4 block boundaries. No retail count baked in.
+        carry_size=min(MAX_CARRY,max(target*STRIDE+STRIDE*2,ANCHOR*STRIDE))
+        self.carry=data[-carry_size:]
 
     def report(self):
         matches=sorted(self.full_matches.values(),key=lambda x:x["start"])
