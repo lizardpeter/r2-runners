@@ -27,7 +27,7 @@ def inspect_next_gfximage_at_cursor(raw,at):
     format=struct.unpack_from("<I",b,24)[0]
     width,height,depth,elements=struct.unpack_from("<4H",b,44)
     mips,streamed=b[52],b[53]
-    first_name=raw.find(b"\\x00",at+0x68,min(len(raw),at+0x68+257))
+    first_name=raw.find(bytes([0]),at+0x68,min(len(raw),at+0x68+257))
     name=None
     if name_ptr==INLINE and first_name>=at+0x68+1:
         candidate=raw[at+0x68:first_name]
