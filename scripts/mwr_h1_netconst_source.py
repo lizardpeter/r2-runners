@@ -6,6 +6,7 @@ NetConstStrings records, inline original XStrings and indexed string arrays.
 Stops without guessing whenever a different pointer format is encountered.
 """
 import struct
+from mwr_h1_comworld_probe import inspect_comworld_after_prefix
 
 INLINE=0xFDFDFDFFFFFFFFFF
 MAX_TEXT=4096
@@ -93,6 +94,7 @@ def inspect_ordered_netconst_bodies(raw,verified):
             if ptr==INLINE:
                 name,_=cstring(raw,cursor+40)
             next_header={
+                "nested_light_source_probe":inspect_comworld_after_prefix(raw,cursor),
                 "next_type":25,"decoded_source_offset":cursor,
                 "header_name_inline":ptr==INLINE,"name":name,
                 "is_in_use":is_in_use,"light_count":light_count,
