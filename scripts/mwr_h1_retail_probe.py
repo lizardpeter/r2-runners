@@ -31,6 +31,7 @@ from mwr_h1_material_window_probe import inspect_material_source_windows
 from mwr_h1_dxbc_probe import H1DXBCSourceScanner
 from mwr_h1_dxbc_verify import verify_retail_dxbc_samples
 from mwr_h1_clipmap_named_scanner import H1NamedClipMapScanner
+from mwr_h1_shader_ownership_probe import verify_dxbc_shader_ownership_windows
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -324,6 +325,9 @@ def main()->int:
                             "original_DXBC_shader_bytecode_container_census",{})
                         header["whole_zone_decode"]["verified_source_shader_DXBC_samples"]=(
                             verify_retail_dxbc_samples(
+                                local,header,LogicalSignedStream,dxbc))
+                        header["whole_zone_decode"]["original_shader_source_header_linkage_probe"]=(
+                            verify_dxbc_shader_ownership_windows(
                                 local,header,LogicalSignedStream,dxbc))
                         typed=header["whole_zone_decode"].get(
                             "typed_original_asset_body_source_scan",{})
