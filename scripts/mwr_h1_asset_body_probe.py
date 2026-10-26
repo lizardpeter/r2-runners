@@ -10,27 +10,70 @@ from collections import Counter
 
 INLINE=struct.pack("<Q",0xFDFDFDFFFFFFFFFF)
 CARRY=1024
-SIZES={"material":0x250,"image":0x68,"xmodel":0x2a8,"clipmap":0x280}
+SIZES={"material":0x250,"image":0x68,"xmodel":0x2a8,
+       "clipmap":0x280,"technique_set":0x790,"shader":0x20}
 
 def uint(data,at):return struct.unpack_from("<I",data,at)[0]
 def u64(data,at):return struct.unpack_from("<Q",data,at)[0]
 def fp(data,at):return struct.unpack_from("<f",data,at)[0]
 def tag(p):return p in (0,0xFDFDFDFFFFFFFFFF) or p>>48==0xFDFD
 
+def inline_xstring_candidate(b,at):
+    if at<0 or at>=len(b):return None
+    end=b.find(b"\x00",at,min(len(b),at+257))
+    if end<=at or end-at>256:return None
+    name=b[at:end]
+    if not all(32<=x<127 for x in name):return None
+    return name.decode("ascii")
+
+
 def material(b,at):
     if at<0 or at+0x250>len(b):return None
     if u64(b,at)!=0xFDFDFDFFFFFFFFFF:return None
     tc,cc,st,flags,region,mt,lc=b[at+288:at+295]
-    if not (1<=tc<=48 and cc<=96 and st<=240 and region<=16 and mt<=96 and lc<=16):
+    if not (0<=tc<=48 and cc<=96 and st<=240 and region<=16 and mt<=96 and lc<=16
+            and tc+cc+st>0):
         return None
     ptrs=[u64(b,at+i) for i in (296,304,312,320,568,584)]
     if not all(tag(p) for p in ptrs) or ptrs[0]==0 or ptrs[1]==0:return None
-    if cc>0 and ptrs[2]==0 or st>0 and ptrs[3]==0:return None
+    if (tc>0 and ptrs[1]==0) or (cc>0 and ptrs[2]==0) or (st>0 and ptrs[3]==0):
+        return None
     # Do not require a particular technique pointer block. This is a
     # candidate until linked against the asset-owned table and string.
     return {"texture_slots":tc,"constants":cc,"states":st,
             "material_type":mt,"technique_ptr":f"{ptrs[0]:016x}",
-            "texture_table_ptr":f"{ptrs[1]:016x}"}
+            "texture_table_ptr":f"{ptrs[1]:016x}",
+            "inline_source_name_candidate":inline_xstring_candidate(b,at+0x250)}
+
+def technique_set(b,at):
+    if at<0 or at+0x790>len(b):return None
+    if u64(b,at)!=0xFDFDFDFFFFFFFFFF:return None
+    flags=struct.unpack_from("<H",b,at+8)[0]
+    world_fmt=b[at+10]
+    if world_fmt>32:return None
+    ptrs=struct.unpack_from("<240Q",b,at+16)
+    if any(not tag(x) for x in ptrs):return None
+    active=[(i,x) for i,x in enumerate(ptrs) if x]
+    if not active:return None
+    return {"flags":flags,"world_vertex_format":world_fmt,
+            "populated_technique_slots":len(active),
+            "first_technique_refs":[{"slot":i,"tag":f"{ptr:016x}"}
+                                    for i,ptr in active[:8]],
+            "inline_source_name_candidate":inline_xstring_candidate(b,at+0x790)}
+
+
+def shader(b,at):
+    if at<0 or at+0x20>len(b):return None
+    if u64(b,at)!=0xFDFDFDFFFFFFFFFF:return None
+    program=u64(b,at+16)
+    byte_count=uint(b,at+24)
+    crc=uint(b,at+28)
+    if not (tag(program) and program!=0 and 16<=byte_count<=16*1024*1024):
+        return None
+    return {"program_ptr":f"{program:016x}",
+            "program_bytes":byte_count,"source_crc":f"{crc:08x}",
+            "inline_source_name_candidate":inline_xstring_candidate(b,at+0x20)}
+
 
 def image(b,at):
     if at<0 or at+0x68>len(b):return None
@@ -103,6 +146,8 @@ class H1TypedBodyScanner:
                 ("xmodel",where,xmodel),
                 ("clipmap",where,clipmap),
                 ("image",where-96,image),
+                ("technique_set",where,technique_set),
+                ("shader",where,shader),
             ):
                 if at<0 or base+at<0:continue
                 if at+SIZES[kind]>len(blob):continue
