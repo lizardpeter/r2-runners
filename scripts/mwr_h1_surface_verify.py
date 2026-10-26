@@ -10,7 +10,44 @@ from collections import Counter
 from mwr_h1_world_vertex_verify import extract_source_window
 from mwr_h1_surface_probe import plausible_surface, STRIDE
 
-def verify_source_surface_array(ff_path,ff_header,stream_class,report,world):
+def inspect_source_material_tag_blocks(material_refs,block_bytes):
+    """Bound-check tagged ORIGINAL source references; no alias relocation."""
+    if block_bytes is None or len(block_bytes)!=7:
+        return {"status":"no_source_memory_block_lengths"}
+    per_block={}
+    invalid=[]
+    special=Counter()
+    for ptr,ref_count in material_refs.items():
+        if ptr in (0,0xFDFDFDFFFFFFFFFF,0xFDFDFDFFFFFFFFFE):
+            special["null" if ptr==0 else "inline_marker"]+=ref_count
+            continue
+        hi=ptr>>32
+        if not 0xFDFDFDF0<=hi<0xFDFDFDF7:
+            special["unknown_tag"]+=ref_count
+            if len(invalid)<12:invalid.append(f"{ptr:016x}")
+            continue
+        block=hi-0xFDFDFDF0
+        offset=ptr&0xffffffff
+        length=block_bytes[block]
+        use=per_block.setdefault(block,{"reference_count":0,
+            "distinct_tags":0,"minimum_offset":offset,"maximum_offset":offset,
+            "declared_block_bytes":length})
+        use["reference_count"]+=ref_count
+        use["distinct_tags"]+=1
+        use["minimum_offset"]=min(use["minimum_offset"],offset)
+        use["maximum_offset"]=max(use["maximum_offset"],offset)
+        if offset>=length:
+            special["offset_outside_declared_block"]+=ref_count
+            if len(invalid)<12:invalid.append(f"{ptr:016x}")
+    return {"status":"all_source_material_refs_fit_blocks"
+                if not invalid else "unresolved_source_reference_bounds",
+            "source_virtual_block_candidates":per_block,
+            "other_source_refs":dict(special),
+            "bounded_invalid_tag_samples":invalid,
+            "CAUTION":"Block bounds are not a decompressed source seek/asset alias resolution."}
+
+
+def verify_source_surface_array(ff_path,ff_header,stream_class,report,world,block_bytes=None):
     candidates=report.get("largest_source_surface_runs",[])
     target=int(world["surface_count"])
     if not candidates or candidates[0]["source_surface_records"]<target*0.9:
@@ -91,6 +128,8 @@ def verify_source_surface_array(ff_path,ff_header,stream_class,report,world):
         "triangle_counts_min":min(tri_counts),
         "triangle_counts_max":max(tri_counts),
         "source_samples":source_samples,
+        "material_tag_block_bounds":inspect_source_material_tag_blocks(
+            material_refs,block_bytes),
         "material_source_reference_census":{
             "source_surface_material_tags_distinct":len(material_refs),
             "source_surface_null_material_ref_count":material_refs.get(0,0),
