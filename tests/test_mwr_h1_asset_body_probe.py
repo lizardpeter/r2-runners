@@ -5,10 +5,10 @@ import struct
 import sys
 import unittest
 sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]/"scripts"))
-from mwr_h1_asset_body_probe import H1TypedBodyScanner,INLINE,material,image,xmodel,clipmap
+from mwr_h1_asset_body_probe import H1TypedBodyScanner,INLINE,material,image,xmodel,clipmap,technique_set,shader
 
 def candidate(kind):
-    sizes={"material":0x250,"image":0x68,"xmodel":0x2a8,"clipmap":0x280}
+    sizes={"material":0x250,"image":0x68,"xmodel":0x2a8,"clipmap":0x280,"technique_set":0x790,"shader":0x20}
     b=bytearray(sizes[kind])
     if kind=="material":
         b[0:8]=INLINE
@@ -27,6 +27,11 @@ def candidate(kind):
         b[120:128]=INLINE
         b[512]=1
         b[136:144]=INLINE
+    if kind=="technique_set":
+        b[0:8]=INLINE;b[16+41*8:24+41*8]=INLINE
+    if kind=="shader":
+        b[0:8]=INLINE;b[16:24]=INLINE
+        struct.pack_into("<II",b,24,1783,0x12345678)
     if kind=="clipmap":
         b[0:8]=INLINE
         for co,po,count in [(16,24,600),(32,40,5),
@@ -39,7 +44,8 @@ class TestTypedSource(unittest.TestCase):
     def test_root_candidates_cross_block_boundaries(self):
         for kind,validator in [
             ("material",material),("image",image),
-            ("xmodel",xmodel),("clipmap",clipmap)
+            ("xmodel",xmodel),("clipmap",clipmap),
+            ("technique_set",technique_set),("shader",shader)
         ]:
             raw=candidate(kind)
             with self.subTest(kind=kind):
@@ -65,5 +71,11 @@ class TestTypedSource(unittest.TestCase):
         raw=bytearray(candidate("clipmap"))
         raw[24:32]=b"\0"*8
         self.assertIsNone(clipmap(raw,0))
+        raw=bytearray(candidate("technique_set"))
+        raw[16+41*8:24+41*8]=bytes(8)
+        self.assertIsNone(technique_set(raw,0))
+        raw=bytearray(candidate("shader"))
+        struct.pack_into("<I",raw,24,0)
+        self.assertIsNone(shader(raw,0))
 
 if __name__=="__main__":unittest.main()
