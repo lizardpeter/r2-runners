@@ -38,16 +38,16 @@ jobs:
           (cd "$RUNNER_TEMP/mwr-original" && find zone -type f -print0 | sort -z | xargs -0 sha256sum) > "$RUNNER_TEMP/mwr-original/SHA256SUMS"
           echo "All seven complete original H1 files verified."
       - name: Handoff original main map FastFile
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: mwr-h1-original-main-fastfile
           path: ${{ runner.temp }}/mwr-original/zone/mp_crash_snow.ff
           compression-level: 0
-          retention-days: 3
+          retention-days: 7
           if-no-files-found: warn
       - name: Handoff original supporting FastFiles
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: mwr-h1-original-supporting-fastfiles
@@ -56,5 +56,5 @@ jobs:
             !${{ runner.temp }}/mwr-original/zone/mp_crash_snow.ff
             ${{ runner.temp }}/mwr-original/SHA256SUMS
           compression-level: 0
-          retention-days: 3
+          retention-days: 7
           if-no-files-found: warn
