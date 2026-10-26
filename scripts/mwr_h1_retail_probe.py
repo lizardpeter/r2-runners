@@ -29,6 +29,7 @@ from mwr_h1_asset_body_probe import H1TypedBodyScanner
 from mwr_h1_static_model_window_verify import inspect_retained_draw_window
 from mwr_h1_material_window_probe import inspect_material_source_windows
 from mwr_h1_dxbc_probe import H1DXBCSourceScanner
+from mwr_h1_dxbc_verify import verify_retail_dxbc_samples
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -313,6 +314,11 @@ def main()->int:
                         stem if args.probe_gfxworld and name==f"{stem}.ff" else None,
                         inspect_typed_assets=(name==f"techsets_{stem}.ff"))
                     if name==f"techsets_{stem}.ff":
+                        dxbc=header["whole_zone_decode"].get(
+                            "original_DXBC_shader_bytecode_container_census",{})
+                        header["whole_zone_decode"]["verified_source_shader_DXBC_samples"]=(
+                            verify_retail_dxbc_samples(
+                                local,header,LogicalSignedStream,dxbc))
                         typed=header["whole_zone_decode"].get(
                             "typed_original_asset_body_source_scan",{})
                         samples=typed.get("candidates",{}).get("material",{}).get("first_30",[])
