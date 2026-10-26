@@ -81,7 +81,30 @@ def inspect_ordered_netconst_bodies(raw,verified):
                     "failed_asset_index":i,"failed_cursor":before,
                     "reason":str(exc),
                     "first_source_bodies":records[:8]}
+    next_asset=root_next=types[1]["type_id"] if len(types)>1 else None
+    next_header=None
+    if next_asset==25 and cursor+40<=len(raw):
+        try:
+            # Native H1 ComWorld (0x28) is the next XAsset after this
+            # original source-driven NetConstStrings run.
+            ptr,is_in_use,light_count,lights_ptr,env_count,pad,env_ptr=struct.unpack_from(
+                "<QIIQIIQ",raw,cursor)
+            name=None
+            if ptr==INLINE:
+                name,_=cstring(raw,cursor+40)
+            next_header={
+                "next_type":25,"decoded_source_offset":cursor,
+                "header_name_inline":ptr==INLINE,"name":name,
+                "is_in_use":is_in_use,"light_count":light_count,
+                "light_array_ptr":f"{lights_ptr:016x}",
+                "light_env_count":env_count,"padding":pad,
+                "light_env_ptr":f"{env_ptr:016x}",
+                "status":"fixed_header_candidate_only_no_nested_array_walk",
+            }
+        except (ValueError,UnicodeError,struct.error) as e:
+            next_header={"status":"unsupported_authored_comworld_header","reason":str(e)}
     return {"status":"complete_authored_netconststrings_run",
+            "next_asset_source_header":next_header,
             "original_record_count":wanted,
             "start":record["end_offset"],"source_body_end":cursor,
             "source_bodies":records[:24],
