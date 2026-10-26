@@ -313,7 +313,8 @@ def main()->int:
                                     local,header,LogicalSignedStream,checked,roots[0])
                             scanned["world_surface_exact_window_verification"]=verify_source_surface_array(
                                 local,header,LogicalSignedStream,
-                                scanned["gfxworld_surface_source_candidate_scan"],roots[0])
+                                scanned["gfxworld_surface_source_candidate_scan"],roots[0],
+                                scanned["xfile_header_u64"][2:])
                             surfaces=scanned["world_surface_exact_window_verification"]
                             if checked.get("status")=="complete" and surfaces.get("status")=="complete_original_surface_struct_array_verified":
                                 scanned["world_index_all_surfaces_linked_verification"]=verify_original_index_bytes(
