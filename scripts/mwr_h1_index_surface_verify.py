@@ -4,7 +4,7 @@ Correct byte start is not chosen by a score: the H1 GfxWorldDraw source
 serializes vertexLayerData immediately after 44-byte vertices, followed by
 u16 indices. A +6-byte (one triangle) shift passes many topology tests but
 cannot be the authored original start. Enforce the exact source-order
-adjacency, complete 3,542,247 index count and every GfxSurface local range.
+adjacency, complete header-declared index coverage and every GfxSurface local range.
 """
 import hashlib
 import struct
@@ -14,8 +14,9 @@ def validate_full_indices(data,at,surfaces,expected_index_count):
     """Read all original u16 triangle references with no guessed vertex IDs."""
     if at<0 or at+expected_index_count*2>len(data):
         return {"status":"truncated_source_index_bytes"}
-    if not surfaces or surfaces[0][0]!=0:
-        return {"status":"original_surface_base_indices_do_not_begin_at_zero"}
+    if not surfaces:
+        return {"status":"no_original_source_surfaces"}
+    ranges=[]
     total=0
     maximal_end=0
     degenerate=0
@@ -28,6 +29,7 @@ def validate_full_indices(data,at,surfaces,expected_index_count):
             return {"status":"source_surface_index_range_outside_buffer",
                     "surface":ordinal}
         maximal_end=max(maximal_end,end)
+        ranges.append((base,end))
         words=struct.unpack_from("<"+str(n)+"H",data,at+base*2)
         if any(i>=vertex_count for i in words):
             return {"status":"invalid_source_local_vertex_index",
@@ -40,6 +42,18 @@ def validate_full_indices(data,at,surfaces,expected_index_count):
     if maximal_end!=expected_index_count or total!=expected_index_count:
         return {"status":"surface_index_count_mismatch",
                 "declared":expected_index_count,"covered":total,"max_end":maximal_end}
+    # The sum and maximum alone can both match even when two surfaces
+    # reuse the same original indices while leaving a different span unused.
+    # Sorting permits source surfaces stored in any authored record order.
+    covered=0
+    for begin,end in sorted(ranges):
+        if begin!=covered:
+            return {"status":"original_surface_indices_overlap_or_have_gap",
+                    "expected_next_index":covered,"actual_next_index":begin}
+        covered=end
+    if covered!=expected_index_count:
+        return {"status":"original_source_index_partition_incomplete",
+                "covered":covered,"declared":expected_index_count}
     triangle_count=total//3
     if degenerate*200>triangle_count:
         return {"status":"source_triangle_topology_inconsistent",
@@ -47,6 +61,7 @@ def validate_full_indices(data,at,surfaces,expected_index_count):
     return {
         "status":"complete_original_index_array_verified",
         "authored_u16_indices_verified":expected_index_count,
+        "original_index_partition_gap_free":True,
         "total_triangles_checked":triangle_count,
         "nondegenerate_triangles":triangle_count-degenerate,
         "maximum_local_index":local_max,
