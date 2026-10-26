@@ -5,6 +5,7 @@ bytes. Reports counts, candidate record layouts and short bounded samples.
 """
 from collections import Counter
 from mwr_h1_asset_payload import analyze_first_source_body, inspect_sequential_source_files
+from mwr_h1_netconst_source import inspect_ordered_netconst_bodies
 import struct
 
 XFILE_BYTES = 72
@@ -426,6 +427,8 @@ def inspect_prefix(data: bytes) -> dict:
     if result["complete_xasset_directory_evidence"].get("status")=="fully_verified" and verified:
         result["first_original_asset_payload"]=analyze_first_source_body(data,verified[0])
         result["sequential_original_source_files"]=inspect_sequential_source_files(data,verified[0])
+        result["source_netconststrings_initial_asset_walk"]=inspect_ordered_netconst_bodies(
+            data,result["complete_xasset_directory_evidence"])
     result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
         data,asset_count,end_of_strings)
     return result
