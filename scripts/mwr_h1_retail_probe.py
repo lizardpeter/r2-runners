@@ -27,6 +27,7 @@ from mwr_h1_index_surface_verify import verify_original_index_bytes
 from mwr_h1_static_models_probe import H1StaticModelDrawScanner
 from mwr_h1_asset_body_probe import H1TypedBodyScanner
 from mwr_h1_static_model_window_verify import inspect_retained_draw_window
+from mwr_h1_material_window_probe import inspect_material_source_windows
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -305,6 +306,13 @@ def main()->int:
                         local,header,args.analyze_directory,
                         stem if args.probe_gfxworld and name==f"{stem}.ff" else None,
                         inspect_typed_assets=(name==f"techsets_{stem}.ff"))
+                    if name==f"techsets_{stem}.ff":
+                        typed=header["whole_zone_decode"].get(
+                            "typed_original_asset_body_source_scan",{})
+                        samples=typed.get("candidates",{}).get("material",{}).get("first_30",[])
+                        header["whole_zone_decode"]["original_material_texture_source_windows"]=(
+                            inspect_material_source_windows(
+                                local,header,LogicalSignedStream,samples))
                     if args.probe_gfxworld and name==f"{stem}.ff":
                         scanned=header["whole_zone_decode"]
                         roots=scanned["gfxworld_geometry_source_root_scan"]["candidates"]
