@@ -7,7 +7,7 @@ classify exact 16B MaterialTextureDef candidates conservatively.
 """
 import struct
 from mwr_h1_world_vertex_verify import extract_source_window
-from mwr_h1_asset_body_probe import inline_xstring_candidate
+from mwr_h1_asset_body_probe import inline_xstring_candidate, image as candidate_gfximage
 
 INLINE=0xFDFDFDFFFFFFFFFF
 MAX_PROBES=4
@@ -30,6 +30,23 @@ def texture_at(blob,at):
     return {"hash":f"{hash_value:08x}","name_first":start,
             "name_last":end,"sampler":sampler,"semantic":semantic,
             "image_or_water_source_ptr":f"{ptr:016x}","pointer_kind":kind}
+
+def inspect_first_owned_image_after_material_table(raw,material_table_end,slot_count):
+    """Original source cursor hypothesis only; never skip unknown data."""
+    prefix=raw[material_table_end:material_table_end+128]
+    if not 1<=slot_count<=255:
+        return {"status":"no_native_material_texture_slots"}
+    info=candidate_gfximage(raw,material_table_end)
+    if info is not None:
+        name=inline_xstring_candidate(raw,material_table_end+0x68)
+        return {"status":"immediately_serialized_original_GfxImage_layout_candidate",
+                "source_window_relative_offset":material_table_end,
+                "inline_source_name_candidate":name,
+                **info}
+    return {"status":"next_material_nested_asset_not_yet_source_verified",
+            "source_bytes_after_table_first_64_hex":prefix[:64].hex(),
+            "first_u64":f"{int.from_bytes(prefix[:8],'little'):016x}" if len(prefix)>=8 else None}
+
 
 def inspect_material_source_windows(ff_file,ff_header,stream_class,candidates):
     out=[]
@@ -66,6 +83,10 @@ def inspect_material_source_windows(ff_file,ff_header,stream_class,candidates):
             "source_after_inline_name":base+cursor,
             "first_48_after_material_name_hex":raw[cursor:cursor+48].hex(),
             "candidate_source_texture_table_spans":samples,
+            "first_inline_image_immediately_after_zero_shift_table":(
+                inspect_first_owned_image_after_material_table(
+                    raw,cursor+16*slots,slots)
+                if samples and samples[0]["after_name_delta"]==0 else None),
         })
     return {"status":"bounded_original_material_source_window_evidence",
             "sampled_original_material_candidates":len(eligible),
