@@ -19,6 +19,7 @@ on:
       - "tests/test_mwr_h1_*.py"
       - "scripts/mwr_h1_asset_runs.py"
       - "scripts/mwr_h1_asset_payload.py"
+      - "scripts/mwr_h1_index_surface_verify.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   pull_request:
     paths:
@@ -26,6 +27,8 @@ on:
       - "scripts/mwr_h1_asset_directory.py"
       - "scripts/mwr_h1_image_streams.py"
       - "scripts/mwr_h1_world_geometry_root.py"
+      - "scripts/mwr_h1_index_surface_verify.py"
+      - "tests/test_mwr_h1_index_surface_verify.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   workflow_dispatch:
     inputs:
@@ -48,6 +51,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_mwr_h1_world_vertex_probe.py
       - name: Test H1 source triangle indexing
         run: python3 -m unittest discover -s tests -p test_mwr_h1_index_source.py
+      - name: Verify H1 original index partitions against overlapping or missing triangles
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_index_surface_verify.py
       - name: Fetch exact original H1 FastFiles and inspect headers and LZ4 framing
         shell: bash
         env:
