@@ -32,6 +32,8 @@ on:
       - "tests/test_mwr_h1_comworld_probe.py"
       - "scripts/mwr_h1_material_window_probe.py"
       - "tests/test_mwr_h1_material_window_probe.py"
+      - "scripts/mwr_h1_dxbc_probe.py"
+      - "tests/test_mwr_h1_dxbc_probe.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   pull_request:
     paths:
@@ -53,6 +55,8 @@ on:
       - "tests/test_mwr_h1_comworld_probe.py"
       - "scripts/mwr_h1_material_window_probe.py"
       - "tests/test_mwr_h1_material_window_probe.py"
+      - "scripts/mwr_h1_dxbc_probe.py"
+      - "tests/test_mwr_h1_dxbc_probe.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   workflow_dispatch:
     inputs:
@@ -89,6 +93,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_mwr_h1_comworld_probe.py
       - name: Test source-native H1 material texture slot byte layout
         run: python3 -m unittest discover -s tests -p test_mwr_h1_material_window_probe.py
+      - name: Test authentic DXBC compiled shader source-container headers
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_dxbc_probe.py
       - name: Fetch exact original H1 FastFiles and inspect headers and LZ4 framing
         shell: bash
         env:
