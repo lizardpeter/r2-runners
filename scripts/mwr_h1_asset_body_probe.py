@@ -9,9 +9,11 @@ import struct
 from collections import Counter
 
 INLINE=struct.pack("<Q",0xFDFDFDFFFFFFFFFF)
-CARRY=1024
 SIZES={"material":0x250,"image":0x68,"xmodel":0x2a8,
        "clipmap":0x280,"technique_set":0x790,"shader":0x20}
+# A full native 0x790-byte technique table can straddle arbitrarily small
+# decoded LZ4 chunks. Retain the longest source record plus its name marker.
+CARRY=max(SIZES.values())+256
 
 def uint(data,at):return struct.unpack_from("<I",data,at)[0]
 def u64(data,at):return struct.unpack_from("<Q",data,at)[0]
