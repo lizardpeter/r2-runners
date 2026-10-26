@@ -18,6 +18,33 @@ def inline_name(raw,at):
     if last<at+1:raise ValueError("H1 ComWorld name missing bounded source UTF-8")
     return raw[at:last].decode("utf-8"),last+1
 
+def inspect_next_gfximage_at_cursor(raw,at):
+    """Type-16 source-body candidate at the proven ComWorld end, no scanning."""
+    if at<0 or at+0x68>len(raw):
+        return {"status":"truncated_exact_source_cursor"}
+    b=raw[at:at+0x68]
+    name_ptr=struct.unpack_from("<Q",b,96)[0]
+    format=struct.unpack_from("<I",b,24)[0]
+    width,height,depth,elements=struct.unpack_from("<4H",b,44)
+    mips,streamed=b[52],b[53]
+    first_name=raw.find(b"\\x00",at+0x68,min(len(raw),at+0x68+257))
+    name=None
+    if name_ptr==INLINE and first_name>=at+0x68+1:
+        candidate=raw[at+0x68:first_name]
+        if all(32<=v<127 for v in candidate):
+            name=candidate.decode("ascii")
+    return {
+        "status":"source_cursor_candidate_not_yet_asset_body_owned",
+        "decoded_source_offset":at,
+        "dxgi_format":format,"map_type":b[28],
+        "dimensions":[width,height,depth,elements],
+        "mip_levels":mips,"streamed":streamed,
+        "name_ptr":f"{name_ptr:016x}",
+        "inline_name_candidate":name,
+        "fixed_header_hex":b[:0x68].hex(),
+    }
+
+
 def inspect_comworld_after_prefix(raw,decoded_cursor):
     at=decoded_cursor
     if at+40>len(raw):
@@ -113,5 +140,9 @@ def inspect_comworld_after_prefix(raw,decoded_cursor):
                           if valid==env_count else "invalid_light_environment_reference_indices")
     report["light_env_records_verified"]=valid
     report["next_source_asset_candidate_cursor"]=final
+    # The original XAssetList says the next body is type 16 GfxImage.
+    # Inspect its exact source-order cursor rather than a signature hit.
+    # Do not advance past any nested records unless the loader confirms it.
+    report["next_image_source_order_probe"]=inspect_next_gfximage_at_cursor(raw,final)
     report["invalid_light_environment_samples"]=problems
     return report
