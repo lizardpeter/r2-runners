@@ -26,6 +26,7 @@ from mwr_h1_surface_verify import verify_source_surface_array
 from mwr_h1_index_surface_verify import verify_original_index_bytes
 from mwr_h1_static_models_probe import H1StaticModelDrawScanner
 from mwr_h1_asset_body_probe import H1TypedBodyScanner
+from mwr_h1_static_model_window_verify import inspect_retained_draw_window
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -317,6 +318,9 @@ def main()->int:
                             if checked.get("status")=="complete" and surfaces.get("status")=="complete_original_surface_struct_array_verified":
                                 scanned["world_index_all_surfaces_linked_verification"]=verify_original_index_bytes(
                                     local,header,LogicalSignedStream,roots[0],checked,surfaces)
+                            scanned["original_static_draw_full_count_followup"]=inspect_retained_draw_window(
+                                local,header,LogicalSignedStream,roots[0],
+                                scanned["gfxworld_static_model_draw_source_scan"])
                 except Exception as exc:
                     header["whole_zone_decode"]={"status":"failed","reason":str(exc)}
                     print(f"H1 full decode not yet validated for {name}: {exc}",file=sys.stderr,flush=True)
