@@ -1,0 +1,52 @@
+name: T6 full R2 FastFile signature/version census
+
+on:
+  push:
+    branches:
+      - feature/source-coverage-observatory-v1
+    paths:
+      - .github/workflows/t6-observatory-headers.yml
+      - scripts/t6_observatory_header_survey.py
+      - observatory/corpus/t6_fastfiles_r2_20261027.json
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: source-observatory-t6-head-survey
+  cancel-in-progress: false
+
+jobs:
+  every-r2-t6-fastfile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original range headers for all 571 indexed .ff objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/t6_observatory_header_survey.py \
+            --corpus observatory/corpus/t6_fastfiles_r2_20261027.json \
+            --out observatory/reports/t6/header-survey.json \
+            --workers 12
+      - name: Publish signed snapshot and recorded range responses
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-observatory-all-t6-r2-fastfile-signatures
+          path: observatory/reports/t6/header-survey.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Commit all verified signatures for hosted website
+        if: success()
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add observatory/reports/t6/header-survey.json
+          if ! git diff --cached --quiet; then
+            git commit -m "proof(t6): survey verified 64-byte original R2 FF headers"
+            git push origin HEAD:feature/source-coverage-observatory-v1
+          fi
