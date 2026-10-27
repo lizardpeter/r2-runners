@@ -1,0 +1,4106 @@
+{
+  "schema": "source-observatory/t6-sound-bank-index/v1",
+  "source_files": 116,
+  "source_sabs": 66,
+  "source_sabl": 50,
+  "entry_tables_validated": 116,
+  "indexed_entry_records": 25446,
+  "state_counts": {
+    "bank_entry_index_validated": 116
+  },
+  "semantic_complete": false,
+  "proof_boundary": "The 2048-byte bank header and 20-byte sound entry directory ranges were read from original R2. Audio frames, SndAlias binding, runtime decode and full-bank hashes not established.",
+  "files": [
+    {
+      "source_key": "bo2/sound/cmn_root.all.sabl",
+      "original_r2_size": 266502144,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1862,
+      "unique_sound_ids": 1862,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 266432512,
+      "entry_directory_bytes": 37240,
+      "entry_directory_sha256": "aaee1bb51e08390f8365ef8296331f2ab556ebadc1d422bdac266ca2bad86065",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1862
+      },
+      "audio_format_code_counts": {
+        "0": 1862
+      },
+      "channel_counts": {
+        "1": 1390,
+        "2": 472
+      },
+      "looping_flag_counts": {
+        "0": 1682,
+        "1": 180
+      },
+      "entry_payload_serialized_bytes_summed": 266429794,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/cmn_root.all.sabs",
+      "original_r2_size": 190654464,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 188,
+      "unique_sound_ids": 188,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 190646272,
+      "entry_directory_bytes": 3760,
+      "entry_directory_sha256": "b475cf7aae3ed02d203fab646f85cafc3a27101695aea3e5fb435ed7d3684020",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 188
+      },
+      "audio_format_code_counts": {
+        "8": 188
+      },
+      "channel_counts": {
+        "1": 86,
+        "2": 102
+      },
+      "looping_flag_counts": {
+        "0": 105,
+        "1": 83
+      },
+      "entry_payload_serialized_bytes_summed": 190643595,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/cmn_root.english.sabs",
+      "original_r2_size": 5742592,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 82,
+      "unique_sound_ids": 82,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5738496,
+      "entry_directory_bytes": 1640,
+      "entry_directory_sha256": "20b61734367744540214fc3511168efc13206b77b8d643f62046a22be82f61b1",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 82
+      },
+      "audio_format_code_counts": {
+        "8": 82
+      },
+      "channel_counts": {
+        "1": 82
+      },
+      "looping_flag_counts": {
+        "0": 82
+      },
+      "entry_payload_serialized_bytes_summed": 5736283,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_bridge.all.sabl",
+      "original_r2_size": 13002752,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 56,
+      "unique_sound_ids": 56,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 12998656,
+      "entry_directory_bytes": 1120,
+      "entry_directory_sha256": "07f7cd11b91b909d4ed777d281bbd254c059b92e5b4eef9cbbcfc0eb81139ca4",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 56
+      },
+      "audio_format_code_counts": {
+        "0": 56
+      },
+      "channel_counts": {
+        "1": 56
+      },
+      "looping_flag_counts": {
+        "0": 45,
+        "1": 11
+      },
+      "entry_payload_serialized_bytes_summed": 12996308,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_bridge.all.sabs",
+      "original_r2_size": 14729216,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 20,
+      "unique_sound_ids": 20,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 14725120,
+      "entry_directory_bytes": 400,
+      "entry_directory_sha256": "a4ff115f37f3843af529bfbf64a888dc65cc9c850468081326658d79cb4f0320",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 20
+      },
+      "audio_format_code_counts": {
+        "8": 20
+      },
+      "channel_counts": {
+        "1": 17,
+        "2": 3
+      },
+      "looping_flag_counts": {
+        "0": 7,
+        "1": 13
+      },
+      "entry_payload_serialized_bytes_summed": 14721435,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_carrier.all.sabl",
+      "original_r2_size": 5429248,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 7,
+      "unique_sound_ids": 7,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5425152,
+      "entry_directory_bytes": 140,
+      "entry_directory_sha256": "49acb0499bb87cae55285e3b15b3d8b709f9311980bd953bd3800e444bc26a30",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 7
+      },
+      "audio_format_code_counts": {
+        "0": 7
+      },
+      "channel_counts": {
+        "1": 7
+      },
+      "looping_flag_counts": {
+        "0": 4,
+        "1": 3
+      },
+      "entry_payload_serialized_bytes_summed": 5421746,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_carrier.all.sabs",
+      "original_r2_size": 839680,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 835584,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "4f5cfb89b80e512aba7c8c779882b8597481d5e7a6fa267ee4f503983cbfae20",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "8": 1
+      },
+      "channel_counts": {
+        "1": 1
+      },
+      "looping_flag_counts": {
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 832952,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_castaway.all.sabl",
+      "original_r2_size": 5613568,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 20,
+      "unique_sound_ids": 20,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5609472,
+      "entry_directory_bytes": 400,
+      "entry_directory_sha256": "583fc1e1bf812e93daeb2aee2e6002052a2421e2594c04a25bf3bb1680fd0836",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 20
+      },
+      "audio_format_code_counts": {
+        "0": 20
+      },
+      "channel_counts": {
+        "1": 16,
+        "2": 4
+      },
+      "looping_flag_counts": {
+        "0": 14,
+        "1": 6
+      },
+      "entry_payload_serialized_bytes_summed": 5605794,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_castaway.all.sabs",
+      "original_r2_size": 2101248,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 5,
+      "unique_sound_ids": 5,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2097152,
+      "entry_directory_bytes": 100,
+      "entry_directory_sha256": "492583033ee95c2bcb938d301e7b13800b11950fd40e7d13ad7eeef23674c1a2",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 5
+      },
+      "audio_format_code_counts": {
+        "8": 5
+      },
+      "channel_counts": {
+        "1": 1,
+        "2": 4
+      },
+      "looping_flag_counts": {
+        "0": 3,
+        "1": 2
+      },
+      "entry_payload_serialized_bytes_summed": 2094514,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_code_post_gfx.all.sabl",
+      "original_r2_size": 1714176,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 18,
+      "unique_sound_ids": 18,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 1710080,
+      "entry_directory_bytes": 360,
+      "entry_directory_sha256": "7d56b0ba47fd5bc3e74e8b3c93f6980cf40379a2b12b3810f57404655a8afe67",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 18
+      },
+      "audio_format_code_counts": {
+        "0": 18
+      },
+      "channel_counts": {
+        "1": 4,
+        "2": 14
+      },
+      "looping_flag_counts": {
+        "0": 17,
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 1706850,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_code_post_gfx.all.sabs",
+      "original_r2_size": 50597888,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 8,
+      "unique_sound_ids": 8,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 50593792,
+      "entry_directory_bytes": 160,
+      "entry_directory_sha256": "f48f0906657965e0ee486cf1dca66e7e14179f67a8fd247350aae7664960d8f2",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 8
+      },
+      "audio_format_code_counts": {
+        "8": 8
+      },
+      "channel_counts": {
+        "2": 8
+      },
+      "looping_flag_counts": {
+        "0": 1,
+        "1": 7
+      },
+      "entry_payload_serialized_bytes_summed": 50590081,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_code_post_gfx.english.sabs",
+      "original_r2_size": 497498112,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 7268,
+      "unique_sound_ids": 7268,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 497235968,
+      "entry_directory_bytes": 145360,
+      "entry_directory_sha256": "93aa66d27e77cf615ddbca7a5b3684f4f8b1a3860e98ad9aa040ed03b7fee1d1",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 7268
+      },
+      "audio_format_code_counts": {
+        "8": 7268
+      },
+      "channel_counts": {
+        "1": 7268
+      },
+      "looping_flag_counts": {
+        "0": 7268
+      },
+      "entry_payload_serialized_bytes_summed": 497232909,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_common.all.sabl",
+      "original_r2_size": 25815040,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 133,
+      "unique_sound_ids": 133,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 25806848,
+      "entry_directory_bytes": 2660,
+      "entry_directory_sha256": "bf451366cd07673b501723d213b3ec651074af117ecdd6d8756f13cb1e1093fa",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 133
+      },
+      "audio_format_code_counts": {
+        "0": 133
+      },
+      "channel_counts": {
+        "1": 98,
+        "2": 35
+      },
+      "looping_flag_counts": {
+        "0": 101,
+        "1": 32
+      },
+      "entry_payload_serialized_bytes_summed": 25803262,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_common.all.sabs",
+      "original_r2_size": 90656768,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 104,
+      "unique_sound_ids": 104,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 90650624,
+      "entry_directory_bytes": 2080,
+      "entry_directory_sha256": "b2e4958719576f71838881e599e444b5020d0755075724ec6175282eadacd5c2",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 104
+      },
+      "audio_format_code_counts": {
+        "8": 104
+      },
+      "channel_counts": {
+        "1": 25,
+        "2": 79
+      },
+      "looping_flag_counts": {
+        "0": 73,
+        "1": 31
+      },
+      "entry_payload_serialized_bytes_summed": 90647568,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_common.english.sabs",
+      "original_r2_size": 323584,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 5,
+      "unique_sound_ids": 5,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 319488,
+      "entry_directory_bytes": 100,
+      "entry_directory_sha256": "7e45c0a5f8558c3cd5834be2d79a887125d2252702a186aaf0258dd06760bcea",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 5
+      },
+      "audio_format_code_counts": {
+        "8": 5
+      },
+      "channel_counts": {
+        "1": 5
+      },
+      "looping_flag_counts": {
+        "0": 5
+      },
+      "entry_payload_serialized_bytes_summed": 317140,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_concert.all.sabl",
+      "original_r2_size": 10524672,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 43,
+      "unique_sound_ids": 43,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 10520576,
+      "entry_directory_bytes": 860,
+      "entry_directory_sha256": "ba48b180811a76da6cc87e9df2a61dda97a92c6348c41325a53120fa19fed389",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 43
+      },
+      "audio_format_code_counts": {
+        "0": 43
+      },
+      "channel_counts": {
+        "1": 41,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 28,
+        "1": 15
+      },
+      "entry_payload_serialized_bytes_summed": 10518484,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_concert.all.sabs",
+      "original_r2_size": 11446272,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 19,
+      "unique_sound_ids": 19,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 11442176,
+      "entry_directory_bytes": 380,
+      "entry_directory_sha256": "d541f38e0b60a736a6fa5bf3791dbe0cd389cdc315a0b150ea01b9935f3a4316",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 19
+      },
+      "audio_format_code_counts": {
+        "8": 19
+      },
+      "channel_counts": {
+        "1": 12,
+        "2": 7
+      },
+      "looping_flag_counts": {
+        "0": 13,
+        "1": 6
+      },
+      "entry_payload_serialized_bytes_summed": 11438940,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_cruise.all.sabl",
+      "original_r2_size": 227328,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 223232,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "57a237e98160908a5562b1cf3bd0e61d6e49a568c78918076722362d5e7c98c7",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "0": 1
+      },
+      "channel_counts": {
+        "1": 1
+      },
+      "looping_flag_counts": {
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 220800,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_dig.all.sabl",
+      "original_r2_size": 10960896,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 46,
+      "unique_sound_ids": 46,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 10956800,
+      "entry_directory_bytes": 920,
+      "entry_directory_sha256": "cc7fa25dc2a5bac84ed47d4b166269f4b5cfc16ce97bdaa839159e5bbe23d465",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 46
+      },
+      "audio_format_code_counts": {
+        "0": 46
+      },
+      "channel_counts": {
+        "1": 42,
+        "2": 4
+      },
+      "looping_flag_counts": {
+        "0": 39,
+        "1": 7
+      },
+      "entry_payload_serialized_bytes_summed": 10954586,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_dig.all.sabs",
+      "original_r2_size": 3219456,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 8,
+      "unique_sound_ids": 8,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 3215360,
+      "entry_directory_bytes": 160,
+      "entry_directory_sha256": "d5f860694e6f5d0f66ad19dca043c51f08e3506959de5aa2a1af01ec22c5b23b",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 8
+      },
+      "audio_format_code_counts": {
+        "8": 8
+      },
+      "channel_counts": {
+        "1": 4,
+        "2": 4
+      },
+      "looping_flag_counts": {
+        "0": 3,
+        "1": 5
+      },
+      "entry_payload_serialized_bytes_summed": 3213065,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_downhill.all.sabl",
+      "original_r2_size": 16189440,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 40,
+      "unique_sound_ids": 40,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 16185344,
+      "entry_directory_bytes": 800,
+      "entry_directory_sha256": "2d1d82687e3115318553031147288f0d3fde9d4a0896c358fa9ee019b6cf0ba8",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 40
+      },
+      "audio_format_code_counts": {
+        "0": 40
+      },
+      "channel_counts": {
+        "1": 31,
+        "2": 9
+      },
+      "looping_flag_counts": {
+        "0": 17,
+        "1": 23
+      },
+      "entry_payload_serialized_bytes_summed": 16182464,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_downhill.all.sabs",
+      "original_r2_size": 3768320,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 6,
+      "unique_sound_ids": 6,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 3764224,
+      "entry_directory_bytes": 120,
+      "entry_directory_sha256": "4cf33ec362f10f8ba3cdaf59460fa69b12bb073cf88d9d135ee9436257cded22",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 6
+      },
+      "audio_format_code_counts": {
+        "8": 6
+      },
+      "channel_counts": {
+        "1": 4,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "1": 6
+      },
+      "entry_payload_serialized_bytes_summed": 3761607,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_express.all.sabl",
+      "original_r2_size": 6455296,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 11,
+      "unique_sound_ids": 11,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 6451200,
+      "entry_directory_bytes": 220,
+      "entry_directory_sha256": "55719c7c79c71e4eb3cdf3f5b0bf7dfb61c9a851e6bd271e3833778269557eab",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 11
+      },
+      "audio_format_code_counts": {
+        "0": 11
+      },
+      "channel_counts": {
+        "1": 9,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 1,
+        "1": 10
+      },
+      "entry_payload_serialized_bytes_summed": 6447124,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_express.all.sabs",
+      "original_r2_size": 20129792,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 24,
+      "unique_sound_ids": 24,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 20125696,
+      "entry_directory_bytes": 480,
+      "entry_directory_sha256": "bba92f572ffa06eda4557bdf6cee7f2e3c267263a0efe3cb56c0de229fa32168",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 24
+      },
+      "audio_format_code_counts": {
+        "8": 24
+      },
+      "channel_counts": {
+        "1": 4,
+        "2": 20
+      },
+      "looping_flag_counts": {
+        "0": 3,
+        "1": 21
+      },
+      "entry_payload_serialized_bytes_summed": 20122744,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_frostbite.all.sabl",
+      "original_r2_size": 12345344,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 61,
+      "unique_sound_ids": 61,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 12341248,
+      "entry_directory_bytes": 1220,
+      "entry_directory_sha256": "d7662b5fd7472ce2a33b07a052786bd45d90f696790a324968ca0dc9e2d11229",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 61
+      },
+      "audio_format_code_counts": {
+        "0": 61
+      },
+      "channel_counts": {
+        "1": 55,
+        "2": 6
+      },
+      "looping_flag_counts": {
+        "0": 52,
+        "1": 9
+      },
+      "entry_payload_serialized_bytes_summed": 12337396,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_frostbite.all.sabs",
+      "original_r2_size": 12224512,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 24,
+      "unique_sound_ids": 24,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 12220416,
+      "entry_directory_bytes": 480,
+      "entry_directory_sha256": "4aa9e756f7b9a4ee57cd0d191f100c3fea9ab5415cc37bf706e4503efc8d84e3",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 24
+      },
+      "audio_format_code_counts": {
+        "8": 24
+      },
+      "channel_counts": {
+        "1": 21,
+        "2": 3
+      },
+      "looping_flag_counts": {
+        "0": 10,
+        "1": 14
+      },
+      "entry_payload_serialized_bytes_summed": 12216375,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_hijacked.all.sabl",
+      "original_r2_size": 7557120,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 10,
+      "unique_sound_ids": 10,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 7553024,
+      "entry_directory_bytes": 200,
+      "entry_directory_sha256": "d6981361bbaa00e75feae5c570be6ed47ca12612f86d94186f718f2f92833e68",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 10
+      },
+      "audio_format_code_counts": {
+        "0": 10
+      },
+      "channel_counts": {
+        "1": 8,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 7,
+        "1": 3
+      },
+      "entry_payload_serialized_bytes_summed": 7549520,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_hijacked.all.sabs",
+      "original_r2_size": 13969408,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 4,
+      "unique_sound_ids": 4,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 13965312,
+      "entry_directory_bytes": 80,
+      "entry_directory_sha256": "d006d1125c43f0d54f55ab66e89e1fa3b4ea354b8989530507714c22588dad6a",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 4
+      },
+      "audio_format_code_counts": {
+        "8": 4
+      },
+      "channel_counts": {
+        "1": 4
+      },
+      "looping_flag_counts": {
+        "1": 4
+      },
+      "entry_payload_serialized_bytes_summed": 13962576,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_hydro.all.sabl",
+      "original_r2_size": 15362048,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 31,
+      "unique_sound_ids": 31,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 15357952,
+      "entry_directory_bytes": 620,
+      "entry_directory_sha256": "15bc22d2249ba891153a9854df1e950b526df7dd3d90efaad804feb66a4ace7c",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 31
+      },
+      "audio_format_code_counts": {
+        "0": 31
+      },
+      "channel_counts": {
+        "1": 29,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 13,
+        "1": 18
+      },
+      "entry_payload_serialized_bytes_summed": 15354666,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_hydro.all.sabs",
+      "original_r2_size": 9338880,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 13,
+      "unique_sound_ids": 13,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 9334784,
+      "entry_directory_bytes": 260,
+      "entry_directory_sha256": "84df477acd5bd96a6eab7dcd8ff5c10a79c48fd340f3c11dd31e4e7499dd66c1",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 13
+      },
+      "audio_format_code_counts": {
+        "8": 13
+      },
+      "channel_counts": {
+        "1": 7,
+        "2": 6
+      },
+      "looping_flag_counts": {
+        "0": 6,
+        "1": 7
+      },
+      "entry_payload_serialized_bytes_summed": 9332667,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_la.all.sabl",
+      "original_r2_size": 2566144,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 16,
+      "unique_sound_ids": 16,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2562048,
+      "entry_directory_bytes": 320,
+      "entry_directory_sha256": "df66cf2a0f399d00253d739da9db45e28c1cb092879072f1b52e8bc519dccb23",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 16
+      },
+      "audio_format_code_counts": {
+        "0": 16
+      },
+      "channel_counts": {
+        "1": 15,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 16
+      },
+      "entry_payload_serialized_bytes_summed": 2558204,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_la.all.sabs",
+      "original_r2_size": 7761920,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 10,
+      "unique_sound_ids": 10,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 7757824,
+      "entry_directory_bytes": 200,
+      "entry_directory_sha256": "a37469145814c370f9f6a873a859ba144f295f8cc46f2af54493ce4d1add45b4",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 10
+      },
+      "audio_format_code_counts": {
+        "8": 10
+      },
+      "channel_counts": {
+        "1": 8,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 4,
+        "1": 6
+      },
+      "entry_payload_serialized_bytes_summed": 7754050,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_magma.all.sabl",
+      "original_r2_size": 12832768,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 47,
+      "unique_sound_ids": 47,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 12828672,
+      "entry_directory_bytes": 940,
+      "entry_directory_sha256": "786e087682856648b1f2a942c7ffe9607e9db61e37cd14ecb9161681a66a9920",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 47
+      },
+      "audio_format_code_counts": {
+        "0": 47
+      },
+      "channel_counts": {
+        "1": 46,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 36,
+        "1": 11
+      },
+      "entry_payload_serialized_bytes_summed": 12826506,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_magma.all.sabs",
+      "original_r2_size": 6215680,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 10,
+      "unique_sound_ids": 10,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 6211584,
+      "entry_directory_bytes": 200,
+      "entry_directory_sha256": "6ee25fd60443dab50c22e35d13f346e03de0f79046eeb3a7468f4d4a0c1a868a",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 10
+      },
+      "audio_format_code_counts": {
+        "8": 10
+      },
+      "channel_counts": {
+        "1": 6,
+        "2": 4
+      },
+      "looping_flag_counts": {
+        "0": 1,
+        "1": 9
+      },
+      "entry_payload_serialized_bytes_summed": 6208781,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_meltdown.all.sabl",
+      "original_r2_size": 4673536,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 10,
+      "unique_sound_ids": 10,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 4669440,
+      "entry_directory_bytes": 200,
+      "entry_directory_sha256": "183c1cf81894d7aed112a9e188fa691ae24aa381abefec8b14932f7326820bdd",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 10
+      },
+      "audio_format_code_counts": {
+        "0": 10
+      },
+      "channel_counts": {
+        "1": 10
+      },
+      "looping_flag_counts": {
+        "0": 4,
+        "1": 6
+      },
+      "entry_payload_serialized_bytes_summed": 4665838,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_meltdown.all.sabs",
+      "original_r2_size": 2459648,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 5,
+      "unique_sound_ids": 5,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2455552,
+      "entry_directory_bytes": 100,
+      "entry_directory_sha256": "c810e32acdca2b290380ae28020c72be57254e7b1ec231636a53dfff979f472c",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 5
+      },
+      "audio_format_code_counts": {
+        "8": 5
+      },
+      "channel_counts": {
+        "1": 5
+      },
+      "looping_flag_counts": {
+        "1": 5
+      },
+      "entry_payload_serialized_bytes_summed": 2452017,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_mirage.all.sabl",
+      "original_r2_size": 7680000,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 17,
+      "unique_sound_ids": 17,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 7675904,
+      "entry_directory_bytes": 340,
+      "entry_directory_sha256": "c4a096b4494dbd22d3d29fcc81c2f84080f6d04ec8c110e18538e7f074daabe0",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 17
+      },
+      "audio_format_code_counts": {
+        "0": 17
+      },
+      "channel_counts": {
+        "1": 17
+      },
+      "looping_flag_counts": {
+        "0": 9,
+        "1": 8
+      },
+      "entry_payload_serialized_bytes_summed": 7671860,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_mirage.all.sabs",
+      "original_r2_size": 4458496,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 13,
+      "unique_sound_ids": 13,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 4454400,
+      "entry_directory_bytes": 260,
+      "entry_directory_sha256": "cbada75cfe8d5d9b49756dd2e15d207dde5c45485a24c24d41da4ffe8f9f2eb1",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 13
+      },
+      "audio_format_code_counts": {
+        "8": 13
+      },
+      "channel_counts": {
+        "1": 13
+      },
+      "looping_flag_counts": {
+        "0": 11,
+        "1": 2
+      },
+      "entry_payload_serialized_bytes_summed": 4451304,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_nightclub.all.sabl",
+      "original_r2_size": 5085184,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 10,
+      "unique_sound_ids": 10,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5081088,
+      "entry_directory_bytes": 200,
+      "entry_directory_sha256": "3659db91118e87fc482903440220a5951dba397bab5a156929728b92b3e1bb3f",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 10
+      },
+      "audio_format_code_counts": {
+        "0": 10
+      },
+      "channel_counts": {
+        "1": 6,
+        "2": 4
+      },
+      "looping_flag_counts": {
+        "0": 4,
+        "1": 6
+      },
+      "entry_payload_serialized_bytes_summed": 5079002,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_nightclub.all.sabs",
+      "original_r2_size": 37187584,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 37183488,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "ad0d674d4d0e717e289dbe320e0fd67613d914b072472caa1e992180f48baf26",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "8": 2
+      },
+      "channel_counts": {
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "1": 2
+      },
+      "entry_payload_serialized_bytes_summed": 37181009,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_nightclub.english.sabs",
+      "original_r2_size": 1359872,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 1355776,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "b96f986bc81b0f0c65cf4ab58e71db70327b844568ade9e26d6aad623fc4cee3",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "8": 1
+      },
+      "channel_counts": {
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 1352586,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_nuketown_2020.all.sabl",
+      "original_r2_size": 16136192,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 51,
+      "unique_sound_ids": 51,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 16132096,
+      "entry_directory_bytes": 1020,
+      "entry_directory_sha256": "deac60b1156902ac106de87bc7b2ee8cfbd00f36d20aef8d6b4ef478e3eb28d9",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 51
+      },
+      "audio_format_code_counts": {
+        "0": 51
+      },
+      "channel_counts": {
+        "1": 48,
+        "2": 3
+      },
+      "looping_flag_counts": {
+        "0": 30,
+        "1": 21
+      },
+      "entry_payload_serialized_bytes_summed": 16129534,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_nuketown_2020.all.sabs",
+      "original_r2_size": 8800256,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 10,
+      "unique_sound_ids": 10,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 8796160,
+      "entry_directory_bytes": 200,
+      "entry_directory_sha256": "6d59489f48d1c56c78a039db24d29c94df0df48eb6cd45607afb562ccf0b73ce",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 10
+      },
+      "audio_format_code_counts": {
+        "8": 10
+      },
+      "channel_counts": {
+        "1": 8,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 3,
+        "1": 7
+      },
+      "entry_payload_serialized_bytes_summed": 8793257,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_paintball.all.sabl",
+      "original_r2_size": 9498624,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 25,
+      "unique_sound_ids": 25,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 9494528,
+      "entry_directory_bytes": 500,
+      "entry_directory_sha256": "4b204902128f3be5d08c6e79cfb2d4f152cdd752f53f5288129ffbfa8f161e6b",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 25
+      },
+      "audio_format_code_counts": {
+        "0": 25
+      },
+      "channel_counts": {
+        "1": 24,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 13,
+        "1": 12
+      },
+      "entry_payload_serialized_bytes_summed": 9490850,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_paintball.all.sabs",
+      "original_r2_size": 8886272,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 13,
+      "unique_sound_ids": 13,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 8882176,
+      "entry_directory_bytes": 260,
+      "entry_directory_sha256": "0b2ed4eaec1ef11dc3e1255d293745070f497975ebf58cd25fca57aa0b003e30",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 13
+      },
+      "audio_format_code_counts": {
+        "8": 13
+      },
+      "channel_counts": {
+        "1": 7,
+        "2": 6
+      },
+      "looping_flag_counts": {
+        "0": 8,
+        "1": 5
+      },
+      "entry_payload_serialized_bytes_summed": 8878415,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_patch.all.sabl",
+      "original_r2_size": 126976,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 122880,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "3637ff93990e33339848785ff396e5b7558c7b8051bb53b778f00f2a0bd15c1b",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "0": 1
+      },
+      "channel_counts": {
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 1
+      },
+      "entry_payload_serialized_bytes_summed": 119040,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_patch.all.sabs",
+      "original_r2_size": 24303616,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 9,
+      "unique_sound_ids": 9,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 24299520,
+      "entry_directory_bytes": 180,
+      "entry_directory_sha256": "b213893dda51ea9bb8add7f83084ab28b06ed47455b3bb527adbd11e4c93dea4",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 9
+      },
+      "audio_format_code_counts": {
+        "8": 9
+      },
+      "channel_counts": {
+        "1": 3,
+        "2": 6
+      },
+      "looping_flag_counts": {
+        "0": 6,
+        "1": 3
+      },
+      "entry_payload_serialized_bytes_summed": 24296163,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_pod.all.sabl",
+      "original_r2_size": 11061248,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 17,
+      "unique_sound_ids": 17,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 11057152,
+      "entry_directory_bytes": 340,
+      "entry_directory_sha256": "52445c8eec30abe17ea64808b30072e997666c62363a41dade4457e006dc202c",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 17
+      },
+      "audio_format_code_counts": {
+        "0": 17
+      },
+      "channel_counts": {
+        "1": 10,
+        "2": 7
+      },
+      "looping_flag_counts": {
+        "0": 7,
+        "1": 10
+      },
+      "entry_payload_serialized_bytes_summed": 11054392,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_pod.all.sabs",
+      "original_r2_size": 8640512,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 11,
+      "unique_sound_ids": 11,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 8636416,
+      "entry_directory_bytes": 220,
+      "entry_directory_sha256": "76e1f8b76b8a56cf21e1222c2f8f5d32791e237315794cfa61b17c8e9008cfa8",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 11
+      },
+      "audio_format_code_counts": {
+        "8": 11
+      },
+      "channel_counts": {
+        "1": 8,
+        "2": 3
+      },
+      "looping_flag_counts": {
+        "0": 6,
+        "1": 5
+      },
+      "entry_payload_serialized_bytes_summed": 8632894,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_raid.all.sabl",
+      "original_r2_size": 2572288,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 12,
+      "unique_sound_ids": 12,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2568192,
+      "entry_directory_bytes": 240,
+      "entry_directory_sha256": "05cd021b7fb3fac93708443da0cf8bd880c484da427f843880d0e5eda3067f2b",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 12
+      },
+      "audio_format_code_counts": {
+        "0": 12
+      },
+      "channel_counts": {
+        "1": 12
+      },
+      "looping_flag_counts": {
+        "0": 10,
+        "1": 2
+      },
+      "entry_payload_serialized_bytes_summed": 2564368,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_raid.all.sabs",
+      "original_r2_size": 4188160,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 4184064,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "70d149699d813db9d8f98c528240e9810ff91dfc24c9b30859b92f7e96d1fa1e",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "8": 2
+      },
+      "channel_counts": {
+        "1": 2
+      },
+      "looping_flag_counts": {
+        "1": 2
+      },
+      "entry_payload_serialized_bytes_summed": 4181600,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_skate.all.sabl",
+      "original_r2_size": 3928064,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 16,
+      "unique_sound_ids": 16,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 3923968,
+      "entry_directory_bytes": 320,
+      "entry_directory_sha256": "1aefcbb0ece5cbfc822eeeca7a0e73d1fe644b639dde51a0b61e219f3eb9e6ad",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 16
+      },
+      "audio_format_code_counts": {
+        "0": 16
+      },
+      "channel_counts": {
+        "1": 16
+      },
+      "looping_flag_counts": {
+        "0": 7,
+        "1": 9
+      },
+      "entry_payload_serialized_bytes_summed": 3920720,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_skate.all.sabs",
+      "original_r2_size": 7747584,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 12,
+      "unique_sound_ids": 12,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 7743488,
+      "entry_directory_bytes": 240,
+      "entry_directory_sha256": "77ed74e0f8554eb2e4222c405771a6fa44eb36bce6427a7d4e887afee34519d6",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 12
+      },
+      "audio_format_code_counts": {
+        "8": 12
+      },
+      "channel_counts": {
+        "1": 9,
+        "2": 3
+      },
+      "looping_flag_counts": {
+        "0": 8,
+        "1": 4
+      },
+      "entry_payload_serialized_bytes_summed": 7741109,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_slums.all.sabl",
+      "original_r2_size": 3989504,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 12,
+      "unique_sound_ids": 12,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 3985408,
+      "entry_directory_bytes": 240,
+      "entry_directory_sha256": "ed50be1e6af9e62ab2fece43735c2e66ef55581d83a4532bbee2ba18b5b73197",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 12
+      },
+      "audio_format_code_counts": {
+        "0": 12
+      },
+      "channel_counts": {
+        "1": 12
+      },
+      "looping_flag_counts": {
+        "0": 9,
+        "1": 3
+      },
+      "entry_payload_serialized_bytes_summed": 3983360,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_slums.all.sabs",
+      "original_r2_size": 3827712,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 8,
+      "unique_sound_ids": 8,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 3823616,
+      "entry_directory_bytes": 160,
+      "entry_directory_sha256": "e76026c35ac793b26864a21d0201c2a1b10237521cdd80556542f0f872401efe",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 8
+      },
+      "audio_format_code_counts": {
+        "8": 8
+      },
+      "channel_counts": {
+        "1": 8
+      },
+      "looping_flag_counts": {
+        "0": 1,
+        "1": 7
+      },
+      "entry_payload_serialized_bytes_summed": 3820596,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_slums.english.sabs",
+      "original_r2_size": 1243136,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 1239040,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "ad45536593d1e54a1c4804edec6ef26370d46fa19945905c181e3ed60f4d9353",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "8": 2
+      },
+      "channel_counts": {
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 2
+      },
+      "entry_payload_serialized_bytes_summed": 1235283,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_standoff.all.sabl",
+      "original_r2_size": 2074624,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 34,
+      "unique_sound_ids": 34,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2070528,
+      "entry_directory_bytes": 680,
+      "entry_directory_sha256": "70e789d68b303d89257e4ac3dc2ba42e3fdd9ec5b079ea66b4e5b5c2db5ee56a",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 34
+      },
+      "audio_format_code_counts": {
+        "0": 34
+      },
+      "channel_counts": {
+        "1": 34
+      },
+      "looping_flag_counts": {
+        "0": 34
+      },
+      "entry_payload_serialized_bytes_summed": 2066484,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_standoff.all.sabs",
+      "original_r2_size": 235520,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 3,
+      "unique_sound_ids": 3,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 231424,
+      "entry_directory_bytes": 60,
+      "entry_directory_sha256": "051dd4fbad1321c3316603290bf5ebd318005dc70632b47704fcd520a7359a2f",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 3
+      },
+      "audio_format_code_counts": {
+        "8": 3
+      },
+      "channel_counts": {
+        "1": 3
+      },
+      "looping_flag_counts": {
+        "0": 3
+      },
+      "entry_payload_serialized_bytes_summed": 228482,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_studio.all.sabl",
+      "original_r2_size": 8892416,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 36,
+      "unique_sound_ids": 36,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 8888320,
+      "entry_directory_bytes": 720,
+      "entry_directory_sha256": "57626fc47428172431d8b1aaf3887f58c40003c7a2c484bc8019619a8f36fd59",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 36
+      },
+      "audio_format_code_counts": {
+        "0": 36
+      },
+      "channel_counts": {
+        "1": 31,
+        "2": 5
+      },
+      "looping_flag_counts": {
+        "0": 32,
+        "1": 4
+      },
+      "entry_payload_serialized_bytes_summed": 8884388,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_studio.all.sabs",
+      "original_r2_size": 5187584,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 14,
+      "unique_sound_ids": 14,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5183488,
+      "entry_directory_bytes": 280,
+      "entry_directory_sha256": "25d32958259e64d252041706c630d70a009ffaeee35179f9c726c1d6458cf446",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 14
+      },
+      "audio_format_code_counts": {
+        "8": 14
+      },
+      "channel_counts": {
+        "1": 13,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 5,
+        "1": 9
+      },
+      "entry_payload_serialized_bytes_summed": 5180984,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_takeoff.all.sabl",
+      "original_r2_size": 9998336,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 25,
+      "unique_sound_ids": 25,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 9994240,
+      "entry_directory_bytes": 500,
+      "entry_directory_sha256": "864b5df9193d9ea4bc4b8e25393c3b1958c443abe018c7033db67db4321decb2",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 25
+      },
+      "audio_format_code_counts": {
+        "0": 25
+      },
+      "channel_counts": {
+        "1": 23,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 18,
+        "1": 7
+      },
+      "entry_payload_serialized_bytes_summed": 9992028,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_takeoff.all.sabs",
+      "original_r2_size": 10790912,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 11,
+      "unique_sound_ids": 11,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 10786816,
+      "entry_directory_bytes": 220,
+      "entry_directory_sha256": "928b1d92afd49b2f395e46e2100d511ed625785cefdfe6ec59b41f4a431cf048",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 11
+      },
+      "audio_format_code_counts": {
+        "8": 11
+      },
+      "channel_counts": {
+        "1": 11
+      },
+      "looping_flag_counts": {
+        "0": 5,
+        "1": 6
+      },
+      "entry_payload_serialized_bytes_summed": 10784053,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_turbine.all.sabl",
+      "original_r2_size": 966656,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 7,
+      "unique_sound_ids": 7,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 962560,
+      "entry_directory_bytes": 140,
+      "entry_directory_sha256": "8a14b75764e795a81fedf4f599e16f6619b6cde4b7ca4a04d4a267f014e26a17",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 7
+      },
+      "audio_format_code_counts": {
+        "0": 7
+      },
+      "channel_counts": {
+        "1": 7
+      },
+      "looping_flag_counts": {
+        "0": 7
+      },
+      "entry_payload_serialized_bytes_summed": 959616,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_turbine.all.sabs",
+      "original_r2_size": 12222464,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 19,
+      "unique_sound_ids": 19,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 12218368,
+      "entry_directory_bytes": 380,
+      "entry_directory_sha256": "eb88c97fed642db0051a3782474d93e1e3393ff1c372c2ec8ce205fa4f1be92d",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 19
+      },
+      "audio_format_code_counts": {
+        "8": 19
+      },
+      "channel_counts": {
+        "1": 14,
+        "2": 5
+      },
+      "looping_flag_counts": {
+        "0": 3,
+        "1": 16
+      },
+      "entry_payload_serialized_bytes_summed": 12214464,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_uplink.all.sabl",
+      "original_r2_size": 17213440,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 61,
+      "unique_sound_ids": 61,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 17209344,
+      "entry_directory_bytes": 1220,
+      "entry_directory_sha256": "5a295c18f3d9db5efb754dd1ac3fd7fbe84becbf38228398e2b9eb62c660a50f",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 61
+      },
+      "audio_format_code_counts": {
+        "0": 61
+      },
+      "channel_counts": {
+        "1": 52,
+        "2": 9
+      },
+      "looping_flag_counts": {
+        "0": 31,
+        "1": 30
+      },
+      "entry_payload_serialized_bytes_summed": 17207188,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_uplink.all.sabs",
+      "original_r2_size": 18638848,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 25,
+      "unique_sound_ids": 25,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 18634752,
+      "entry_directory_bytes": 500,
+      "entry_directory_sha256": "4e20955acbca9eef76f0fddf49bbd1eafbebfb3f2f8d8c9fead5cc22e6b80f48",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 25
+      },
+      "audio_format_code_counts": {
+        "8": 25
+      },
+      "channel_counts": {
+        "1": 11,
+        "2": 14
+      },
+      "looping_flag_counts": {
+        "0": 14,
+        "1": 11
+      },
+      "entry_payload_serialized_bytes_summed": 18631653,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_vertigo.all.sabl",
+      "original_r2_size": 13907968,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 48,
+      "unique_sound_ids": 48,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 13903872,
+      "entry_directory_bytes": 960,
+      "entry_directory_sha256": "265abf7aa50e3c2781a31bd92c24f3eef7cd33becd613234e7894bd5de766410",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 48
+      },
+      "audio_format_code_counts": {
+        "0": 48
+      },
+      "channel_counts": {
+        "1": 39,
+        "2": 9
+      },
+      "looping_flag_counts": {
+        "0": 40,
+        "1": 8
+      },
+      "entry_payload_serialized_bytes_summed": 13901240,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_vertigo.all.sabs",
+      "original_r2_size": 9834496,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 20,
+      "unique_sound_ids": 20,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 9830400,
+      "entry_directory_bytes": 400,
+      "entry_directory_sha256": "996db59be8932d7357e9ba6cc09ceb6d96f4cdda84a96a58445ccf0a49dff645",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 20
+      },
+      "audio_format_code_counts": {
+        "8": 20
+      },
+      "channel_counts": {
+        "1": 13,
+        "2": 7
+      },
+      "looping_flag_counts": {
+        "0": 3,
+        "1": 17
+      },
+      "entry_payload_serialized_bytes_summed": 9826831,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_village.all.sabl",
+      "original_r2_size": 2519040,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 13,
+      "unique_sound_ids": 13,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2514944,
+      "entry_directory_bytes": 260,
+      "entry_directory_sha256": "83d05f20df0367a17a89aa268df059409de3b05fadd02d550f47c12e50ff4b74",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 13
+      },
+      "audio_format_code_counts": {
+        "0": 13
+      },
+      "channel_counts": {
+        "1": 13
+      },
+      "looping_flag_counts": {
+        "0": 13
+      },
+      "entry_payload_serialized_bytes_summed": 2511828,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_village.all.sabs",
+      "original_r2_size": 4710400,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 11,
+      "unique_sound_ids": 11,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 4706304,
+      "entry_directory_bytes": 220,
+      "entry_directory_sha256": "4803f1e06e45d7f29805f71842edc9eb14ba89a5a3fd9637b9bbdb3c48ef64ba",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 11
+      },
+      "audio_format_code_counts": {
+        "8": 11
+      },
+      "channel_counts": {
+        "1": 5,
+        "2": 6
+      },
+      "looping_flag_counts": {
+        "0": 6,
+        "1": 5
+      },
+      "entry_payload_serialized_bytes_summed": 4702292,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/mpl_vox_multi_team.english.sabs",
+      "original_r2_size": 616448,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 11,
+      "unique_sound_ids": 11,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 612352,
+      "entry_directory_bytes": 220,
+      "entry_directory_sha256": "e657393b26ec37c6262b62501181d4a9043724458188f368f9adeea377087010",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 11
+      },
+      "audio_format_code_counts": {
+        "8": 11
+      },
+      "channel_counts": {
+        "1": 11
+      },
+      "looping_flag_counts": {
+        "0": 11
+      },
+      "entry_payload_serialized_bytes_summed": 609317,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/wpn_gaz_quad.all.sabl",
+      "original_r2_size": 208896,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 204800,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "ce5ebacb3fd5560c58dc178b0cc72fa8c2a423e83081fa022e7bc0d3042d67f7",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "0": 2
+      },
+      "channel_counts": {
+        "1": 1,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 1,
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 200804,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/wpn_gaz_single.all.sabl",
+      "original_r2_size": 518144,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 3,
+      "unique_sound_ids": 3,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 514048,
+      "entry_directory_bytes": 60,
+      "entry_directory_sha256": "c5d4c0d3089cc968407678877c0eea4c1c247eb874fa9868ffa3a9aad0eb506c",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 3
+      },
+      "audio_format_code_counts": {
+        "0": 3
+      },
+      "channel_counts": {
+        "1": 1,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 2,
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 510552,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/wpn_slingshot.all.sabl",
+      "original_r2_size": 2027520,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 12,
+      "unique_sound_ids": 12,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2023424,
+      "entry_directory_bytes": 240,
+      "entry_directory_sha256": "8c59df73e096b67582999ad502da6fa6a03a7509137c719dd72259a40dcf9685",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 12
+      },
+      "audio_format_code_counts": {
+        "0": 12
+      },
+      "channel_counts": {
+        "1": 5,
+        "2": 7
+      },
+      "looping_flag_counts": {
+        "0": 8,
+        "1": 4
+      },
+      "entry_payload_serialized_bytes_summed": 2020752,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_alcatraz.all.sabl",
+      "original_r2_size": 65378304,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 223,
+      "unique_sound_ids": 223,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 65368064,
+      "entry_directory_bytes": 4460,
+      "entry_directory_sha256": "ccf1d53b4ff4984816d8bb3d6910e3f5dc047cd7dbfe1c76f4906d7636dd878c",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 223
+      },
+      "audio_format_code_counts": {
+        "0": 223
+      },
+      "channel_counts": {
+        "1": 132,
+        "2": 91
+      },
+      "looping_flag_counts": {
+        "0": 193,
+        "1": 30
+      },
+      "entry_payload_serialized_bytes_summed": 65364572,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_alcatraz.all.sabs",
+      "original_r2_size": 224202752,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 193,
+      "unique_sound_ids": 193,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 224194560,
+      "entry_directory_bytes": 3860,
+      "entry_directory_sha256": "ff2709a3fc0b50da6dc0b5e300d8d84149aa6f3e184cbf29a672055086e65b96",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 193
+      },
+      "audio_format_code_counts": {
+        "8": 193
+      },
+      "channel_counts": {
+        "1": 39,
+        "2": 154
+      },
+      "looping_flag_counts": {
+        "0": 167,
+        "1": 26
+      },
+      "entry_payload_serialized_bytes_summed": 224190841,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_alcatraz.english.sabl",
+      "original_r2_size": 833536,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 829440,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "a58eeea75e34190181fc61a6350246c0b5f5a56038d023410c452135c2f4d536",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "0": 2
+      },
+      "channel_counts": {
+        "1": 2
+      },
+      "looping_flag_counts": {
+        "0": 2
+      },
+      "entry_payload_serialized_bytes_summed": 826174,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_alcatraz.english.sabs",
+      "original_r2_size": 291160064,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2464,
+      "unique_sound_ids": 2464,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 291067904,
+      "entry_directory_bytes": 49280,
+      "entry_directory_sha256": "2354eac078900a7199ef0bb486f02b6e9847302e02207ca743fedd5394df1baf",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2464
+      },
+      "audio_format_code_counts": {
+        "8": 2464
+      },
+      "channel_counts": {
+        "1": 2456,
+        "2": 8
+      },
+      "looping_flag_counts": {
+        "0": 2464
+      },
+      "entry_payload_serialized_bytes_summed": 291064655,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_alcatraz_load.all.sabs",
+      "original_r2_size": 3926016,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 3921920,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "e45ca7e18bdf0788e3533bc232740d34d12a436953fb6e42171ad1ea628e7fbb",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "8": 1
+      },
+      "channel_counts": {
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 1
+      },
+      "entry_payload_serialized_bytes_summed": 3919059,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_alcatraz_load.english.sabs",
+      "original_r2_size": 31168512,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 3,
+      "unique_sound_ids": 3,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 31164416,
+      "entry_directory_bytes": 60,
+      "entry_directory_sha256": "94f6e1bcc8097aa0db9d363a28fc0a935983d0afbca107404f488e5d6b6957eb",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 3
+      },
+      "audio_format_code_counts": {
+        "8": 3
+      },
+      "channel_counts": {
+        "1": 1,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 3
+      },
+      "entry_payload_serialized_bytes_summed": 31161351,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_buried.all.sabl",
+      "original_r2_size": 77056000,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 464,
+      "unique_sound_ids": 464,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 77037568,
+      "entry_directory_bytes": 9280,
+      "entry_directory_sha256": "008970c971138fa42c183fd880d486706d00791f56c8805f878c42be6064b595",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 464
+      },
+      "audio_format_code_counts": {
+        "0": 464
+      },
+      "channel_counts": {
+        "1": 417,
+        "2": 47
+      },
+      "looping_flag_counts": {
+        "0": 429,
+        "1": 35
+      },
+      "entry_payload_serialized_bytes_summed": 77035394,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_buried.all.sabs",
+      "original_r2_size": 323911680,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 159,
+      "unique_sound_ids": 159,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 323903488,
+      "entry_directory_bytes": 3180,
+      "entry_directory_sha256": "65c7b378a56f73a205c3c9dacb985afb3aa1148f326f4dd75e68062e33f24d28",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 159
+      },
+      "audio_format_code_counts": {
+        "8": 159
+      },
+      "channel_counts": {
+        "1": 55,
+        "2": 104
+      },
+      "looping_flag_counts": {
+        "0": 119,
+        "1": 40
+      },
+      "entry_payload_serialized_bytes_summed": 323900668,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_buried.english.sabs",
+      "original_r2_size": 424990720,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2434,
+      "unique_sound_ids": 2434,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 424900608,
+      "entry_directory_bytes": 48680,
+      "entry_directory_sha256": "81108aefb4c90f85ed6e162327325bddc980f2f551dcfe2b9146555ca723b934",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2434
+      },
+      "audio_format_code_counts": {
+        "8": 2434
+      },
+      "channel_counts": {
+        "1": 2434
+      },
+      "looping_flag_counts": {
+        "0": 2434
+      },
+      "entry_payload_serialized_bytes_summed": 424897184,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_buried_load.all.sabs",
+      "original_r2_size": 15456256,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 15452160,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "87742e3b09393137c8d7344fa51520fa676f06073b07d083b232eb9d04cd12d7",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "8": 2
+      },
+      "channel_counts": {
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 2
+      },
+      "entry_payload_serialized_bytes_summed": 15449493,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_buried_load.english.sabs",
+      "original_r2_size": 5988352,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5984256,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "dd1108e3eb0b8c52a4a1baef56a5c910f1b85c02285fd271a20068249108ace4",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "8": 1
+      },
+      "channel_counts": {
+        "1": 1
+      },
+      "looping_flag_counts": {
+        "0": 1
+      },
+      "entry_payload_serialized_bytes_summed": 5981246,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_classic_transit.all.sabl",
+      "original_r2_size": 19374080,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 57,
+      "unique_sound_ids": 57,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 19369984,
+      "entry_directory_bytes": 1140,
+      "entry_directory_sha256": "06eca31b61637390ec8f9d7573a1519851e888b768c75ba6f0459f3c967b5001",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 57
+      },
+      "audio_format_code_counts": {
+        "0": 57
+      },
+      "channel_counts": {
+        "1": 37,
+        "2": 20
+      },
+      "looping_flag_counts": {
+        "0": 50,
+        "1": 7
+      },
+      "entry_payload_serialized_bytes_summed": 19366276,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_classic_transit.all.sabs",
+      "original_r2_size": 5953536,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 7,
+      "unique_sound_ids": 7,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5949440,
+      "entry_directory_bytes": 140,
+      "entry_directory_sha256": "39e00043275b76b3a0f593cf14524a8a38672e75a9ba2ab2ff6b01735a050007",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 7
+      },
+      "audio_format_code_counts": {
+        "8": 7
+      },
+      "channel_counts": {
+        "2": 7
+      },
+      "looping_flag_counts": {
+        "0": 2,
+        "1": 5
+      },
+      "entry_payload_serialized_bytes_summed": 5947126,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_classic_transit.english.sabs",
+      "original_r2_size": 54546432,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 147,
+      "unique_sound_ids": 147,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 54538240,
+      "entry_directory_bytes": 2940,
+      "entry_directory_sha256": "bb2840badb155829ca9ad938259040c394de357133fc38d0b4c5cdea7d3ef7d1",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 147
+      },
+      "audio_format_code_counts": {
+        "8": 147
+      },
+      "channel_counts": {
+        "1": 137,
+        "2": 10
+      },
+      "looping_flag_counts": {
+        "0": 147
+      },
+      "entry_payload_serialized_bytes_summed": 54534333,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_code_post_gfx.all.sabs",
+      "original_r2_size": 25309184,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 43,
+      "unique_sound_ids": 43,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 25305088,
+      "entry_directory_bytes": 860,
+      "entry_directory_sha256": "a9f45e56d2754b3ab0f43159543e17a72e4769b5490227d32b179385660b666b",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 43
+      },
+      "audio_format_code_counts": {
+        "8": 43
+      },
+      "channel_counts": {
+        "1": 1,
+        "2": 42
+      },
+      "looping_flag_counts": {
+        "0": 40,
+        "1": 3
+      },
+      "entry_payload_serialized_bytes_summed": 25302959,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_common.all.sabl",
+      "original_r2_size": 91109376,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 352,
+      "unique_sound_ids": 352,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 91095040,
+      "entry_directory_bytes": 7040,
+      "entry_directory_sha256": "a964bc2870187db79120c802b5af7e6e7d8c4f3ab2273bbcc8060502b566bf21",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 352
+      },
+      "audio_format_code_counts": {
+        "0": 352
+      },
+      "channel_counts": {
+        "1": 272,
+        "2": 80
+      },
+      "looping_flag_counts": {
+        "0": 317,
+        "1": 35
+      },
+      "entry_payload_serialized_bytes_summed": 91092530,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_common.all.sabs",
+      "original_r2_size": 122509312,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 83,
+      "unique_sound_ids": 83,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 122505216,
+      "entry_directory_bytes": 1660,
+      "entry_directory_sha256": "5d8f0b041dca2a76b53095590d22c52760afc074cc6facbf277d72612a229e59",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 83
+      },
+      "audio_format_code_counts": {
+        "8": 83
+      },
+      "channel_counts": {
+        "1": 39,
+        "2": 44
+      },
+      "looping_flag_counts": {
+        "0": 59,
+        "1": 24
+      },
+      "entry_payload_serialized_bytes_summed": 122502527,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_common.english.sabl",
+      "original_r2_size": 399360,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 8,
+      "unique_sound_ids": 8,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 395264,
+      "entry_directory_bytes": 160,
+      "entry_directory_sha256": "1adc79d47f02d9d9fbf3adc7deb2ad51bc6bd26c4d0eafa9a00a3327569edfee",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 8
+      },
+      "audio_format_code_counts": {
+        "0": 8
+      },
+      "channel_counts": {
+        "1": 8
+      },
+      "looping_flag_counts": {
+        "0": 8
+      },
+      "entry_payload_serialized_bytes_summed": 392380,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_common.english.sabs",
+      "original_r2_size": 379510784,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2336,
+      "unique_sound_ids": 2336,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 379424768,
+      "entry_directory_bytes": 46720,
+      "entry_directory_sha256": "1d1784a6328150c3b1741967b8644e7dfb38151592fb958d5f4a81fdedb566cf",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2336
+      },
+      "audio_format_code_counts": {
+        "8": 2336
+      },
+      "channel_counts": {
+        "1": 2336
+      },
+      "looping_flag_counts": {
+        "0": 2336
+      },
+      "entry_payload_serialized_bytes_summed": 379422300,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_highrise.all.sabl",
+      "original_r2_size": 41625600,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 147,
+      "unique_sound_ids": 147,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 41617408,
+      "entry_directory_bytes": 2940,
+      "entry_directory_sha256": "2f757bd77cf261bb4e705209a51ffee37d4d8776408b78254ea46977e4e5b284",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 147
+      },
+      "audio_format_code_counts": {
+        "0": 147
+      },
+      "channel_counts": {
+        "1": 99,
+        "2": 48
+      },
+      "looping_flag_counts": {
+        "0": 133,
+        "1": 14
+      },
+      "entry_payload_serialized_bytes_summed": 41614736,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_highrise.all.sabs",
+      "original_r2_size": 57575424,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 26,
+      "unique_sound_ids": 26,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 57571328,
+      "entry_directory_bytes": 520,
+      "entry_directory_sha256": "fc01c44b0b4dd31e1a1395a8d26d6c5f49e0ae9e2de73f03ef18b58682a096c5",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 26
+      },
+      "audio_format_code_counts": {
+        "8": 26
+      },
+      "channel_counts": {
+        "1": 12,
+        "2": 14
+      },
+      "looping_flag_counts": {
+        "0": 15,
+        "1": 11
+      },
+      "entry_payload_serialized_bytes_summed": 57568301,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_highrise.english.sabs",
+      "original_r2_size": 292567040,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1826,
+      "unique_sound_ids": 1826,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 292499456,
+      "entry_directory_bytes": 36520,
+      "entry_directory_sha256": "e78c1743bd27e3c7f092b15dce140fca84d562973f6218cbb8eab2d17df7bc6d",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1826
+      },
+      "audio_format_code_counts": {
+        "8": 1826
+      },
+      "channel_counts": {
+        "1": 1799,
+        "2": 27
+      },
+      "looping_flag_counts": {
+        "0": 1826
+      },
+      "entry_payload_serialized_bytes_summed": 292495763,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_nuked.english.sabl",
+      "original_r2_size": 11579392,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 13,
+      "unique_sound_ids": 13,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 11575296,
+      "entry_directory_bytes": 260,
+      "entry_directory_sha256": "84e00c121481cfbf76e6a580ba80c221673270b0d725b5e2cd2d86ab15b3e6e2",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 13
+      },
+      "audio_format_code_counts": {
+        "0": 13
+      },
+      "channel_counts": {
+        "1": 2,
+        "2": 11
+      },
+      "looping_flag_counts": {
+        "0": 13
+      },
+      "entry_payload_serialized_bytes_summed": 11573210,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_nuked_real.all.sabl",
+      "original_r2_size": 30126080,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 44,
+      "unique_sound_ids": 44,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 30121984,
+      "entry_directory_bytes": 880,
+      "entry_directory_sha256": "e2d37a8c772f4b11831d62d440cd120aad99144af15e5b152eb7ab22beeecbf7",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 44
+      },
+      "audio_format_code_counts": {
+        "0": 44
+      },
+      "channel_counts": {
+        "1": 26,
+        "2": 18
+      },
+      "looping_flag_counts": {
+        "0": 40,
+        "1": 4
+      },
+      "entry_payload_serialized_bytes_summed": 30117938,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_nuked_real.all.sabs",
+      "original_r2_size": 37216256,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 11,
+      "unique_sound_ids": 11,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 37212160,
+      "entry_directory_bytes": 220,
+      "entry_directory_sha256": "48c5cf1762e41873d31e8beab91d60b6c9329ef5717baa222a928365d4d4527c",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 11
+      },
+      "audio_format_code_counts": {
+        "8": 11
+      },
+      "channel_counts": {
+        "1": 3,
+        "2": 8
+      },
+      "looping_flag_counts": {
+        "0": 7,
+        "1": 4
+      },
+      "entry_payload_serialized_bytes_summed": 37209965,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_nuked_real.english.sabs",
+      "original_r2_size": 8282112,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 37,
+      "unique_sound_ids": 37,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 8278016,
+      "entry_directory_bytes": 740,
+      "entry_directory_sha256": "25cbec00d823f9b3b00def282fe6c778ef4941a5976ddf33ff8fe75a57b9147e",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 37
+      },
+      "audio_format_code_counts": {
+        "8": 37
+      },
+      "channel_counts": {
+        "1": 29,
+        "2": 8
+      },
+      "looping_flag_counts": {
+        "0": 37
+      },
+      "entry_payload_serialized_bytes_summed": 8274419,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_nuked_real_intro.all.sabs",
+      "original_r2_size": 2961408,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 2957312,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "ff5663ed085edfcb16fa590241b133a326f1c385509e0a5aa0ca1028ebc18bb3",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "8": 1
+      },
+      "channel_counts": {
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 1
+      },
+      "entry_payload_serialized_bytes_summed": 2953971,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_patch.all.sabl",
+      "original_r2_size": 1652736,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 12,
+      "unique_sound_ids": 12,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 1648640,
+      "entry_directory_bytes": 240,
+      "entry_directory_sha256": "ba47c908daa1cfd2eb0a4b78a5a3377145b9baefcb3abe656a9357d39a40a9f3",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 12
+      },
+      "audio_format_code_counts": {
+        "0": 12
+      },
+      "channel_counts": {
+        "1": 6,
+        "2": 6
+      },
+      "looping_flag_counts": {
+        "0": 12
+      },
+      "entry_payload_serialized_bytes_summed": 1645764,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_patch.all.sabs",
+      "original_r2_size": 34258944,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 19,
+      "unique_sound_ids": 19,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 34254848,
+      "entry_directory_bytes": 380,
+      "entry_directory_sha256": "2418d501d59060a5175f9beba435fdf9a8034363fdef0bd0268432cf7f7bdc25",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 19
+      },
+      "audio_format_code_counts": {
+        "8": 19
+      },
+      "channel_counts": {
+        "1": 12,
+        "2": 7
+      },
+      "looping_flag_counts": {
+        "0": 19
+      },
+      "entry_payload_serialized_bytes_summed": 34252480,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_patch_ui.all.sabs",
+      "original_r2_size": 110592,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 1,
+      "unique_sound_ids": 1,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 106496,
+      "entry_directory_bytes": 20,
+      "entry_directory_sha256": "ca843d38b8e3b6eb9a915424e88cd1a4929f916f3107c2dd9cf02bc2c6c5da20",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 1
+      },
+      "audio_format_code_counts": {
+        "8": 1
+      },
+      "channel_counts": {
+        "1": 1
+      },
+      "looping_flag_counts": {
+        "0": 1
+      },
+      "entry_payload_serialized_bytes_summed": 104183,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_returned_tranzit.all.sabl",
+      "original_r2_size": 1054720,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 5,
+      "unique_sound_ids": 5,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 1050624,
+      "entry_directory_bytes": 100,
+      "entry_directory_sha256": "968e5de42cc5732db0e390b48b76fb5a6157fabcbe51a483d5807812f03117a9",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 5
+      },
+      "audio_format_code_counts": {
+        "0": 5
+      },
+      "channel_counts": {
+        "1": 4,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 5
+      },
+      "entry_payload_serialized_bytes_summed": 1047356,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_returned_tranzit.all.sabs",
+      "original_r2_size": 32821248,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 19,
+      "unique_sound_ids": 19,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 32817152,
+      "entry_directory_bytes": 380,
+      "entry_directory_sha256": "1bbfca2d684255236e1b2c788a9206bc3ec6c86a140d16135cb60e92acb53fc2",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 19
+      },
+      "audio_format_code_counts": {
+        "8": 19
+      },
+      "channel_counts": {
+        "1": 17,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 18,
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 32814509,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_returned_tranzit.english.sabl",
+      "original_r2_size": 11579392,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 13,
+      "unique_sound_ids": 13,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 11575296,
+      "entry_directory_bytes": 260,
+      "entry_directory_sha256": "84e00c121481cfbf76e6a580ba80c221673270b0d725b5e2cd2d86ab15b3e6e2",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 13
+      },
+      "audio_format_code_counts": {
+        "0": 13
+      },
+      "channel_counts": {
+        "1": 2,
+        "2": 11
+      },
+      "looping_flag_counts": {
+        "0": 13
+      },
+      "entry_payload_serialized_bytes_summed": 11573210,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_returned_tranzit.english.sabs",
+      "original_r2_size": 18110464,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 280,
+      "unique_sound_ids": 280,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 18098176,
+      "entry_directory_bytes": 5600,
+      "entry_directory_sha256": "432bb2350063636fc5b1e845ac2339661af9dfca0ee7199da33239a917241df7",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 280
+      },
+      "audio_format_code_counts": {
+        "8": 280
+      },
+      "channel_counts": {
+        "1": 280
+      },
+      "looping_flag_counts": {
+        "0": 280
+      },
+      "entry_payload_serialized_bytes_summed": 18096094,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_rt_load.all.sabs",
+      "original_r2_size": 5134336,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 5130240,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "5844747de1c88459f6a71ae7ecab139b2f2788890c5273eb92928c330ed26bfa",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "8": 2
+      },
+      "channel_counts": {
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 2
+      },
+      "entry_payload_serialized_bytes_summed": 5128187,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_rt_load.english.sabs",
+      "original_r2_size": 18995200,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 4,
+      "unique_sound_ids": 4,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 18991104,
+      "entry_directory_bytes": 80,
+      "entry_directory_sha256": "c3906d17a02ba78facd3418fdedbb703b26a522acdf81586a9c6cb1a0fd8d41a",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 4
+      },
+      "audio_format_code_counts": {
+        "8": 4
+      },
+      "channel_counts": {
+        "1": 2,
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 4
+      },
+      "entry_payload_serialized_bytes_summed": 18987690,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_survival_transit.all.sabl",
+      "original_r2_size": 13398016,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 59,
+      "unique_sound_ids": 59,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 13393920,
+      "entry_directory_bytes": 1180,
+      "entry_directory_sha256": "88021a57ca34f1236b517135ad1a7eb77226b6ce561ae46ad86b49ad54ea1769",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 59
+      },
+      "audio_format_code_counts": {
+        "0": 59
+      },
+      "channel_counts": {
+        "1": 58,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 58,
+        "1": 1
+      },
+      "entry_payload_serialized_bytes_summed": 13390406,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_tomb.all.sabl",
+      "original_r2_size": 103546880,
+      "extension": "sabl",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 533,
+      "unique_sound_ids": 533,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 103524352,
+      "entry_directory_bytes": 10660,
+      "entry_directory_sha256": "c11e574be4f380d07d9106ea3d5aba1536eb7d2863a5dfd12223bbbc39552e5e",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 533
+      },
+      "audio_format_code_counts": {
+        "0": 533
+      },
+      "channel_counts": {
+        "1": 409,
+        "2": 124
+      },
+      "looping_flag_counts": {
+        "0": 467,
+        "1": 66
+      },
+      "entry_payload_serialized_bytes_summed": 103522102,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_tomb.all.sabs",
+      "original_r2_size": 481327104,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 214,
+      "unique_sound_ids": 214,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 481316864,
+      "entry_directory_bytes": 4280,
+      "entry_directory_sha256": "bf1f6d2425667e4b585ac17eceaaf9a8d77497df7babaf953f6cde6123c1912c",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 214
+      },
+      "audio_format_code_counts": {
+        "8": 214
+      },
+      "channel_counts": {
+        "1": 61,
+        "2": 153
+      },
+      "looping_flag_counts": {
+        "0": 171,
+        "1": 43
+      },
+      "entry_payload_serialized_bytes_summed": 481314534,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_tomb.english.sabs",
+      "original_r2_size": 393840640,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2381,
+      "unique_sound_ids": 2381,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 393752576,
+      "entry_directory_bytes": 47620,
+      "entry_directory_sha256": "5749cadcb3f848e13be52fa7d9864845b555c000e125e99fc36bb2338ab2afaf",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2381
+      },
+      "audio_format_code_counts": {
+        "8": 2381
+      },
+      "channel_counts": {
+        "1": 2361,
+        "2": 20
+      },
+      "looping_flag_counts": {
+        "0": 2381
+      },
+      "entry_payload_serialized_bytes_summed": 393750266,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_tomb_load.all.sabs",
+      "original_r2_size": 29353984,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 2,
+      "unique_sound_ids": 2,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 29349888,
+      "entry_directory_bytes": 40,
+      "entry_directory_sha256": "145d18a83b408fa655b60aa9ea291d517a86ea8370faa9d86d587e8eb677fa5d",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 2
+      },
+      "audio_format_code_counts": {
+        "8": 2
+      },
+      "channel_counts": {
+        "2": 2
+      },
+      "looping_flag_counts": {
+        "0": 2
+      },
+      "entry_payload_serialized_bytes_summed": 29347023,
+      "original_payload_samples": "not_read"
+    },
+    {
+      "source_key": "bo2/sound/zmb_tomb_load.english.sabs",
+      "original_r2_size": 12253184,
+      "extension": "sabs",
+      "status": "bank_entry_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 v14 2UX# sound bank header and indexed 20-byte entry records only; payload codec and actual audio samples not decoded",
+      "magic": "2UX#",
+      "version": 14,
+      "entry_count": 3,
+      "unique_sound_ids": 3,
+      "duplicate_sound_ids": 0,
+      "bank_entry_size": 20,
+      "header_bytes_examined": 2048,
+      "entry_directory_start": 12249088,
+      "entry_directory_bytes": 60,
+      "entry_directory_sha256": "757057931cd8f281a78b51822604cec2932665807f820da1723fd14b7f53763a",
+      "dependency_count": 8,
+      "dependency_size": 64,
+      "frame_rate_index_counts": {
+        "6": 3
+      },
+      "audio_format_code_counts": {
+        "8": 3
+      },
+      "channel_counts": {
+        "1": 2,
+        "2": 1
+      },
+      "looping_flag_counts": {
+        "0": 3
+      },
+      "entry_payload_serialized_bytes_summed": 12245052,
+      "original_payload_samples": "not_read"
+    }
+  ]
+}
