@@ -99,3 +99,72 @@ Relevant remote-source runner proofs:
 - Entire 1,287-object source header survey:
   https://github.com/lizardpeter/r2-runners/actions/runs/40543593008
 
+
+## 2026-10-27 T6 nested container and complete physical-byte proof
+
+The initial object inventory establishes exact R2 **prefix-sample** evidence for
+all **1,287** BO2 objects (15,774,948,972 listed source bytes), excluding
+zero-byte folder markers. This includes 571 source FastFiles, 23 IPAKs, 116
+sound banks, 366 WAD archives and assorted CAB/executables/support files.
+The observed signatures include the signed and unsigned T6 zone magics,
+`KAPI`, `2UX#`, `MSCF`, and `T3w\xAB`. There are 14 other/unknown
+signatures under the initial classifier. One source named
+`bo2/redist/.NETFramework.exe` begins with an HTML DOCTYPE, not MZ:
+**do not infer a valid executable from a filename extension**.
+
+The following measurements are all **real source R2 byte ranges** or
+full-source authenticated on ephemeral public runners; original game bytes
+are not committed to this repository.
+
+| Family | Original objects | Structural evidence | Remaining limitation |
+| --- | ---: | --- | --- |
+| Signed T6 PC client FastFiles | 215 | 215/215 exact source SHA256, decrypted/expanded, 120,385 typed XAsset directory entries | Serialized asset-body bytes not semantically explained |
+| Unsigned T6 dedicated server FastFiles | 356 | 356/356 exact source SHA256, DEFLATE XChunks and 256,811 typed XAsset directory entries across PC/PS3/Xbox360/WiiU | Body semantics and independent Rust-test importer tests not completed |
+| T6 IPAK image packages | 23 | Original HTTP ranges for all headers/section tables/indexes, 32,227 bounded entries | Original whole-file hashes, LZO/RAW body decode and image semantics not measured |
+| T6 SABS/SABL audio banks | 116 | Original R2 v14 2UX# headers and 25,446 bounded 20-byte entry records | Exact whole-file hashes and runtime codec playback not measured |
+| T3w WAD server archives | 366 | **366/366 original SHA256, 4,624,084/4,624,084 physical bytes assigned without holes/overlaps, all 1,098 zlib entry bodies decoded and SHA256** | Application semantics for nested files are not all established |
+| Windows DirectX CAB | 154 | Physical first 64 bytes match MSCF | CAB member directory and bytes not yet audited |
+| Other sources | 57 | Physical signature identified or explicitly unknown | Per-format audit pending |
+
+The complete WAD original body proof lives at `GET /api/t6/wads/full`.
+Every file reports `source_sha256`, exact physical owned byte count, number
+of zlib streams, expanded byte count, and a `nested_entries` list with
+original compressed offsets and SHA256 hashes of decoded files. Nested
+files sum to **20,769,844** losslessly decompressed bytes: 610 `.info`,
+366 `.json`, and 122 `.dat` entries. Of the 366 files with a `.json`
+extension, **244 pass strict UTF-8 JSON syntax**, while **122 fail**, all
+from localized `motd-mp-*.json` files with unescaped control characters.
+Their original source SHA256 and zlib checks pass; strict JSON rejection
+does not imply corrupt compression, and permissive app parsing is not
+yet demonstrated.
+
+The supported website endpoints are:
+`/api/t6/source-headers`, `/api/t6/headers`, `/api/t6/index`,
+`/api/t6/report?key=...`, `/api/t6/client-corpus`,
+`/api/t6/server-corpus`, `/api/t6/types`,
+`/api/t6/ipaks`, `/api/t6/sound-banks`,
+`/api/t6/wads`, and `/api/t6/wads/full`.
+Original source bytes are never served. The website marks source evidence
+and semantic completeness separately.
+
+**No blanket assertion of understanding every byte:** WAD original
+*physical/compressed* byte ownership is proven, but embedded contents'
+meaning (and the production Rust-test importer) remains separately
+unverified. FastFile expanded body byte semantics and IPAK/audio payloads
+remain major open frontiers.
+
+Source runner proofs:
+- Full 366 original WAD physical-byte and zlib proof:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40545892214
+- All 23 original IPAKs:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40544406099
+- All 116 original SABS/SABL entry directories:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40544723639
+- All 366 original WAD directories:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40545316460
+- Live hosted browser and eleven original T6 audit endpoints:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40546618736
+
+WAD format field layout follows independently published public parser
+`uhhashe/wadify` (`https://github.com/uhhashe/wadify/blob/main/src/main.cpp`)
+and was validated anew against the original R2 source files.
