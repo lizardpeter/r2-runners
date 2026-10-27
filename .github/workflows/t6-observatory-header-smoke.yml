@@ -1,0 +1,32 @@
+name: Source Observatory all-T6 header API verification
+on:
+  push:
+    branches:
+      - feature/source-coverage-observatory-v1
+    paths:
+      - .github/workflows/t6-observatory-header-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Validate live hosted original-source header census
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --show-error --location --retry 4 \
+            'https://source-coverage-observatory.hokroute.workers.dev/api/t6/headers' > /tmp/t6-headers.json
+          python3 - <<'PY'
+          import json
+          x=json.load(open("/tmp/t6-headers.json"))
+          assert x["schema"]=="source-observatory/t6-header-survey/v1"
+          assert x["objects_listed"]==571
+          assert x["objects_range_verified"]==571
+          assert x["complete_range_survey"] is True
+          assert len(x["files"])==571
+          print("PASS: all 571 authentic R2 T6 .ff object prefixes accounted")
+          print("Signature categories:",x["signature_counts"])
+          PY
