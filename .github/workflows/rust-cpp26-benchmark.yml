@@ -1,0 +1,81 @@
+name: Rust 1.99.1 vs C++26 measured benchmark
+on:
+  push:
+    branches:
+      - research/rust-cpp26-benchmark-20261026
+    paths:
+      - ".github/workflows/rust-cpp26-benchmark.yml"
+      - "benchmarks/rust-cpp26/**"
+  pull_request:
+    paths:
+      - ".github/workflows/rust-cpp26-benchmark.yml"
+      - "benchmarks/rust-cpp26/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Rust 1.99.1 from verified R2 path
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-tar" "$RUNNER_TEMP/rust-install" "$RUNNER_TEMP/compiler-bin"
+          curl --fail --show-error --silent --location --retry 5 --retry-all-errors --retry-delay 3 \
+            --connect-timeout 25 --max-time 1200 \
+            --output "$RUNNER_TEMP/rust-tar/rust-1.99.1.tar" \
+            "https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar"
+          test "$(stat -c%s "$RUNNER_TEMP/rust-tar/rust-1.99.1.tar")" = 210515736
+          sha256sum "$RUNNER_TEMP/rust-tar/rust-1.99.1.tar" | tee benchmarks/rust-cpp26/rust-toolchain-sha256.txt
+          tar -tf "$RUNNER_TEMP/rust-tar/rust-1.99.1.tar" | grep -E '/(bin/(cargo|rustc)|install.sh)$' | head -30 || true
+          tar -xf "$RUNNER_TEMP/rust-tar/rust-1.99.1.tar" -C "$RUNNER_TEMP/rust-tar"
+          installer="$(find "$RUNNER_TEMP/rust-tar" -mindepth 2 -maxdepth 3 -name install.sh -type f -print -quit)"
+          test -n "$installer"
+          bash "$installer" --prefix="$RUNNER_TEMP/rust-install" --disable-ldconfig
+          "$RUNNER_TEMP/rust-install/bin/rustc" --version
+          echo "$RUNNER_TEMP/rust-install/bin" >> "$GITHUB_PATH"
+
+      - name: Set up C++26 GCC and Clang
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y g++-14
+          command -v g++-14
+          g++-14 --version | head -1
+          clang++ --version | head -1
+          ln -sf "$(command -v g++-14)" "$RUNNER_TEMP/compiler-bin/g++"
+          echo "$RUNNER_TEMP/compiler-bin" >> "$GITHUB_PATH"
+
+      - name: Run paired checksummed benchmarks (Rust, GCC, Clang)
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustc --version
+          g++ --version | head -1
+          clang++ --version | head -1
+          cd benchmarks/rust-cpp26
+          python3 run.py --trials 7 --warmups 2 --out results --strict | tee results-console.log
+          grep -q 'rust-O3' results/summary.csv
+          grep -q 'gcc-cpp26-O3' results/summary.csv
+          grep -q 'clang-cpp2c-O3' results/summary.csv
+          cp bench.cpp bench.rs run.py rust-toolchain-sha256.txt results/
+          cat results/summary.csv >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload full auditable results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-1-99-1-vs-cpp26-raw-results
+          path: |
+            benchmarks/rust-cpp26/results/
+            benchmarks/rust-cpp26/results-console.log
+            benchmarks/rust-cpp26/rust-toolchain-sha256.txt
+          retention-days: 30
+          if-no-files-found: warn
