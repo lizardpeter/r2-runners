@@ -70,6 +70,8 @@ def inspect(archive:str,destination:Path):
                  "payload_sha1_verified":0,"verified_plain_payload_bytes":0,
                  "encrypted_payloads_unresolved":0,"encrypted_payload_bytes":0,
                  "compressed_payloads_unresolved":0,"unresolved_data_gap_bytes":0,
+                 "data_gap_zero_bytes":0,"data_gap_nonzero_bytes":0,
+                 "nonzero_gap_samples":[],
                  "unknown_local_record_bytes":0,"failures":[],
                  "full_original_payload_coverage":False,
                  "semantic_coverage_bytes":None}
@@ -78,7 +80,20 @@ def inspect(archive:str,destination:Path):
             mm=mmap.mmap(file.fileno(),0,access=mmap.ACCESS_READ)
             try:
                 first=offsets[0] if offsets else index_offset
-                summary["unresolved_data_gap_bytes"]+=first
+                def classify_gap(start,end,owner):
+                    if start>=end:return
+                    original_gap=mm[start:end]
+                    zero_count=original_gap.count(0)
+                    nonzero_count=len(original_gap)-zero_count
+                    summary["unresolved_data_gap_bytes"]+=len(original_gap)
+                    summary["data_gap_zero_bytes"]+=zero_count
+                    summary["data_gap_nonzero_bytes"]+=nonzero_count
+                    if nonzero_count and len(summary["nonzero_gap_samples"])<20:
+                        summary["nonzero_gap_samples"].append({
+                            "after":owner,"offset":start,
+                            "bytes":len(original_gap),"nonzero_bytes":nonzero_count,
+                            "source_sha1":hashlib.sha1(original_gap).hexdigest()})
+                classify_gap(0,first,"before_first_record")
                 for name,(offset,stored,unpacked,method,digest,encrypted) in records:
                     if offset in seen:
                         raise ValueError(f"duplicate physical local-record offset {offset}")
@@ -93,7 +108,7 @@ def inspect(archive:str,destination:Path):
                         raise
                     summary["validated_local_headers"]+=1
                     summary["validated_local_header_bytes"]+=53
-                    summary["unresolved_data_gap_bytes"]+=limit-payload_end
+                    classify_gap(payload_end,limit,name)
                     record={"kind":"entry","indexed_path":name,"offset":offset,
                             "stored_bytes":stored,"unpacked_bytes":unpacked,
                             "original_index_sha1":digest.hex(),
