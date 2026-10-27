@@ -1,0 +1,575 @@
+{
+  "schema": "source-observatory/t6-asset-types/v1",
+  "files_with_eligible_directory_scan": 571,
+  "xasset_registry_types": 60,
+  "observed_types": 43,
+  "unobserved_registry_types": [
+    "XMODELPIECES",
+    "MAP_ENTS",
+    "UI_MAP",
+    "MENU",
+    "WEAPONDEF",
+    "WEAPON_VARIANT",
+    "WEAPON_FULL",
+    "ATTACHMENT_UNIQUE",
+    "AITYPE",
+    "MPTYPE",
+    "MPBODY",
+    "MPHEAD",
+    "CHARACTER",
+    "XMODELALIAS",
+    "EMBLEMSET",
+    "MEMORYBLOCK",
+    "QDB"
+  ],
+  "source_files_by_family": {
+    "client": 215,
+    "pc": 60,
+    "ps3": 103,
+    "wiiu": 86,
+    "xbox360": 107
+  },
+  "total_directory_entries": 377196,
+  "unique_logical_assets": "not_measured_patch_overrides_and_cross_zone_references",
+  "semantic_complete": false,
+  "proof_boundary": "XAsset directory ordinals and type counts only, across 571 original FastFiles. Duplicates, patches, per-type body semantics, references and runtime behavior not resolved.",
+  "types": [
+    {
+      "type_id": 24,
+      "type": "LOCALIZE_ENTRY",
+      "entries": 185226,
+      "files": 78,
+      "by_source_family": {
+        "client": 44222,
+        "pc": 14081,
+        "ps3": 40154,
+        "wiiu": 46615,
+        "xbox360": 40154
+      }
+    },
+    {
+      "type_id": 5,
+      "type": "XMODEL",
+      "entries": 67014,
+      "files": 269,
+      "by_source_family": {
+        "client": 22255,
+        "pc": 14186,
+        "ps3": 10849,
+        "wiiu": 8875,
+        "xbox360": 10849
+      }
+    },
+    {
+      "type_id": 4,
+      "type": "XANIMPARTS",
+      "entries": 61796,
+      "files": 170,
+      "by_source_family": {
+        "client": 24114,
+        "pc": 7441,
+        "ps3": 10132,
+        "wiiu": 9977,
+        "xbox360": 10132
+      }
+    },
+    {
+      "type_id": 6,
+      "type": "MATERIAL",
+      "entries": 17475,
+      "files": 307,
+      "by_source_family": {
+        "client": 4952,
+        "pc": 3159,
+        "ps3": 2902,
+        "wiiu": 3552,
+        "xbox360": 2910
+      }
+    },
+    {
+      "type_id": 41,
+      "type": "RAWFILE",
+      "entries": 9376,
+      "files": 461,
+      "by_source_family": {
+        "client": 2203,
+        "pc": 996,
+        "ps3": 2002,
+        "wiiu": 2163,
+        "xbox360": 2012
+      }
+    },
+    {
+      "type_id": 7,
+      "type": "TECHNIQUE_SET",
+      "entries": 9284,
+      "files": 112,
+      "by_source_family": {
+        "client": 9272,
+        "pc": 1,
+        "ps3": 3,
+        "wiiu": 5,
+        "xbox360": 3
+      }
+    },
+    {
+      "type_id": 48,
+      "type": "SCRIPTPARSETREE",
+      "entries": 7101,
+      "files": 252,
+      "by_source_family": {
+        "client": 2267,
+        "pc": 815,
+        "ps3": 1363,
+        "wiiu": 1293,
+        "xbox360": 1363
+      }
+    },
+    {
+      "type_id": 33,
+      "type": "FX",
+      "entries": 6950,
+      "files": 237,
+      "by_source_family": {
+        "client": 6784,
+        "pc": 47,
+        "ps3": 39,
+        "wiiu": 41,
+        "xbox360": 39
+      }
+    },
+    {
+      "type_id": 25,
+      "type": "WEAPON",
+      "entries": 2555,
+      "files": 68,
+      "by_source_family": {
+        "client": 1128,
+        "pc": 262,
+        "ps3": 448,
+        "wiiu": 269,
+        "xbox360": 448
+      }
+    },
+    {
+      "type_id": 8,
+      "type": "IMAGE",
+      "entries": 2286,
+      "files": 89,
+      "by_source_family": {
+        "client": 587,
+        "pc": 367,
+        "ps3": 431,
+        "wiiu": 470,
+        "xbox360": 431
+      }
+    },
+    {
+      "type_id": 57,
+      "type": "FOOTSTEP_TABLE",
+      "entries": 1203,
+      "files": 188,
+      "by_source_family": {
+        "client": 331,
+        "pc": 199,
+        "ps3": 241,
+        "wiiu": 191,
+        "xbox360": 241
+      }
+    },
+    {
+      "type_id": 42,
+      "type": "STRINGTABLE",
+      "entries": 993,
+      "files": 218,
+      "by_source_family": {
+        "client": 141,
+        "pc": 107,
+        "ps3": 264,
+        "wiiu": 210,
+        "xbox360": 271
+      }
+    },
+    {
+      "type_id": 31,
+      "type": "WEAPON_CAMO",
+      "entries": 955,
+      "files": 38,
+      "by_source_family": {
+        "client": 448,
+        "pc": 96,
+        "ps3": 157,
+        "wiiu": 97,
+        "xbox360": 157
+      }
+    },
+    {
+      "type_id": 29,
+      "type": "ATTACHMENT",
+      "entries": 719,
+      "files": 33,
+      "by_source_family": {
+        "client": 256,
+        "pc": 102,
+        "ps3": 127,
+        "wiiu": 107,
+        "xbox360": 127
+      }
+    },
+    {
+      "type_id": 1,
+      "type": "PHYSPRESET",
+      "entries": 609,
+      "files": 148,
+      "by_source_family": {
+        "client": 150,
+        "pc": 143,
+        "ps3": 107,
+        "wiiu": 102,
+        "xbox360": 107
+      }
+    },
+    {
+      "type_id": 43,
+      "type": "LEADERBOARD",
+      "entries": 608,
+      "files": 14,
+      "by_source_family": {
+        "client": 141,
+        "pc": 86,
+        "ps3": 128,
+        "wiiu": 125,
+        "xbox360": 128
+      }
+    },
+    {
+      "type_id": 3,
+      "type": "DESTRUCTIBLEDEF",
+      "entries": 542,
+      "files": 129,
+      "by_source_family": {
+        "client": 127,
+        "pc": 115,
+        "ps3": 97,
+        "wiiu": 106,
+        "xbox360": 97
+      }
+    },
+    {
+      "type_id": 53,
+      "type": "TRACER",
+      "entries": 368,
+      "files": 46,
+      "by_source_family": {
+        "client": 157,
+        "pc": 39,
+        "ps3": 63,
+        "wiiu": 46,
+        "xbox360": 63
+      }
+    },
+    {
+      "type_id": 49,
+      "type": "KEYVALUEPAIRS",
+      "entries": 305,
+      "files": 305,
+      "by_source_family": {
+        "client": 99,
+        "pc": 55,
+        "ps3": 48,
+        "wiiu": 54,
+        "xbox360": 49
+      }
+    },
+    {
+      "type_id": 20,
+      "type": "FONT",
+      "entries": 198,
+      "files": 29,
+      "by_source_family": {
+        "client": 36,
+        "pc": 12,
+        "ps3": 30,
+        "wiiu": 90,
+        "xbox360": 30
+      }
+    },
+    {
+      "type_id": 9,
+      "type": "SOUND",
+      "entries": 183,
+      "files": 171,
+      "by_source_family": {
+        "client": 171,
+        "pc": 2,
+        "ps3": 2,
+        "wiiu": 6,
+        "xbox360": 2
+      }
+    },
+    {
+      "type_id": 13,
+      "type": "COMWORLD",
+      "entries": 145,
+      "files": 145,
+      "by_source_family": {
+        "client": 38,
+        "pc": 31,
+        "ps3": 25,
+        "wiiu": 26,
+        "xbox360": 25
+      }
+    },
+    {
+      "type_id": 17,
+      "type": "GFXWORLD",
+      "entries": 145,
+      "files": 145,
+      "by_source_family": {
+        "client": 38,
+        "pc": 31,
+        "ps3": 25,
+        "wiiu": 26,
+        "xbox360": 25
+      }
+    },
+    {
+      "type_id": 54,
+      "type": "SKINNEDVERTS",
+      "entries": 145,
+      "files": 145,
+      "by_source_family": {
+        "client": 38,
+        "pc": 31,
+        "ps3": 25,
+        "wiiu": 26,
+        "xbox360": 25
+      }
+    },
+    {
+      "type_id": 12,
+      "type": "CLIPMAP_PVS",
+      "entries": 144,
+      "files": 144,
+      "by_source_family": {
+        "client": 38,
+        "pc": 31,
+        "ps3": 25,
+        "wiiu": 25,
+        "xbox360": 25
+      }
+    },
+    {
+      "type_id": 15,
+      "type": "GAMEWORLD_MP",
+      "entries": 144,
+      "files": 144,
+      "by_source_family": {
+        "client": 38,
+        "pc": 31,
+        "ps3": 25,
+        "wiiu": 25,
+        "xbox360": 25
+      }
+    },
+    {
+      "type_id": 45,
+      "type": "DDL",
+      "entries": 131,
+      "files": 21,
+      "by_source_family": {
+        "client": 28,
+        "pc": 15,
+        "ps3": 29,
+        "wiiu": 30,
+        "xbox360": 29
+      }
+    },
+    {
+      "type_id": 18,
+      "type": "LIGHT_DEF",
+      "entries": 125,
+      "files": 47,
+      "by_source_family": {
+        "client": 119,
+        "pc": 1,
+        "ps3": 1,
+        "wiiu": 3,
+        "xbox360": 1
+      }
+    },
+    {
+      "type_id": 22,
+      "type": "MENULIST",
+      "entries": 124,
+      "files": 55,
+      "by_source_family": {
+        "client": 87,
+        "pc": 5,
+        "ps3": 10,
+        "wiiu": 12,
+        "xbox360": 10
+      }
+    },
+    {
+      "type_id": 46,
+      "type": "GLASSES",
+      "entries": 91,
+      "files": 91,
+      "by_source_family": {
+        "client": 21,
+        "pc": 20,
+        "ps3": 16,
+        "wiiu": 18,
+        "xbox360": 16
+      }
+    },
+    {
+      "type_id": 50,
+      "type": "VEHICLEDEF",
+      "entries": 73,
+      "files": 23,
+      "by_source_family": {
+        "client": 20,
+        "pc": 11,
+        "ps3": 13,
+        "wiiu": 16,
+        "xbox360": 13
+      }
+    },
+    {
+      "type_id": 34,
+      "type": "IMPACT_FX",
+      "entries": 50,
+      "files": 50,
+      "by_source_family": {
+        "client": 16,
+        "pc": 11,
+        "ps3": 7,
+        "wiiu": 9,
+        "xbox360": 7
+      }
+    },
+    {
+      "type_id": 21,
+      "type": "FONTICON",
+      "entries": 32,
+      "files": 14,
+      "by_source_family": {
+        "client": 10,
+        "pc": 4,
+        "ps3": 4,
+        "wiiu": 10,
+        "xbox360": 4
+      }
+    },
+    {
+      "type_id": 59,
+      "type": "ZBARRIER",
+      "entries": 27,
+      "files": 12,
+      "by_source_family": {
+        "client": 19,
+        "ps3": 4,
+        "xbox360": 4
+      }
+    },
+    {
+      "type_id": 56,
+      "type": "SLUG",
+      "entries": 19,
+      "files": 11,
+      "by_source_family": {
+        "client": 5,
+        "pc": 2,
+        "ps3": 6,
+        "xbox360": 6
+      }
+    },
+    {
+      "type_id": 58,
+      "type": "FOOTSTEPFX_TABLE",
+      "entries": 16,
+      "files": 13,
+      "by_source_family": {
+        "client": 11,
+        "pc": 1,
+        "ps3": 1,
+        "wiiu": 2,
+        "xbox360": 1
+      }
+    },
+    {
+      "type_id": 2,
+      "type": "PHYSCONSTRAINTS",
+      "entries": 16,
+      "files": 16,
+      "by_source_family": {
+        "client": 4,
+        "pc": 1,
+        "ps3": 3,
+        "wiiu": 5,
+        "xbox360": 3
+      }
+    },
+    {
+      "type_id": 32,
+      "type": "SNDDRIVER_GLOBALS",
+      "entries": 9,
+      "files": 9,
+      "by_source_family": {
+        "client": 3,
+        "pc": 1,
+        "ps3": 1,
+        "wiiu": 3,
+        "xbox360": 1
+      }
+    },
+    {
+      "type_id": 52,
+      "type": "ADDON_MAP_ENTS",
+      "entries": 6,
+      "files": 6,
+      "by_source_family": {
+        "client": 6
+      }
+    },
+    {
+      "type_id": 44,
+      "type": "XGLOBALS",
+      "entries": 4,
+      "files": 4,
+      "by_source_family": {
+        "client": 3,
+        "wiiu": 1
+      }
+    },
+    {
+      "type_id": 10,
+      "type": "SOUND_PATCH",
+      "entries": 2,
+      "files": 2,
+      "by_source_family": {
+        "client": 2
+      }
+    },
+    {
+      "type_id": 11,
+      "type": "CLIPMAP",
+      "entries": 1,
+      "files": 1,
+      "by_source_family": {
+        "wiiu": 1
+      }
+    },
+    {
+      "type_id": 14,
+      "type": "GAMEWORLD_SP",
+      "entries": 1,
+      "files": 1,
+      "by_source_family": {
+        "wiiu": 1
+      }
+    }
+  ]
+}
