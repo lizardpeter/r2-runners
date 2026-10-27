@@ -27,8 +27,10 @@ jobs:
             [core_gfx.xpak]=786432
             [base_patch_tu32.xpak]=1048576
             [core_common.xpak]=6291456
+            [en_initial.xpak]=13893632
+            [core_frontend_patch.xpak]=4194304
           )
-          for name in core_all.ff en_core_common.ff core_gfx.ff core_gfx.xpak base_patch_tu32.xpak core_common.xpak; do
+          for name in core_all.ff en_core_common.ff core_gfx.ff core_gfx.xpak base_patch_tu32.xpak core_common.xpak en_initial.xpak core_frontend_patch.xpak; do
             target="$root/bo3/DUMP/zone/$name"
             curl -fSL --retry 5 --retry-all-errors --retry-delay 3 \
               --connect-timeout 20 --max-time 500 \
@@ -42,7 +44,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: bo3-small-original-t7-containers-exact-source
+          name: bo3-expanded-t7-containers-exact-source
           path: ${{ runner.temp }}/bo3-exact-source/
           retention-days: 7
           if-no-files-found: error
