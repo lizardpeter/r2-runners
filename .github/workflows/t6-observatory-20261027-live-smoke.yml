@@ -1,0 +1,61 @@
+name: Source Observatory live T6 all-family verified byte-coverage smoke
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-20261027-live-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Validate deployed browser JavaScript and all original T6 reports
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/observatory"
+          BASE='https://source-coverage-observatory.hokroute.workers.dev'
+          for report in client-corpus server-corpus types source-headers ipaks sound-banks wads wads/full; do
+            filename="${report//\//-}"
+            curl --fail-with-body --show-error --location --retry 4 --retry-delay 2 \
+              "$BASE/api/t6/$report" -o "$RUNNER_TEMP/observatory/$filename.json"
+          done
+          curl --fail-with-body --show-error --location --retry 4 "$BASE/" \
+            -o "$RUNNER_TEMP/observatory/index.html"
+          python3 - "$RUNNER_TEMP/observatory" <<'PY'
+          import json,sys
+          from pathlib import Path
+          root=Path(sys.argv[1])
+          def read(name):return json.loads((root/(name+'.json')).read_text())
+          client,server=read('client-corpus'),read('server-corpus')
+          types=read('types')
+          origins=read('source-headers')
+          ipak,sounds,wads,wfull=(read(n) for n in ('ipaks','sound-banks','wads','wads-full'))
+          assert client['xasset_directory_validated_count']==215
+          assert server['directory_validated']==356
+          assert len(server['platforms'])==4 and server['platforms']['xbox360']['files']==107
+          assert types['total_directory_entries']==377196 and types['observed_types']==43
+          assert origins['r2_objects_prefix_verified']==1287
+          assert ipak['indexes_validated']==23 and ipak['total_indexed_entries']==32227
+          assert sounds['entry_tables_validated']==116 and sounds['indexed_entry_records']==25446
+          assert wads['indexes_validated']==366 and wads['total_nested_wad_entries']==1098
+          assert wfull['original_wad_files']==366
+          assert wfull['original_files_full_hash_verified']==366
+          assert wfull['full_physical_source_byte_coverage_count']==366
+          assert wfull['all_zlib_entries_complete_count']==1098
+          assert wfull['original_owned_physical_bytes']==4624084
+          assert wfull['all_zlib_expanded_bytes']==20769844
+          assert wfull['json_syntax_valid_total']==244
+          assert wfull['json_syntax_invalid_total']==122
+          assert wfull['semantic_complete'] is False
+          assert len(wfull['files'])==366
+          html=(root/'index.html').read_text()
+          assert 'renderFullWad' in html and '/api/t6/wads/full' in html
+          assert 'renderNestedProof' in html
+          (root/'browser.js').write_text(html.split('<script>',1)[1].split('</script>',1)[0])
+          print('SUCCESS: Live Worker serves entire 1287 BO2 R2 source inventory, 571 FF directories, 23 IPAKs, 116 audio, 366 WADs with source-complete zlib byte proofs')
+          PY
+          node --check "$RUNNER_TEMP/observatory/browser.js"
