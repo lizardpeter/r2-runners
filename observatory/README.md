@@ -41,3 +41,61 @@ A green structural walk does not promote `semantics` above `not-evaluated`. Deco
 `worker.mjs` is a complete Worker script, with an R2 bucket binding `SOURCES` -> `houseofkublai`, `main_module: worker.mjs`, and `compatibility_date: 2026-10-27`. It was published through the connected Cloudflare API as `source-coverage-observatory` and enabled on the existing `hokroute.workers.dev` account subdomain, without changes to any existing game production deployments.
 
 Any larger inventory or exact retail parsing should use the established `r2-runners` source-handoff workflows and hash-verify source objects. Private Rust-test code must not be checked out on public r2-runners. This site itself needs **no local PC commands**.
+
+## October 27, 2026: whole-corpus T6 source audit
+
+**All 1,287 BO2 R2 objects have been listed and an original-source 0–63 byte
+range signature has been validated** (shorter files use their full length).
+This includes, but is not limited to, **571 FastFiles, 23 IPAKs, 116 audio
+banks (66 SABS/50 SABL), 366 WAD files, and 154 CAB files**.
+`GET /api/t6/source-headers` provides every original R2 key, physical
+byte length, extension, exact observed first eight bytes, signature group,
+and byte-range proof status. This is **not** a complete original SHA-256
+or structural parser proof for the non-FF files.
+
+The original **215 signed T6 PC client FastFiles** all authenticated by
+original R2 source SHA-256 and expanded/decrypted with the pinned public
+decoder. All **215 XAsset directories** passed the strict parser:
+**120,385 directory entries**. The 215-source report at
+`GET /api/t6/client-corpus` records exact source hashes, expanded SHA-256s,
+type counts, raw directory end offsets, unknown spans and all successes or
+failures. Original historical fixture hashes were independently checked
+for three shared MP zones. This is not proof of semantic body closure.
+
+The original **356 unsigned T6 server FastFiles** from an archived server
+bundle (60 PC v147, 103 PS3 v146, 107 Xbox 360 v146, 86 Wii U v148) all
+passed strict unsigned raw-DEFLATE XChunk expansion. All **356 XAsset
+directories** parsed structurally: **256,811 directory entries**.
+These originals are separately SHA-256 hashed during the runner audit,
+with explicit trailing source bytes/padding and expanded address-space
+metadata. **Version 146 alone does not identify PS3 vs Xbox 360.**
+The per-file results are served at `GET /api/t6/server-corpus`.
+
+`GET /api/t6/types` aggregates these **377,196 XAsset DIRECTORY
+entries** across all 571 archives: 43 observed out of 60 registered type
+IDs. 17 type IDs lack top-level entries in this scope; no conclusion about
+nested usage, absence in other builds, asset uniqueness, or full serialized
+semantics can be drawn. Counts may overlap across source zones, versions
+and DLC patches.
+
+Production Rust-test importer coverage, embedded sound and texture semantics,
+WAD/CAB internals, runtime rendering, and lossless byte-span owner closure
+**are not measured** by this metadata-first observatory. A successful full
+FastFile decrypt/expand plus type directory census does not mean that the
+remaining encoded asset-body bytes are understood. Every source state is
+reported separately with source corpus/proof provenance.
+
+Relevant remote-source runner proofs:
+- Client source SHA/decrypt/215 directories:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40540875368
+- Unsigned PC/PS3/WiiU smoke:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40541515916
+- Full original server source decode:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40542137393
+- 571-entry type index:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40542799682
+- Live original client/server/type website API:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40543183541
+- Entire 1,287-object source header survey:
+  https://github.com/lizardpeter/r2-runners/actions/runs/40543593008
+
