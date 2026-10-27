@@ -21,6 +21,12 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          path: source-decoder
+          persist-credentials: false
       - name: Original format probe synthetic test
         run: python3 scripts/fortnite541_exceptional_pak_footers.py --self-test
       - name: Read exact original R2 object bytes, SHA256 and source footer
