@@ -89,7 +89,7 @@ function renderProof(p,item){
  const ranges=el("div","scrollproof"),rt=el("table"),rb=el("tbody");
  for(const r of p.expanded_ranges){const tr=el("tr");tr.append(el("td","mono",r.start+"–"+r.end),el("td","",r.kind),el("td","",r.name));rb.append(tr)}rt.append(rb);ranges.append(rt);content.append(ranges);
  content.append(el("h3","","Source verification"));
- content.append(el("div","mono assetlist","R2: "+source.r2_key+"\nSHA256: "+source.sha256+"\nExpanded SHA256: "+expanded.sha256));
+ content.append(el("div","mono assetlist","R2: "+source.r2_key+" | SHA256: "+source.sha256+" | Expanded SHA256: "+expanded.sha256));
  content.append(el("p","","Rust-test production importer: NOT TESTED by this evidence. Byte-complete: NO. Semantic-complete: NO."));
 }
 async function loadReport(item){
