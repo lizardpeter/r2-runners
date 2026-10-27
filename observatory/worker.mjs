@@ -68,7 +68,51 @@ button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-rad
 <script>
 const games=[{id:"bo1",name:"Black Ops",observed:133},{id:"bo2",name:"Black Ops II · T6",observed:1287},{id:"bo3",name:"Black Ops III",observed:76},{id:"destiny",name:"Destiny",observed:2156},{id:"ghosts",name:"Call of Duty: Ghosts",observed:7539},{id:"h1",name:"Modern Warfare Remastered",observed:7},{id:"fortnite",name:"Fortnite",observed:352},{id:"smg",name:"Super Mario Galaxy",observed:2426}];
 const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString(), pretty=n=>n>=1073741824?(n/1073741824).toFixed(2)+" GiB":n>=1048576?(n/1048576).toFixed(2)+" MiB":n>=1024?(n/1024).toFixed(1)+" KiB":fmt(n)+" B";
-let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false,clientIndex={},clientOverview=null,serverIndex={},serverOverview=null,typeInventory=null,sourceHeaderIndex={},sourceHeaderOverview=null;
+let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false,clientIndex={},clientOverview=null,serverIndex={},serverOverview=null,typeInventory=null,sourceHeaderIndex={},sourceHeaderOverview=null,ipakIndex={},soundIndex={};
+async function loadNestedDirectories(){
+ ipakIndex={};soundIndex={};
+ if(game!=="bo2")return;
+ const sources=[["/api/t6/ipaks","source-observatory/t6-ipak-index/v1","ipak"],
+                ["/api/t6/sound-banks","source-observatory/t6-sound-bank-index/v1","sound"]];
+ for(const [url,schema,kind] of sources){
+  try{const res=await fetch(url,{cache:"no-store"});if(!res.ok)continue;
+    const d=await res.json();if(d.schema!==schema)continue;
+    for(const row of d.files||[]){if(kind==="ipak")ipakIndex[row.source_key]=row;else soundIndex[row.source_key]=row}
+  }catch(e){console.warn("Nested source directory not yet available",e)}
+ }
+ if(chosen)inspect(chosen);
+ render();
+}
+function renderNestedProof(p,item,kind){
+ const panel=$("proofPanel"),box=$("proofContent");panel.style.display="block";box.replaceChildren();
+ const verified=kind==="ipak"?p.status==="ipak_index_validated":p.status==="bank_entry_index_validated";
+ const count=kind==="ipak"?p.index_entry_count:p.entry_count;
+ const intro=el("p","",(kind==="ipak"?"IPAK index":"Sound bank index")+" — "+(verified?"structure verified":"not fully verified")+
+ ". Actual original R2 byte ranges were checked, but payload contents were not downloaded or semantically decoded.");
+ box.append(intro);
+ const cells=el("div","proofmetrics");const metric=(k,v)=>{const d=el("div");d.append(el("small","",k),el("strong","",v));return d};
+ cells.append(metric("Original file",pretty(p.original_r2_size)),metric("Indexed records",count===undefined?"Unresolved":fmt(count)),
+ metric("Validated index bytes",pretty(kind==="ipak"?(p.index_entry_table_bytes||0):(p.entry_directory_bytes||0))),
+ metric("Full original SHA256","Not collected in range audit"));box.append(cells);
+ if(p.sections){
+  box.append(el("h3","","Physical source sections"));
+  const sc=el("div","scrollproof"),tab=el("table"),body=el("tbody");
+  for(const section of p.sections){const row=el("tr");row.append(el("td","mono","Type "+section.type),
+      el("td","mono",fmt(section.offset)+"–"+fmt(section.offset+section.size)),
+      el("td","mono",fmt(section.item_count)+" rows"));body.append(row)}
+  tab.append(body);sc.append(tab);box.append(sc);
+ }
+ if(p.audio_format_code_counts){
+  box.append(el("h3","","Observed sound format codes"));
+  const list=el("div","scrollproof"),tab=el("table"),body=el("tbody");
+  for(const [fmtCode,n] of Object.entries(p.audio_format_code_counts)){const row=el("tr");row.append(el("td","mono","Code "+fmtCode),el("td","mono",fmt(n)+" indexed clips"));body.append(row)}
+  tab.append(body);list.append(tab);box.append(list);
+ }
+ if(p.error)box.append(el("p","prooferr",p.error));
+ box.append(el("h3","","Source evidence"));
+ box.append(el("p","mono assetlist",p.source_key));
+ box.append(el("p","","Only header/directory ranges were read from original R2; texture/audio payloads and complete byte semantics remain unevaluated."));
+}
 async function loadSourceHeaders(){
  sourceHeaderIndex={};sourceHeaderOverview=null;
  if(game!=="bo2")return;
@@ -217,6 +261,10 @@ function nav(){const root=$("games");root.replaceChildren();games.forEach(g=>{co
 function inspect(item){chosen=item;
  if(game==="bo2"&&item?.extension==="ff"&&proofIndex[item.key])loadReport(item);
  else if(game==="bo2"&&item?.extension==="ff"&&clientIndex[item.key]&&clientIndex[item.key].original_listed_bytes===item.bytes)renderClientProof(clientIndex[item.key],item);
+ else if(game==="bo2"&&item?.extension==="ipak"&&ipakIndex[item.key]&&ipakIndex[item.key].original_r2_size===item.bytes)
+   renderNestedProof(ipakIndex[item.key],item,"ipak");
+ else if(game==="bo2"&&(item?.extension==="sabs"||item?.extension==="sabl")&&soundIndex[item.key]&&soundIndex[item.key].original_r2_size===item.bytes)
+   renderNestedProof(soundIndex[item.key],item,"sound");
  else if(game==="bo2"&&item?.extension==="ff"&&serverIndex[item.key]&&serverIndex[item.key].original_listed_bytes===item.bytes){
    const proof=serverIndex[item.key];
    renderClientProof({...proof,structural_expanded_bytes:proof.expanded_directory_bytes,unknown_expanded_bytes:proof.expanded_unknown_bytes,actual_original_bytes:proof.original_authenticated_bytes},item);
@@ -228,12 +276,12 @@ function inspect(item){chosen=item;
     "Source header checked using original HTTP 206 bytes 0–63. Signature: "+hdr.signature_status+"; version: "+(hdr.version??"unknown")+". Full-file SHA-256, decryption, nested assets, and semantic byte meaning have NOT been checked for this object.":
     "No completed original-source byte audit yet; R2 inventory metadata only.";
  }
- const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const general=sourceHeaderIndex[item.key],authMagic=general?.http_range_verified&&general?.r2_size===item.bytes?general:null;
+ const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const general=sourceHeaderIndex[item.key],authMagic=general?.http_range_verified&&general?.r2_size===item.bytes?general:null,ip=ipakIndex[item.key],snd=soundIndex[item.key],deep=ip?.original_r2_size===item.bytes?ip:snd?.original_r2_size===item.bytes?snd:null;
  const rows=[["Original R2 object key",item.key],["Verified source magic",authMagic?
    (authMagic.signature+" | "+(authMagic.signature8_ascii||"no signature")+" | "+(authMagic.signature8_hex||"")):
-   (headerIndex[item.key]?.signature_prefix8_ascii||"Not checked")],["Header evidence",authMagic?"Original bytes 0–"+(authMagic.bytes_sampled-1)+" / HTTP 206 exact Content-Range":"Not evaluated"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets","Not audited"],["Byte-range ownership","Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
-function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,family=$("family").value,asset=$("xasset").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type)&&(!family||familyOf(x)===family)&&(!asset||(clientIndex[x.key]?.type_counts?.[asset]||serverIndex[x.key]?.type_counts?.[asset])));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes,clientProof=clientIndex[item.key]?.original_listed_bytes===item.bytes?clientIndex[item.key]:null,serverProof=serverIndex[item.key]?.original_listed_bytes===item.bytes?serverIndex[item.key]:null,sourceHeader=sourceHeaderIndex[item.key]?.http_range_verified&&sourceHeaderIndex[item.key]?.r2_size===item.bytes?sourceHeaderIndex[item.key]:null;
- tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader||clientProof||serverProof||sourceHeader?"pill":"tag",proofIndex[item.key]?"Verified directory":clientProof?.state==="xasset_directory_validated"||serverProof?.state==="xasset_directory_validated"?"Verified directory":clientProof?.state==="empty_expanded_stream"?"Empty expanded":serverProof?.state==="unsigned_xchunks_decoded_directory_unresolved"?"Decompressed":clientProof?.state||serverProof?.state?"Parse issue":verifiedHeader||sourceHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("family").style.display=game==="bo2"?"":"none";$("xasset").style.display=game==="bo2"&&typeInventory?"":"none";renderTypeInventory();$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
+   (headerIndex[item.key]?.signature_prefix8_ascii||"Not checked")],["Header evidence",authMagic?"Original bytes 0–"+(authMagic.bytes_sampled-1)+" / HTTP 206 exact Content-Range":"Not evaluated"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets",deep?.status==="ipak_index_validated"?"IPAK entries validated: "+fmt(deep.index_entry_count):deep?.status==="bank_entry_index_validated"?"Audio entries validated: "+fmt(deep.entry_count):"Not audited"],["Byte-range ownership",deep?"Header and directory physical ranges identified; payload unknown":"Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
+function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,family=$("family").value,asset=$("xasset").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type)&&(!family||familyOf(x)===family)&&(!asset||(clientIndex[x.key]?.type_counts?.[asset]||serverIndex[x.key]?.type_counts?.[asset])));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes,clientProof=clientIndex[item.key]?.original_listed_bytes===item.bytes?clientIndex[item.key]:null,serverProof=serverIndex[item.key]?.original_listed_bytes===item.bytes?serverIndex[item.key]:null,sourceHeader=sourceHeaderIndex[item.key]?.http_range_verified&&sourceHeaderIndex[item.key]?.r2_size===item.bytes?sourceHeaderIndex[item.key]:null,ipak=ipakIndex[item.key]?.original_r2_size===item.bytes?ipakIndex[item.key]:null,sound=soundIndex[item.key]?.original_r2_size===item.bytes?soundIndex[item.key]:null;
+ tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader||clientProof||serverProof||sourceHeader||ipak||sound?"pill":"tag",proofIndex[item.key]?"Verified directory":clientProof?.state==="xasset_directory_validated"||serverProof?.state==="xasset_directory_validated"?"Verified directory":clientProof?.state==="empty_expanded_stream"?"Empty expanded":serverProof?.state==="unsigned_xchunks_decoded_directory_unresolved"?"Decompressed":clientProof?.state||serverProof?.state?"Parse issue":ipak?.status==="ipak_index_validated"?"IPAK index":sound?.status==="bank_entry_index_validated"?"Audio index":ipak||sound?"Index issue":verifiedHeader||sourceHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("family").style.display=game==="bo2"?"":"none";$("xasset").style.display=game==="bo2"&&typeInventory?"":"none";renderTypeInventory();$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
 $("more").disabled=!hasMore||busy;$("more").textContent=busy?"Reading R2 listing…":hasMore?"Load next 400 files":"All objects in this collection loaded";
 const types={};for(const f of items)types[f.extension]=(types[f.extension]||0)+1;const keys=Object.keys(types).sort((a,b)=>types[b]-types[a]);const current=$("type").value;$("type").replaceChildren();$("type").append(el("option","","All extensions"));$("type").firstChild.value="";keys.sort().forEach(k=>{const o=el("option","",k+" ("+types[k]+")");o.value=k;$("type").append(o)});$("type").value=keys.includes(current)?current:"";
 const bars=$("typeBars");bars.replaceChildren();const max=Math.max(1,...Object.values(types));Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([k,n])=>{const row=el("div","typerow");row.append(el("span","mono",k));const track=el("div","track"),fill=el("span");fill.style.width=(n/max*100)+"%";track.append(fill);row.append(track,el("span","mono",fmt(n)));bars.append(row)});if(!items.length)bars.textContent="No files loaded yet."}
@@ -246,8 +294,8 @@ async function more(){if(busy||!hasMore)return;const target=game;busy=true;rende
  }catch(e){if(target===game)$("pageNote").textContent="R2 metadata request failed: "+e.message;return}
  finally{if(target===game){busy=false;render();if(game==="bo2"&&hasMore)more()}}
 }
-function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";$("family").value="";$("xasset").value="";nav();inspect(null);render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();loadServerCorpus();loadTypeInventory();loadSourceHeaders();more()}
-$("find").oninput=render;$("type").onchange=render;$("family").onchange=render;$("xasset").onchange=render;$("more").onclick=more;nav();render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();loadServerCorpus();loadTypeInventory();loadSourceHeaders();more();
+function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";$("family").value="";$("xasset").value="";nav();inspect(null);render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();loadServerCorpus();loadTypeInventory();loadSourceHeaders();loadNestedDirectories();more()}
+$("find").oninput=render;$("type").onchange=render;$("family").onchange=render;$("xasset").onchange=render;$("more").onclick=more;nav();render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();loadServerCorpus();loadTypeInventory();loadSourceHeaders();loadNestedDirectories();more();
 </script></body></html>`;
 function fileExtension(key) {
   const name = key.slice(key.lastIndexOf("/") + 1);
@@ -259,6 +307,14 @@ export default {
     if(request.method !== "GET") return asJson({error:"Read-only explorer"},405);
     const url = new URL(request.url);
     if(url.pathname==="/api/games") return asJson({schema:"source-observatory/v1",snapshot_date:"2026-10-27",games:GAMES});
+    if(url.pathname==="/api/t6/ipaks"){
+      try{const j=await getProof("ipak-index.json");return j?.schema==="source-observatory/t6-ipak-index/v1"&&j?.files?.length===23?asJson(j):asJson({error:"IPAK proof unavailable"},404)}
+      catch(e){return asJson({error:"IPAK index cannot be loaded",detail:String(e)},503)}
+    }
+    if(url.pathname==="/api/t6/sound-banks"){
+      try{const j=await getProof("sound-bank-index.json");return j?.schema==="source-observatory/t6-sound-bank-index/v1"&&j?.files?.length===116?asJson(j):asJson({error:"Sound bank proof unavailable"},404)}
+      catch(e){return asJson({error:"Sound bank index cannot be loaded",detail:String(e)},503)}
+    }
     if(url.pathname==="/api/t6/source-headers"){
       try{const j=await getProof("all-source-headers.json");
       return j?.schema==="source-observatory/original-r2-signature-corpus/v1"&&j?.files?.length===1287?asJson(j):asJson({error:"Full original R2 signature inventory not yet published"},404)}
