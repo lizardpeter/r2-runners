@@ -55,6 +55,12 @@ def classify(data):
     if sig8==b"TAsvu100":return "t6_unsigned_server_fastfile"
     if sig4==b"KAPI":return "ipak_little_endian_candidate"
     if sig4==b"IPAK":return "ipak_big_endian_candidate"
+    if data.startswith(b"T3w"):return "t3w_wad_family_magic"
+    if sig4==b"2UX#" and data[4:8]==bytes.fromhex("0e000000"):
+        return "t6_sound_bank_magic_v14"
+    if data.startswith(b"Microsoft C/C++"):return "microsoft_pdb_msf_magic"
+    if data.startswith(b"BM"):return "bitmap_magic"
+    if data.lstrip().startswith(b"<!DOCTYPE"):return "html_doctype_not_executable"
     if sig4==b"MSCF":return "windows_cabinet_magic"
     if sig4==b"PK\x03\x04":return "zip_local_header"
     if sig4==b"OggS":return "ogg_stream_magic"
