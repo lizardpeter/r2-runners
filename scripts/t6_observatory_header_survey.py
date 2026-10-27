@@ -24,6 +24,8 @@ def classify(buf):
         if ver==147 and buf[12:20]==b"PHEEBs71":
             return "t6_pc_signed_header",ver
         return "other_taff_header",ver
+    if buf[:8]==b"TAsvu100":
+        return "t6_dedicated_server_magic_tasvu100",struct.unpack_from("<I",buf,8)[0]
     if buf[:8]==b"IWffu100":
         return "iwffu100_not_t6_pc_signed",struct.unpack_from("<I",buf,8)[0]
     return "other_or_unknown_magic",None
