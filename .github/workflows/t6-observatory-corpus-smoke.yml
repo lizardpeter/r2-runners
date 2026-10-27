@@ -1,0 +1,32 @@
+name: Source Observatory live full T6 client-corpus contract
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-corpus-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Verify hosted site publishes independent per-file T6 hashes and unknowns
+        run: |
+          set -euo pipefail
+          curl --fail --retry 3 --location \
+            'https://source-coverage-observatory.hokroute.workers.dev/api/t6/client-corpus' > /tmp/bo2-client-corpus.json
+          python3 - <<'PY'
+          import json
+          j=json.load(open('/tmp/bo2-client-corpus.json'))
+          assert j['schema']=='source-observatory/t6-client-corpus/v1'
+          assert j['files_in_corpus']==len(j['files'])==215
+          assert j['individual_source_hash_proven_count']==215
+          assert j['expanded_stream_decoded_count']==215
+          assert j['xasset_directory_validated_count']==215
+          assert j['asset_directory_entries']==120385
+          assert j['semantic_complete'] is False
+          assert j['expanded_unknown_bytes_for_parsed_files']>7_000_000_000
+          print('PASS: remote live Cloudflare source API serves all 215 original FF reports')
+          PY
