@@ -1,0 +1,48 @@
+name: BO2 all original R2 source types and actual header signatures
+
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-all-headers.yml
+      - scripts/t6_observatory_all_r2_headers.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  entire-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify HTTP byte-range signature of every indexed BO2 source object
+        run: |
+          set -euo pipefail
+          python3 scripts/t6_observatory_all_r2_headers.py \
+            --game bo2 --expected 1287 --workers 12 \
+            --out observatory/reports/t6/all-source-headers.json
+      - name: Preserve file-magic evidence as inspectable run artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-all-1287-r2-source-byte-signatures
+          path: observatory/reports/t6/all-source-headers.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish authenticated source signatures to observatory
+        if: success()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add observatory/reports/t6/all-source-headers.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "proof(t6): exact 64-byte signatures of every original R2 source object"
+          for attempt in 1 2 3; do
+            git fetch origin feature/source-coverage-observatory-v1
+            git rebase origin/feature/source-coverage-observatory-v1
+            if git push origin HEAD:feature/source-coverage-observatory-v1; then exit 0; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+          done
