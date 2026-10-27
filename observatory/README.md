@@ -1,6 +1,6 @@
 # Source Coverage Observatory v1
 
-Cloudflare Worker deployed at https://source-coverage-observatory.hokroute.workers.dev/ (Cloudflare API deployment and workers.dev subdomain both confirmed 2026-10-27; public DNS availability was not independently verified by this assistant's restricted runtime).
+Cloudflare Worker deployed at https://source-coverage-observatory.hokroute.workers.dev/ (Cloudflare deployment confirmed 2026-10-27; GitHub-hosted Ubuntu runner independently fetched the live site and API, parsed its JSON and checked browser JavaScript syntax (run 40536577723)).
 
 ## Status and scope
 
@@ -13,6 +13,13 @@ The October 27, 2026 verified object-list snapshot enumerated these eight prefix
 - `GET /`: no-build browser dashboard.
 - `GET /api/games`: schema and dated prefix counts.
 - `GET /api/files?game=bo2&limit=400&cursor=...`: pagination over *live* R2 objects with source key, byte size, extension, etag, and upload date where provided. Excludes folder placeholders. Each returned row explicitly marks structure / byte ranges / semantics as `not-evaluated`. A supplied cursor applies only to the requested game.
+
+The initial three-file authenticated T6 proof pipeline also exposes:
+- `GET /api/t6/index`: proven original/expanded SHA-256 and directory counts for `common_mp.ff` (6,082 XAssets), `common_patch_mp.ff` (3,533), and `patch_mp.ff` (1,764). Source/expanded SHA-256 fingerprints match independently pinned research fixtures. Runner success: https://github.com/lizardpeter/r2-runners/actions/runs/40536019206.
+- `GET /api/t6/report?key=bo2%2Fzone%2Fall%2Fcommon_mp.ff`: verified expanded byte ranges, per-entry ordinal/type/pointer information, explicit unknown body span and an `asset_bodies: not-evaluated` flag.
+- `GET /api/t6/headers`: complete 571-object original R2 HTTP range survey. 215 client-zone files under `bo2/zone/all` and `bo2/zone/english` start `TAff0100`; the other 356 FastFiles are dedicated-server package files under `bo2/exes` starting `TAsvu100`. Merely recognizing those eight bytes is not a dedicated-server decoder. Survey run: https://github.com/lizardpeter/r2-runners/actions/runs/40537166256. The 571-file survey is separately verified from the live hosted website by run 40537578076.
+
+A byte range read establishes only the first 64 original source bytes, not the file's full SHA-256 or interior. A full-file decoder runs on a separate verified job. Production Rust-test importer closure remains untested by these public-runner reports.
 
 All results are metadata only. ETags are **not** treated as SHA-256 proofs, file extensions **not** treated as magic-byte verified file types, and compression **not** treated as understood field semantics.
 
