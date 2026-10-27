@@ -1,0 +1,105 @@
+name: T6 signed client FastFile corpus full decode and XAsset inventory
+
+# Explicitly authorized public source audit on networked runners. Does not
+# check out private Rust-test; original signed files remain in R2.
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-client-corpus.yml
+      - scripts/t6_observatory_client_corpus.py
+      - scripts/t6_observatory_client_merge.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: t6-observatory-whole-client-corpus
+  cancel-in-progress: false
+
+jobs:
+  expand-and-inventory:
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - name: Retrieve exact known public decoder source
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/t6-tools"
+          BASE=https://raw.githubusercontent.com/lizardpeter/bo2-t6-assets/4a435b8fe21a849e178c24a1075bde6e0e19da7f/tools
+          curl --fail --retry 4 --location "$BASE/t6_fastfile_expand_pc_v1.c" -o "$RUNNER_TEMP/t6-tools/expand.c"
+          curl --fail --retry 4 --location "$BASE/t6_raw_xasset_inventory.py" -o "$RUNNER_TEMP/t6-tools/xassets.py"
+          gcc -O2 -std=c11 -o "$RUNNER_TEMP/t6-tools/expand" "$RUNNER_TEMP/t6-tools/expand.c" -lcrypto -lz
+      - name: SHA-hash, decrypt, expand, and classify exact R2 client FastFiles
+        shell: bash
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          python3 scripts/t6_observatory_client_corpus.py \
+            --signatures observatory/reports/t6/header-survey.json \
+            --expander "$RUNNER_TEMP/t6-tools/expand" \
+            --parser "$RUNNER_TEMP/t6-tools/xassets.py" \
+            --downloader scripts/r2_download.py \
+            --shard "$SHARD" --shards 12 \
+            --output "out/t6-client-shard-$SHARD.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t6-client-shard-${{ matrix.shard }}
+          path: out/t6-client-shard-*.json
+          if-no-files-found: warn
+          retention-days: 90
+
+  aggregate:
+    needs: expand-and-inventory
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: t6-client-shard-*
+          path: out/shards
+          merge-multiple: false
+      - name: Refuse missing shards; retain per-file parser failures explicitly
+        shell: bash
+        run: |
+          python3 scripts/t6_observatory_client_merge.py \
+            --shards out/shards \
+            --headers observatory/reports/t6/header-survey.json \
+            --output observatory/reports/t6/client-corpus.json \
+            --shard-count 12
+      - name: Save full metadata corpus as inspectable run artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-client-corpus-verified-byte-census
+          path: observatory/reports/t6/client-corpus.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Commit the full data-backed original-source corpus report
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add observatory/reports/t6/client-corpus.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "proof(t6): account for all 215 original signed client FastFiles"
+          for attempt in 1 2 3; do
+            git fetch origin feature/source-coverage-observatory-v1
+            git rebase origin/feature/source-coverage-observatory-v1
+            if git push origin HEAD:feature/source-coverage-observatory-v1; then exit 0; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+          done
