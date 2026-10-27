@@ -23,13 +23,20 @@ const asJson = (data, status = 200) => new Response(JSON.stringify(data), {
 });
 // Only trust the pinned public code branch as a source of provenance metadata.
 // Reports contain SHA-256 and byte-range metadata, never original game binaries.
-const PROOF_BASE = "https://raw.githubusercontent.com/lizardpeter/r2-runners/feature/source-coverage-observatory-v1/observatory/reports/t6/";
+const PROOF_BASES = [
+ "https://raw.githubusercontent.com/lizardpeter/r2-runners/feature/source-coverage-observatory-v1/observatory/reports/t6/",
+ "https://raw.githubusercontent.com/lizardpeter/r2-runners/main/observatory/reports/t6/"
+];
 async function getProof(name) {
-  const response = await fetch(PROOF_BASE + name, {headers: {"Accept":"application/json"}});
-  if(!response.ok) return null;
-  const content = await response.text();
-  if(content.length > 6_000_000) throw new Error("Proof document is unexpectedly large");
-  return JSON.parse(content);
+  if (!/^[a-z0-9_-]+\\.json$/.test(name)) throw new Error("Invalid proof file name");
+  for (const base of PROOF_BASES) {
+    const response = await fetch(base + name, {headers: {"Accept":"application/json"}});
+    if (!response.ok) continue;
+    const content = await response.text();
+    if(content.length > 6_000_000) throw new Error("Proof document is unexpectedly large");
+    return JSON.parse(content);
+  }
+  return null;
 }
 const PAGE = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
