@@ -1,0 +1,49 @@
+name: T6 unsigned server original XChunk smoke across three platforms
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-unsigned-smoke.yml
+      - scripts/t6_observatory_unsigned_expand.py
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unsigned-exact-source:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and decode one original unsigned T6 FF per server platform
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/unsigned" out
+          while IFS='|' read -r platform key expected_version; do
+            source="$RUNNER_TEMP/unsigned/$platform"
+            python3 scripts/r2_download.py \
+              --base-url https://r2.houseofkublai.com --key "$key" --output-dir "$source"
+            python3 scripts/t6_observatory_unsigned_expand.py \
+              --source "$source/artifact/$key" \
+              --out "$source/expanded.bin" \
+              --report "out/$platform.json"
+            python3 - "$platform" "$expected_version" <<'PY'
+          import json,sys
+          data=json.load(open('out/'+sys.argv[1]+'.json'))
+          assert data['version']==int(sys.argv[2])
+          assert data['platform_by_t6_header_version']==sys.argv[1]
+          assert data['source_bytes']>0
+          assert data['terminated_at_zero_chunk']
+          print('verified platform',sys.argv[1],'XChunks',data['chunk_count'],'expanded bytes',data['expanded_bytes'])
+          PY
+          done <<'SOURCES'
+          ps3|bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dlc2_load_mp.ff|146
+          pc|bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/dlc2_load_mp.ff|147
+          wiiu|bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_ui_loc_mp.ff|148
+          SOURCES
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t6-unsigned-server-platform-probe
+          path: out/*.json
+          if-no-files-found: warn
+          retention-days: 30
