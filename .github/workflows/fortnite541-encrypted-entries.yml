@@ -1,0 +1,50 @@
+name: Fortnite 5.41 exact encrypted main PAK payload audit
+
+on:
+  pull_request:
+    paths:
+      - "scripts/fortnite541_encrypted_entries.py"
+      - ".github/workflows/fortnite541-encrypted-entries.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/fortnite541_encrypted_entries.py"
+      - ".github/workflows/fortnite541-encrypted-entries.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          path: source-decoder
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: workbench
+          persist-credentials: false
+      - name: AES / exact source-entry test
+        run: python3 workbench/scripts/fortnite541_encrypted_entries.py --self-test
+      - name: Authenticate original encrypted entry bytes against retail index
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/fortnite541-original-encrypted-probe"
+          python3 workbench/scripts/fortnite541_encrypted_entries.py \
+            --output "$RUNNER_TEMP/fortnite541-original-encrypted-probe/original-encrypted-source.json" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-original-encrypted-probe/run.log"
+      - name: Save provenance and diagnostic findings without original payloads
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-encrypted-entry-verified-evidence-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-original-encrypted-probe/
+          if-no-files-found: warn
+          retention-days: 90
