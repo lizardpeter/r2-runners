@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 180
     env:
-      LATEST_TOOLCHAINS: ${{ runner.temp }}/latest-toolchains
+      LATEST_TOOLCHAINS: /tmp/rust-cpp26-current
       DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v4
@@ -103,6 +103,6 @@ jobs:
           path: |
             benchmarks/rust-cpp26/results-current/
             current-benchmark-console.log
-            ${{ runner.temp }}/latest-toolchains/*-archive-sha*
+            /tmp/rust-cpp26-current/*-archive-sha*
           retention-days: 30
           if-no-files-found: warn
