@@ -1,0 +1,51 @@
+name: Source Observatory complete 571-file T6 website contract
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-complete-smoke.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  hosted:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - name: Fetch real live website and all four original-source evidence APIs
+        run: |
+          set -euo pipefail
+          root=https://source-coverage-observatory.hokroute.workers.dev
+          mkdir -p /tmp/t6-site
+          curl --fail --retry 4 -L "$root/" -o /tmp/t6-site/index.html
+          curl --fail --retry 4 -L "$root/api/t6/types" -o /tmp/t6-site/types.json
+          curl --fail --retry 4 -L "$root/api/t6/client-corpus" -o /tmp/t6-site/client.json
+          curl --fail --retry 4 -L "$root/api/t6/server-corpus" -o /tmp/t6-site/server.json
+          curl --fail --retry 4 -L "$root/api/t6/headers" -o /tmp/t6-site/headers.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          d=Path('/tmp/t6-site')
+          client=json.loads((d/'client.json').read_text())
+          server=json.loads((d/'server.json').read_text())
+          types=json.loads((d/'types.json').read_text())
+          headers=json.loads((d/'headers.json').read_text())
+          assert client["files_in_corpus"]==215 and client["xasset_directory_validated_count"]==215
+          assert server["files_in_corpus"]==356 and server["directory_validated"]==356
+          assert server["platforms"]["xbox360"]["files"]==107
+          assert len(server["platforms"])==4
+          assert types["files_with_eligible_directory_scan"]==571
+          assert types["observed_types"]==43 and types["xasset_registry_types"]==60
+          assert types["total_directory_entries"]==377196
+          assert headers["objects_range_verified"]==571
+          assert client["semantic_complete"] is False
+          assert server["semantic_complete"] is False
+          assert types["semantic_complete"] is False
+          html=(d/'index.html').read_text()
+          assert 'id="xasset"' in html and 'id="family"' in html
+          assert 'loadTypeInventory' in html and 'loadServerCorpus' in html
+          assert "<script>" in html and "</script>" in html
+          (d/'browser.js').write_text(html.split("<script>",1)[1].split("</script>",1)[0])
+          print("PASS: Cloudflare serves 571 distinct physical original source proofs, 377196 XAsset directory entries, 43 observed types; semantic completeness not asserted")
+          PY
+          node --check /tmp/t6-site/browser.js
