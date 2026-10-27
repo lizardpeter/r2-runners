@@ -28,7 +28,7 @@ def sha256(path):
 def audit(item,work,downloader,decoder,parser):
     key=item["r2_key"]
     platform=item["platform"]
-    expected={"ps3":146,"pc":147,"wiiu":148}[platform]
+    expected={"ps3":146,"xbox360":146,"pc":147,"wiiu":148}[platform]
     row={"source_key":key,"platform":platform,"expected_version":expected,
          "original_listed_bytes":item["r2_listed_bytes"],"state":"source_pending",
          "proof_boundary":"Unsigned XChunk transport decode differs from structural XFile parsing and does not demonstrate semantic XAsset body understanding"}
@@ -88,9 +88,9 @@ def main():
     for f in signatures["files"]:
         if f["signature_status"]!="t6_dedicated_server_magic_tasvu100":continue
         key=f["r2_key"]
-        platform="ps3" if "/PS3 Server/" in key else "wiiu" if "/WiiU Server/" in key else "pc" if "/PC Server/" in key else None
+        platform="ps3" if "/PS3 Server/" in key else "xbox360" if "/Xbox 360 Server/" in key else "wiiu" if "/WiiU Server/" in key else "pc" if "/PC Server/" in key else None
         if not platform:raise ValueError("Unsigned source without verifiable platform provenance")
-        if f["version"]!={"ps3":146,"pc":147,"wiiu":148}[platform]:
+        if f["version"]!={"ps3":146,"xbox360":146,"pc":147,"wiiu":148}[platform]:
             raise ValueError("Contradictory platform and unsigned FF version")
         rows.append({**f,"platform":platform})
     rows.sort(key=lambda f:f["r2_key"])
