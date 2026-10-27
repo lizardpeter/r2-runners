@@ -33,6 +33,7 @@ from mwr_h1_dxbc_verify import verify_retail_dxbc_samples
 from mwr_h1_clipmap_named_scanner import H1NamedClipMapScanner
 from mwr_h1_shader_ownership_probe import verify_dxbc_shader_ownership_windows
 from mwr_h1_draw_batch_verify import inspect_original_draw_batch_source
+from mwr_h1_mapents_root_probe import H1MapEntsBodyScanner
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -204,6 +205,7 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
         typed_asset_scanner=H1TypedBodyScanner() if (gfx_stem is not None or inspect_typed_assets) else None
         dxbc_scanner=H1DXBCSourceScanner() if inspect_typed_assets else None
         named_clipmap_scanner=H1NamedClipMapScanner() if gfx_stem is not None else None
+        mapents_scanner=H1MapEntsBodyScanner() if gfx_stem is not None else None
         while decoded < expected_bytes:
             if count >= 200_000:
                 raise ValueError("H1 exceeds maximum block count")
@@ -244,6 +246,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
                 dxbc_scanner.push(raw)
             if named_clipmap_scanner is not None:
                 named_clipmap_scanner.push(raw)
+            if mapents_scanner is not None:
+                mapents_scanner.push(raw)
             digest.update(raw)
             decoded += raw_size
             count += 1
@@ -277,6 +281,8 @@ def decode_lz4_zone(file: Path, header: dict, analyze_directory=False, gfx_stem=
             result["original_DXBC_shader_bytecode_container_census"]=dxbc_scanner.report()
         if named_clipmap_scanner is not None:
             result["original_named_ClipMap_source_root_candidates"]=named_clipmap_scanner.report()
+        if mapents_scanner is not None:
+            result["original_type29_MapEnts_source_root_candidates"]=mapents_scanner.report()
         if analyze_directory:
             result["asset_directory_evidence"] = inspect_prefix(bytes(sample))
             result["complete_zone_asset_run_scan"] = asset_scanner.report()
