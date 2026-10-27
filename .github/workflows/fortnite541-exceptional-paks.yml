@@ -1,0 +1,41 @@
+name: Fortnite 5.41 exceptional original PAK footer and SHA audit
+
+on:
+  pull_request:
+    paths:
+      - "scripts/fortnite541_exceptional_pak_footers.py"
+      - ".github/workflows/fortnite541-exceptional-paks.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/fortnite541_exceptional_pak_footers.py"
+      - ".github/workflows/fortnite541-exceptional-paks.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-source-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Original format probe synthetic test
+        run: python3 scripts/fortnite541_exceptional_pak_footers.py --self-test
+      - name: Read exact original R2 object bytes, SHA256 and source footer
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/fortnite541-exceptional-paks"
+          python3 scripts/fortnite541_exceptional_pak_footers.py \
+            --output "$RUNNER_TEMP/fortnite541-exceptional-paks/exceptional-format-census.json" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-exceptional-paks/probe.log"
+      - name: Preserve authenticated original-source metadata only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-exceptional-pak-identity-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-exceptional-paks/
+          if-no-files-found: warn
+          retention-days: 90
