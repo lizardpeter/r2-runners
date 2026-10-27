@@ -37,7 +37,7 @@ def main():
     if set(merged)!=set(exp):raise ValueError(f"Missing {len(exp)-len(merged)} exact original server records")
     states=dict(sorted(Counter(f["state"] for f in merged.values()).items()))
     platforms={}
-    for platform in ("pc","ps3","wiiu"):
+    for platform in ("pc","ps3","xbox360","wiiu"):
         xs=[x for x in merged.values() if x["platform"]==platform]
         platforms[platform]={"files":len(xs),"source_hashed":sum(bool(x.get("original_sha256")) for x in xs),
             "expanded":sum(bool(x.get("expanded_sha256")) for x in xs),
@@ -52,7 +52,7 @@ def main():
          "directory_validated":states.get("xasset_directory_validated",0),
          "asset_directory_entries":sum(x.get("xasset_count",0) for x in merged.values()),
          "semantic_complete":False,"byte_complete":False,
-         "proof_boundary":"Unsigned source FFs are split by PS3(v146), PC(v147), WiiU(v148). DEFLATE XChunk expansion and XAsset structural directory parsing are separate. Source hashes come from original R2 byte downloads in this audit, not independent historical hash fixtures. No original semantic asset body closure demonstrated.",
+         "proof_boundary":"Unsigned source FFs are split by Xbox 360(v146), PS3(v146), PC(v147), WiiU(v148). DEFLATE XChunk expansion and XAsset structural directory parsing are separate. Source hashes come from original R2 byte downloads in this audit, not independent historical hash fixtures. No original semantic asset body closure demonstrated.",
          "files":[merged[k] for k in sorted(merged)]}
     a.output.parent.mkdir(parents=True,exist_ok=True)
     a.output.write_text(json.dumps(out,indent=2)+"\n")
