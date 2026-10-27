@@ -1,0 +1,49 @@
+name: Fortnite source decoder Linux Rust toolchain proof
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/fortnite541-rust-toolkit-proof.yml"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fortnite541-rust-toolkit-proof.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provide-toolchain:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Download complete verified Rust toolkit from owner's public R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-toolkit"
+          curl --fail --show-error --silent --location --retry 4 \
+            --retry-all-errors --retry-delay 3 --max-time 1200 \
+            --output "$RUNNER_TEMP/rust-toolkit/rust-1.99.1-x86_64-unknown-linux-gnu.tar" \
+            https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar
+          test "$(stat -c%s "$RUNNER_TEMP/rust-toolkit/rust-1.99.1-x86_64-unknown-linux-gnu.tar")" = 210515736
+          sha256sum "$RUNNER_TEMP/rust-toolkit/rust-1.99.1-x86_64-unknown-linux-gnu.tar" > "$RUNNER_TEMP/rust-toolkit/original-source.sha256"
+          tar tf "$RUNNER_TEMP/rust-toolkit/rust-1.99.1-x86_64-unknown-linux-gnu.tar" > "$RUNNER_TEMP/rust-toolkit/tar-members.txt"
+          grep '/bin/rustc$' "$RUNNER_TEMP/rust-toolkit/tar-members.txt"
+          grep '/bin/cargo$' "$RUNNER_TEMP/rust-toolkit/tar-members.txt"
+      - name: Upload exact original R2 compiler with independent SHA256 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-rust-toolchain-complete-original-${{ github.run_id }}
+          path: ${{ runner.temp }}/rust-toolkit/rust-1.99.1-x86_64-unknown-linux-gnu.tar
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: error
+      - name: Upload source hash evidence separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-rust-toolchain-source-hash-${{ github.run_id }}
+          path: ${{ runner.temp }}/rust-toolkit/original-source.sha256
+          retention-days: 5
+          if-no-files-found: error
