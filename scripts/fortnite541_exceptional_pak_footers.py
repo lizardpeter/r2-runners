@@ -76,6 +76,47 @@ def check(name,bytes_expected):
         if c["raw_source_index_sha1_matches_footer"] or c["original_index_aes_deciphered_sha1_matches_footer"]:
             result["source_index_sha1_verified"]=True
             result["original_format_verified"]=True
+    # Original Era541 was observed to use the authenticated *clear* v3 index.
+    # Use the pinned real UE4 index parser, never treat the filename's 541
+    # suffix as evidence that its footer or entry format must be v7.
+    for candidate in candidates:
+        if candidate["version"] != 3 or not candidate.get("raw_source_index_sha1_matches_footer"):
+            continue
+        parser_dir=Path("source-decoder/crates/fortnite_541/tools")
+        if not parser_dir.is_dir():
+            raise RuntimeError("pinned source decoder required to interpret authentic v3 index")
+        sys.path.insert(0,str(parser_dir.resolve()))
+        from fetch_athena_541 import index_entries
+        start,length=candidate["index_start"],candidate["index_bytes"]
+        entries=index_entries(whole[start:start+length])
+        ordered=sorted(entries.items(),key=lambda x:x[1][0])
+        verified=0
+        local_headers=0
+        blocked=[]
+        previous=0
+        for i,(source_name,entry) in enumerate(ordered):
+            off,stored,unpacked,method,sha,encrypted=entry
+            next_start=ordered[i+1][1][0] if i+1<len(ordered) else start
+            if not(previous<=off<next_start<=start):
+                raise ValueError("v3 local source entry ordering or bounds invalid")
+            previous=off
+            if method or off+53+stored>next_start:
+                blocked.append({"source_name":source_name,"reason":"compressed_or_unbounded_local_record"})
+                continue
+            local=whole[off:off+53]
+            local_offset,local_stored,local_unpacked,local_method=struct.unpack_from("<QQQI",local)
+            if local_offset not in (0,off) or (local_stored,local_unpacked,local_method)!=(stored,unpacked,0) or local[28:48]!=sha or bool(local[48]&1)!=bool(encrypted):
+                raise ValueError("v3 source local FPakEntry does not match authenticated index")
+            local_headers+=1
+            original_stored=whole[off+53:off+53+stored]
+            if hashlib.sha1(original_stored).digest()!=sha:
+                raise ValueError("v3 original source payload SHA1 mismatch")
+            verified+=1
+        result["v3_source_records"]=len(entries)
+        result["v3_local_headers_verified"]=local_headers
+        result["v3_payload_source_sha1_verified"]=verified
+        result["v3_entry_blockers"]=blocked
+        result["v3_original_payload_storage_sha1_complete"]=verified==len(entries)
     return result
 
 def test():
