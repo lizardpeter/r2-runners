@@ -68,7 +68,19 @@ button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-rad
 <script>
 const games=[{id:"bo1",name:"Black Ops",observed:133},{id:"bo2",name:"Black Ops II · T6",observed:1287},{id:"bo3",name:"Black Ops III",observed:76},{id:"destiny",name:"Destiny",observed:2156},{id:"ghosts",name:"Call of Duty: Ghosts",observed:7539},{id:"h1",name:"Modern Warfare Remastered",observed:7},{id:"fortnite",name:"Fortnite",observed:352},{id:"smg",name:"Super Mario Galaxy",observed:2426}];
 const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString(), pretty=n=>n>=1073741824?(n/1073741824).toFixed(2)+" GiB":n>=1048576?(n/1048576).toFixed(2)+" MiB":n>=1024?(n/1024).toFixed(1)+" KiB":fmt(n)+" B";
-let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false;
+let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false,clientIndex={},clientOverview=null;
+async function loadClientCorpus(){
+ clientIndex={};clientOverview=null;
+ if(game!=="bo2")return;
+ try{const r=await fetch("/api/t6/client-corpus",{cache:"no-store"});if(!r.ok)return;
+   const d=await r.json();
+   if(d.schema!=="source-observatory/t6-client-corpus/v1"||!d.complete_source_listing||d.files?.length!==215)return;
+   for(const f of d.files||[])clientIndex[f.source_key]=f;
+   clientOverview=d;
+   if(chosen)inspect(chosen);
+   render();
+ }catch(e){console.warn("Client corpus unavailable",e)}
+}
 async function loadHeaderSurvey(){
  headerIndex={};headerSurveyComplete=false;
  if(game!=="bo2")return;
@@ -87,6 +99,19 @@ async function loadProofIndex(){
  proofLoaded=true;render();
  }catch(e){console.warn("T6 evidence unavailable",e)}
 }
+function renderClientProof(p,item){
+ const panel=$("proofPanel"),content=$("proofContent");panel.style.display="block";content.replaceChildren();
+ const n=(label,value)=>{const d=el("div");d.append(el("small","",label),el("strong","",value));return d};
+ const outcome=el("p","", "This source was analyzed from the original R2 bytes. State: "+p.state+". This is not evidence that the Rust-test production importer decodes or understands the asset bodies.");content.append(outcome);
+ const fields=el("div","proofmetrics");
+ fields.append(n("Original bytes",pretty(p.actual_original_bytes||p.original_listed_bytes)),n("Expanded XFile bytes",p.expanded_bytes===undefined?"Not expanded":pretty(p.expanded_bytes)),n("XAsset directory entries",p.xasset_count===undefined?"Not verified":fmt(p.xasset_count)),n("Unclassified expanded bytes",p.unknown_expanded_bytes===undefined?"Not measured":pretty(p.unknown_expanded_bytes)));content.append(fields);
+ if(p.expanded_bytes>0){const track=el("div","proofbar"),a=el("div","understood"),b=el("div","unknown");a.style.width=100*(p.structural_expanded_bytes||0)/p.expanded_bytes+"%";b.style.width=100*(p.unknown_expanded_bytes||0)/p.expanded_bytes+"%";track.append(a,b);content.append(track)}
+ if(p.type_counts && Object.keys(p.type_counts).length){content.append(el("h3","","XAsset type counts (directory only)"));const scroll=el("div","scrollproof"),table=el("table"),body=el("tbody");
+  for(const [type,count] of Object.entries(p.type_counts).sort((a,b)=>b[1]-a[1])){const tr=el("tr");tr.append(el("td","mono",type),el("td","mono",fmt(count)));body.append(tr)}table.append(body);scroll.append(table);content.append(scroll)}
+ if(p.error)content.append(el("p","prooferr","Parser/transport result: "+p.error));
+ content.append(el("h3","","Source verification"));content.append(el("div","mono assetlist","Source key: "+p.source_key+" | Original SHA256: "+(p.original_sha256||"Not verified")+" | Expanded SHA256: "+(p.expanded_sha256||"Not produced")));
+ content.append(el("p","","These hashes are calculated from the R2 download during the runner audit. They are not automatically independent historical fixtures. Byte complete: NO. Semantic complete: NO."));
+}
 function renderProof(p,item){
  const panel=$("proofPanel"),content=$("proofContent");panel.style.display="block";content.replaceChildren();
  if(!p||!item){content.textContent="No independently authenticated report for this original source file. The R2 object is inventoried but its decoded contents have not been evaluated here.";return}
@@ -101,6 +126,14 @@ function renderProof(p,item){
  const h=el("h3","","Nested XAsset type inventory");h.style.marginTop="15px";content.append(h);
  const list=el("div","scrollproof"),table=el("table"),body=el("tbody");
  for(const [t,c] of Object.entries(p.type_counts).sort((a,b)=>b[1]-a[1])){const row=el("tr");row.append(el("td","mono",t),el("td","mono",fmt(c)));body.append(row)}table.append(body);list.append(table);content.append(list);
+ if(p.asset_records?.length){
+  content.append(el("h3","","XAsset ordinals and source directory offsets"));
+  const filter=el("input");filter.placeholder="Search ordinal or type…";filter.setAttribute("aria-label","Filter verified XAsset records");filter.style.width="100%";filter.style.margin="6px 0 10px";
+  const holder=el("div","scrollproof"),tab=el("table"),body=el("tbody");tab.append(body);holder.append(tab);content.append(filter,holder);
+  const paint=()=>{body.replaceChildren();const q=filter.value.trim().toLowerCase();const selected=p.asset_records.filter(r=>!q||r.type.toLowerCase().includes(q)||String(r.ordinal).includes(q));for(const r of selected.slice(0,90)){const tr=el("tr");tr.append(el("td","mono","#"+r.ordinal),el("td","",r.type),el("td","mono",r.expanded_start+"–"+r.expanded_end));body.append(tr)}
+   if(selected.length>90){const tr=el("tr");const td=el("td","muted","Showing 90 of "+selected.length+" matching directory entries");td.colSpan=3;tr.append(td);body.append(tr)}};
+  filter.oninput=paint;paint();
+ }
  content.append(el("h3","","Byte-range ownership"));
  const ranges=el("div","scrollproof"),rt=el("table"),rb=el("tbody");
  for(const r of p.expanded_ranges){const tr=el("tr");tr.append(el("td","mono",r.start+"–"+r.end),el("td","",r.kind),el("td","",r.name));rb.append(tr)}rt.append(rb);ranges.append(rt);content.append(ranges);
@@ -122,6 +155,7 @@ function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=
 function nav(){const root=$("games");root.replaceChildren();games.forEach(g=>{const b=el("button",g.id===game?"active":"");b.append(el("span","",g.name),el("span","count",fmt(g.observed)));b.onclick=()=>select(g.id);root.append(b)})}
 function inspect(item){chosen=item;
  if(game==="bo2"&&item?.extension==="ff"&&proofIndex[item.key])loadReport(item);
+ else if(game==="bo2"&&item?.extension==="ff"&&clientIndex[item.key]&&clientIndex[item.key].original_listed_bytes===item.bytes)renderClientProof(clientIndex[item.key],item);
  else {
   const hdr=headerIndex[item?.key],verified=hdr?.r2_content_range_verified&&hdr?.r2_listed_bytes===item?.bytes;
   $("proofPanel").style.display=game==="bo2"&&item?.extension==="ff"?"block":"none";
@@ -130,14 +164,14 @@ function inspect(item){chosen=item;
     "No completed original-source byte audit yet; R2 inventory metadata only.";
  }
  const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const rows=[["Original R2 object key",item.key],["Detected format","."+item.extension+" (extension only; signature not read)"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets","Not audited"],["Byte-range ownership","Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
-function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes;
- tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader?"pill":"tag",proofIndex[item.key]?"Verified directory":verifiedHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
+function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes,clientProof=clientIndex[item.key]?.original_listed_bytes===item.bytes?clientIndex[item.key]:null;
+ tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader||clientProof?"pill":"tag",proofIndex[item.key]?"Verified directory":clientProof?.state==="xasset_directory_validated"?"Verified directory":clientProof?.state==="empty_expanded_stream"?"Empty expanded":clientProof?.state?"Parse issue":verifiedHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
 $("more").disabled=!hasMore||busy;$("more").textContent=busy?"Reading R2 listing…":hasMore?"Load next 400 files":"All objects in this collection loaded";
 const types={};for(const f of items)types[f.extension]=(types[f.extension]||0)+1;const keys=Object.keys(types).sort((a,b)=>types[b]-types[a]);const current=$("type").value;$("type").replaceChildren();$("type").append(el("option","","All extensions"));$("type").firstChild.value="";keys.sort().forEach(k=>{const o=el("option","",k+" ("+types[k]+")");o.value=k;$("type").append(o)});$("type").value=keys.includes(current)?current:"";
 const bars=$("typeBars");bars.replaceChildren();const max=Math.max(1,...Object.values(types));Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([k,n])=>{const row=el("div","typerow");row.append(el("span","mono",k));const track=el("div","track"),fill=el("span");fill.style.width=(n/max*100)+"%";track.append(fill);row.append(track,el("span","mono",fmt(n)));bars.append(row)});if(!items.length)bars.textContent="No files loaded yet."}
 async function more(){if(busy||!hasMore)return;busy=true;render();try{const params=new URLSearchParams({game,limit:"400"});if(cursor)params.set("cursor",cursor);const target=game,res=await fetch("/api/files?"+params.toString(),{cache:"no-store"});if(!res.ok)throw Error("R2 metadata request failed: "+res.status);const data=await res.json();if(target!==game)return;items.push(...data.files);cursor=data.cursor;hasMore=data.truncated;render()}catch(e){$("pageNote").textContent="Unable to read R2: "+e.message}finally{busy=false;render()}}
-function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";nav();inspect(null);render();loadProofIndex();loadHeaderSurvey();more()}
-$("find").oninput=render;$("type").onchange=render;$("more").onclick=more;nav();render();loadProofIndex();loadHeaderSurvey();more();
+function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";nav();inspect(null);render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();more()}
+$("find").oninput=render;$("type").onchange=render;$("more").onclick=more;nav();render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();more();
 </script></body></html>`;
 function fileExtension(key) {
   const name = key.slice(key.lastIndexOf("/") + 1);
@@ -149,6 +183,10 @@ export default {
     if(request.method !== "GET") return asJson({error:"Read-only explorer"},405);
     const url = new URL(request.url);
     if(url.pathname==="/api/games") return asJson({schema:"source-observatory/v1",snapshot_date:"2026-10-27",games:GAMES});
+    if(url.pathname==="/api/t6/client-corpus"){
+      try{const p=await getProof("client-corpus.json");return p?.schema==="source-observatory/t6-client-corpus/v1"&&p?.files?.length===215?asJson(p):asJson({error:"Remote full-client scan has not published 215 accountable reports yet"},404)}
+      catch(e){return asJson({error:"Client corpus unavailable",detail:String(e)},503)}
+    }
     if(url.pathname==="/api/t6/headers"){
       try {const p=await getProof("header-survey.json");return p?.schema==="source-observatory/t6-header-survey/v1"?asJson(p):asJson({error:"No complete original R2 signature survey published"},404)}
       catch(e){return asJson({error:"Header survey unavailable",detail:String(e)},503)}
