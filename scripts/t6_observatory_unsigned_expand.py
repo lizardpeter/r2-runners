@@ -18,7 +18,7 @@ import zlib
 MAX_CHUNK=0x8000
 RAW_BOUNDARY=0x80000
 MAX_EXPANDED=600*1024*1024
-ALLOWED={146:"ps3",147:"pc",148:"wiiu"}
+ALLOWED={146:"ps3_or_xbox360",147:"pc",148:"wiiu"}
 
 def decode(data):
     if len(data)<12 or data[:8]!=b"TAsvu100":
