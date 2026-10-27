@@ -138,16 +138,40 @@ def main():
     if args.self_test:return
     if not args.output:ap.error("--output required")
     if not args.output.parent.is_dir():raise ValueError("output directory does not exist")
+    def scan_with_evidence(archive):
+        try:
+            result=scan(archive)
+            result["index_authenticated"]=True
+            print("FORTNITE541_ORIGINAL_PAK_INDEX_OK",archive,result["indexed_entries"],flush=True)
+            return result
+        except Exception as error:
+            # Retain exactly the original listed size as physical unknown,
+            # NOT an accepted/recovered PAK index or known payload.
+            print("FORTNITE541_ORIGINAL_PAK_INDEX_BLOCKED",archive,str(error),flush=True)
+            return {
+                "kind":"pak","archive":archive,"physical_bytes":EXPECTED[archive],
+                "index_authenticated":False,"indexed_entries":0,"index_bytes":0,
+                "sampled_local_headers":[],
+                "physical_byte_ranges":[{
+                    "begin":0,"end_exclusive":EXPECTED[archive],
+                    "bytes":EXPECTED[archive],"class":"archive_wholly_semantically_unresolved"}],
+                "error":str(error),"semantically_understood_bytes":None,
+                "all_entry_payload_sha1_verified":False}
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-        pak_rows=list(pool.map(scan,EXPECTED))
+        pak_rows=list(pool.map(scan_with_evidence,EXPECTED))
     pak_rows.sort(key=lambda x:x["archive"])
     total=sum(x["physical_bytes"] for x in pak_rows)
+    blockers=[{"archive":x["archive"],"error":x["error"]}
+              for x in pak_rows if not x["index_authenticated"]]
     summary={
         "kind":"summary","real_original_source":"houseofkublai/Fortnite/5.41",
         "archive_scope":"all 10 source-object Content/Paks/*.pak in the 2026-10-27 R2 inventory",
-        "paks_verified":len(pak_rows),"physical_bytes_accounted":total,
+        "paks_in_r2_snapshot":len(pak_rows),
+        "paks_verified":len(pak_rows)-len(blockers),"authentication_blockers":blockers,
+        "physical_bytes_accounted":total,
         "authenticated_index_bytes":sum(x["index_bytes"] for x in pak_rows),
         "indexed_entry_records":sum(x["indexed_entries"] for x in pak_rows),
+        "complete_original_index_authentication":not blockers,
         "sampled_local_headers":sum(len(x["sampled_local_headers"]) for x in pak_rows),
         "physical_accounting_complete":total==sum(EXPECTED.values()),
         "semantic_coverage_bytes":None,"full_installation_byte_corpus":False,
@@ -157,4 +181,5 @@ def main():
         for x in pak_rows:out.write(json.dumps(x,sort_keys=True)+"\n")
         out.write(json.dumps(summary,sort_keys=True)+"\n")
     print("FORTNITE541_REAL_SOURCE_ALL_PAK_CENSUS",json.dumps(summary,sort_keys=True),flush=True)
+    if blockers:raise RuntimeError(f"{len(blockers)} original PAK indexes unverified; audit output preserved")
 if __name__=="__main__":main()
