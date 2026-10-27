@@ -1,0 +1,53 @@
+name: T6 all-571 original XAsset type inventory
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-type-index.yml
+      - scripts/t6_observatory_type_index.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  summarize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned 60-entry T6 type registry from public source
+        run: |
+          set -euo pipefail
+          curl --fail --retry 4 --location \
+            'https://raw.githubusercontent.com/lizardpeter/bo2-t6-assets/4a435b8fe21a849e178c24a1075bde6e0e19da7f/tools/t6_raw_xasset_inventory.py' \
+            -o /tmp/t6_xasset_registry.py
+      - name: Compute and cross-check all original FastFile type counts
+        run: |
+          set -euo pipefail
+          python3 scripts/t6_observatory_type_index.py \
+            --client observatory/reports/t6/client-corpus.json \
+            --server observatory/reports/t6/server-corpus.json \
+            --parser /tmp/t6_xasset_registry.py \
+            --out observatory/reports/t6/type-inventory.json
+      - name: Save authenticated type census as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-571-fastfiles-cross-platform-asset-type-index
+          path: observatory/reports/t6/type-inventory.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Publish original metadata to observatory dashboard branch
+        if: success()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add observatory/reports/t6/type-inventory.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "proof(t6): source-wide cross-platform 60-type registry inventory"
+          for attempt in 1 2 3; do
+            git fetch origin feature/source-coverage-observatory-v1
+            git rebase origin/feature/source-coverage-observatory-v1
+            if git push origin HEAD:feature/source-coverage-observatory-v1; then exit 0; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+          done
