@@ -48,5 +48,14 @@ jobs:
           git add observatory/reports/t6/header-survey.json
           if ! git diff --cached --quiet; then
             git commit -m "proof(t6): survey verified 64-byte original R2 FF headers"
-            git push origin HEAD:feature/source-coverage-observatory-v1
+            for attempt in 1 2 3; do
+              git fetch origin feature/source-coverage-observatory-v1
+              git rebase origin/feature/source-coverage-observatory-v1
+              if git push origin HEAD:feature/source-coverage-observatory-v1; then
+                break
+              elif [ "$attempt" = 3 ]; then
+                echo "Report commit refused: another branch writer advanced the ref" >&2
+                exit 1
+              fi
+            done
           fi
