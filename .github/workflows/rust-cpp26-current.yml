@@ -1,0 +1,108 @@
+name: Rust 1.99.1 GCC 16.2 Clang LLVM 23.1.4 C++26 benchmarks
+on:
+  push:
+    branches: [research/rust-cpp26-benchmark-20261026]
+    paths:
+      - ".github/workflows/rust-cpp26-current.yml"
+      - ".github/scripts/rust-cpp26-current/**"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  compare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    env:
+      LATEST_TOOLCHAINS: ${{ runner.temp }}/latest-toolchains
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare runner dependencies and disk
+        shell: bash
+        run: |
+          set -euo pipefail
+          df -h
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq g++-14 clang-18 build-essential libgmp-dev libmpfr-dev libmpc-dev libisl-dev flex bison xz-utils zstd curl ca-certificates texinfo
+          mkdir -p "$LATEST_TOOLCHAINS"/{rust,src,gcc16,llvm23,downloads}
+          df -h
+      - name: Install existing Rust 1.99.1 with checked SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$LATEST_TOOLCHAINS/downloads"
+          curl -fSL --retry 6 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 1500 \
+            -o rust-1.99.1.tar https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar
+          test "$(stat -c%s rust-1.99.1.tar)" = 210515736
+          echo "231fcae47ee950621374725b5fc3b5441d2fbda2955ac45dd7dc816d8876cfe7  rust-1.99.1.tar" | sha256sum --check
+          tar -xf rust-1.99.1.tar -C "$LATEST_TOOLCHAINS/src"
+          installer="$(find "$LATEST_TOOLCHAINS/src" -name install.sh -type f -print -quit)"
+          test -n "$installer"
+          bash "$installer" --prefix="$LATEST_TOOLCHAINS/rust" --disable-ldconfig
+          "$LATEST_TOOLCHAINS/rust/bin/rustc" --version --verbose
+          rm -f rust-1.99.1.tar
+      - name: Install Clang LLVM 23.1.4 binary from upstream release
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$LATEST_TOOLCHAINS/downloads"
+          curl -fSL --retry 6 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 1800 \
+            -o LLVM-23.1.4-Linux-X64.tar.zst \
+            https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.4/LLVM-23.1.4-Linux-X64.tar.zst
+          sha256sum LLVM-23.1.4-Linux-X64.tar.zst | tee "$LATEST_TOOLCHAINS/llvm23-archive-sha256.txt"
+          tar -I zstd --strip-components=1 -xf LLVM-23.1.4-Linux-X64.tar.zst -C "$LATEST_TOOLCHAINS/llvm23"
+          "$LATEST_TOOLCHAINS/llvm23/bin/clang++" --version | head -3
+          test -x "$LATEST_TOOLCHAINS/llvm23/bin/clang++"
+          rm -f LLVM-23.1.4-Linux-X64.tar.zst
+          df -h
+      - name: Compile GCC 16.2 and matching libstdc++ from official source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$LATEST_TOOLCHAINS/downloads"
+          curl -fSL --retry 6 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 1200 \
+            -o gcc-16.2.0.tar.xz https://gcc.gnu.org/pub/gcc/releases/gcc-16.2.0/gcc-16.2.0.tar.xz
+          sha512sum gcc-16.2.0.tar.xz | tee "$LATEST_TOOLCHAINS/gcc16-archive-sha512.txt"
+          tar -xf gcc-16.2.0.tar.xz -C "$LATEST_TOOLCHAINS/src"
+          mkdir -p "$LATEST_TOOLCHAINS/gcc-build"
+          cd "$LATEST_TOOLCHAINS/gcc-build"
+          "$LATEST_TOOLCHAINS/src/gcc-16.2.0/configure" \
+            --prefix="$LATEST_TOOLCHAINS/gcc16" --enable-languages=c,c++ \
+            --disable-bootstrap --disable-multilib --disable-nls --disable-libsanitizer \
+            --with-system-zlib --disable-libssp
+          make -j"$(nproc)" > "$LATEST_TOOLCHAINS/gcc16-build.log" 2>&1 || {
+            tail -150 "$LATEST_TOOLCHAINS/gcc16-build.log"; exit 1;
+          }
+          make -j"$(nproc)" install >> "$LATEST_TOOLCHAINS/gcc16-build.log" 2>&1 || {
+            tail -150 "$LATEST_TOOLCHAINS/gcc16-build.log"; exit 1;
+          }
+          "$LATEST_TOOLCHAINS/gcc16/bin/g++" --version | head -1
+          "$LATEST_TOOLCHAINS/gcc16/bin/g++" -print-file-name=libstdc++.so
+          rm -rf "$LATEST_TOOLCHAINS/gcc-build" "$LATEST_TOOLCHAINS/src/gcc-16.2.0" \
+            "$LATEST_TOOLCHAINS/downloads/gcc-16.2.0.tar.xz"
+          df -h
+      - name: Paired benchmark across current and old compilers
+        shell: bash
+        run: |
+          set -euo pipefail
+          export LD_LIBRARY_PATH="$LATEST_TOOLCHAINS/gcc16/lib64:$LATEST_TOOLCHAINS/gcc16/lib:$LATEST_TOOLCHAINS/llvm23/lib"
+          python3 .github/scripts/rust-cpp26-current/run_all.py \
+            --out benchmarks/rust-cpp26/results-current --trials 7 --warmups 2 | tee current-benchmark-console.log
+          cp .github/scripts/rust-cpp26-current/run_all.py benchmarks/rust-cpp26/results-current/
+          cp benchmarks/rust-cpp26/{bench.cpp,bench.rs} benchmarks/rust-cpp26/results-current/
+          cp "$LATEST_TOOLCHAINS"/*-archive-sha* benchmarks/rust-cpp26/results-current/
+          cat benchmarks/rust-cpp26/results-current/summary.csv >> "$GITHUB_STEP_SUMMARY"
+          test -s benchmarks/rust-cpp26/results-current/samples.csv
+          test -s benchmarks/rust-cpp26/results-current/checksums.json
+      - name: Preserve complete benchmark data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-gcc16-clang23-current-and-baseline
+          path: |
+            benchmarks/rust-cpp26/results-current/
+            current-benchmark-console.log
+            ${{ runner.temp }}/latest-toolchains/*-archive-sha*
+          retention-days: 30
+          if-no-files-found: warn
