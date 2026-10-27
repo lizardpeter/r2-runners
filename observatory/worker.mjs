@@ -28,7 +28,7 @@ const PROOF_BASES = [
  "https://raw.githubusercontent.com/lizardpeter/r2-runners/main/observatory/reports/t6/"
 ];
 async function getProof(name) {
-  if (!/^[a-z0-9_-]+\\.json$/.test(name)) throw new Error("Invalid proof file name");
+  if (!/^[a-z0-9_-]+\.json$/.test(name)) throw new Error("Invalid proof file name");
   for (const base of PROOF_BASES) {
     const response = await fetch(base + name, {headers: {"Accept":"application/json"}});
     if (!response.ok) continue;
