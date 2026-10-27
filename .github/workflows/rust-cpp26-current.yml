@@ -51,7 +51,7 @@ jobs:
             -o LLVM-23.1.4-Linux-X64.tar.zst \
             https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.4/LLVM-23.1.4-Linux-X64.tar.zst
           sha256sum LLVM-23.1.4-Linux-X64.tar.zst | tee "$LATEST_TOOLCHAINS/llvm23-archive-sha256.txt"
-          tar -I zstd --strip-components=1 -xf LLVM-23.1.4-Linux-X64.tar.zst -C "$LATEST_TOOLCHAINS/llvm23"
+          zstd --long=30 -dc LLVM-23.1.4-Linux-X64.tar.zst | tar --strip-components=1 -xf - -C "$LATEST_TOOLCHAINS/llvm23"
           "$LATEST_TOOLCHAINS/llvm23/bin/clang++" --version | head -3
           test -x "$LATEST_TOOLCHAINS/llvm23/bin/clang++"
           rm -f LLVM-23.1.4-Linux-X64.tar.zst
