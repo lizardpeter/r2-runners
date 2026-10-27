@@ -1,0 +1,45 @@
+name: BO3 exact original FastFile handoff for native importer
+
+on:
+  push:
+    branches: [work/bo3-exact-ff-handoff-20261027]
+    paths: [".github/workflows/bo3-exact-ff-handoff.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Retrieve byte-exact original BO3 FastFiles from public R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/bo3-exact-source"
+          mkdir -p "$root/bo3/DUMP/zone"
+          declare -A expected=(
+            [core_all.ff]=704
+            [en_core_common.ff]=545024
+            [core_gfx.ff]=6790208
+          )
+          for name in core_all.ff en_core_common.ff core_gfx.ff; do
+            target="$root/bo3/DUMP/zone/$name"
+            curl -fSL --retry 5 --retry-all-errors --retry-delay 3 \
+              --connect-timeout 20 --max-time 500 \
+              --output "$target" "https://r2.houseofkublai.com/bo3/DUMP/zone/$name"
+            test "$(stat -c%s "$target")" = "${expected[$name]}"
+          done
+          (cd "$root" && find bo3 -type f -print0 | sort -z | xargs -0 sha256sum) \
+            > "$root/SHA256SUMS.txt"
+          cat "$root/SHA256SUMS.txt"
+      - name: Upload exact original BO3 source files and checksums
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-small-original-fastfiles-exact-source
+          path: ${{ runner.temp }}/bo3-exact-source/
+          retention-days: 7
+          if-no-files-found: error
