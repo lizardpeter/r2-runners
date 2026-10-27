@@ -49,3 +49,27 @@ jobs:
           path: ${{ runner.temp }}/fortnite541-source-census/
           if-no-files-found: warn
           retention-days: 90
+
+  rust-toolchain-handoff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Fetch existing original Rust 1.99.1 Linux toolchain from R2
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust"
+          curl --fail --show-error --silent --location --retry 4 \
+            --retry-all-errors --retry-delay 3 --max-time 1200 \
+            -o "$RUNNER_TEMP/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar" \
+            https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar
+          test "$(stat -c %s "$RUNNER_TEMP/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar")" = 210515736
+          tar tf "$RUNNER_TEMP/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar" | grep -m1 '/bin/rustc$'
+      - name: Deliver verifiable original Rust toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-toolchain-1.99.1-original-r2-${{ github.run_id }}
+          path: ${{ runner.temp }}/rust/*.tar
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: error
