@@ -39,4 +39,5 @@ jobs:
           name: bo3-public-cargo-vendor
           path: ${{ runner.temp }}/bo3-offline-deps/
           retention-days: 7
+          include-hidden-files: true
           if-no-files-found: error
