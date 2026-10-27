@@ -1,0 +1,92 @@
+name: T6 unsigned PS3-PC-WiiU server FastFile whole-corpus decode
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-server-corpus.yml
+      - scripts/t6_observatory_server_corpus.py
+      - scripts/t6_observatory_server_merge.py
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: source-observatory-full-t6-server
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch pinned original public XAsset directory parser
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/t6-tools"
+          curl --fail --retry 4 --location \
+            'https://raw.githubusercontent.com/lizardpeter/bo2-t6-assets/4a435b8fe21a849e178c24a1075bde6e0e19da7f/tools/t6_raw_xasset_inventory.py' \
+            -o "$RUNNER_TEMP/t6-tools/xassets.py"
+      - name: Download original source files, decode unsigned chunks and inventory entries
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: |
+          set -euo pipefail
+          python3 scripts/t6_observatory_server_corpus.py \
+            --signatures observatory/reports/t6/header-survey.json \
+            --parser "$RUNNER_TEMP/t6-tools/xassets.py" \
+            --unsigned-reader scripts/t6_observatory_unsigned_expand.py \
+            --downloader scripts/r2_download.py \
+            --shard "$SHARD" --shards 12 \
+            --output "out/t6-server-shard-$SHARD.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t6-server-shard-${{ matrix.shard }}
+          path: out/t6-server-shard-*.json
+          if-no-files-found: warn
+          retention-days: 90
+  merge:
+    needs: scan
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: t6-server-shard-*
+          path: out/shards
+          merge-multiple: false
+      - name: Require all 356 recorded source outcomes
+        run: |
+          python3 scripts/t6_observatory_server_merge.py \
+            --shards out/shards \
+            --headers observatory/reports/t6/header-survey.json \
+            --output observatory/reports/t6/server-corpus.json \
+            --shard-count 12
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t6-server-356-real-source-fastfile-report
+          path: observatory/reports/t6/server-corpus.json
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Publish original-server coverage outcomes to source branch
+        if: success()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add observatory/reports/t6/server-corpus.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "proof(t6): audit all 356 unsigned server FF sources and classify failures"
+          for attempt in 1 2 3; do
+            git fetch origin feature/source-coverage-observatory-v1
+            git rebase origin/feature/source-coverage-observatory-v1
+            if git push origin HEAD:feature/source-coverage-observatory-v1; then exit 0; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+          done
