@@ -44,8 +44,10 @@ on:
       - "tests/test_mwr_h1_shader_ownership_probe.py"
       - "scripts/mwr_h1_technique_order_source.py"
       - "scripts/mwr_h1_draw_batch_verify.py"
+      - "scripts/mwr_h1_mapents_root_probe.py"
       - "tests/test_mwr_h1_technique_order_source.py"
       - "tests/test_mwr_h1_draw_batch_verify.py"
+      - "tests/test_mwr_h1_mapents_root_probe.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   pull_request:
     paths:
@@ -79,8 +81,10 @@ on:
       - "tests/test_mwr_h1_shader_ownership_probe.py"
       - "scripts/mwr_h1_technique_order_source.py"
       - "scripts/mwr_h1_draw_batch_verify.py"
+      - "scripts/mwr_h1_mapents_root_probe.py"
       - "tests/test_mwr_h1_technique_order_source.py"
       - "tests/test_mwr_h1_draw_batch_verify.py"
+      - "tests/test_mwr_h1_mapents_root_probe.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   workflow_dispatch:
     inputs:
@@ -127,6 +131,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_mwr_h1_clipmap_named_scanner.py
       - name: Test original shader asset header and inline DXBC ownership
         run: python3 -m unittest discover -s tests -p test_mwr_h1_shader_ownership_probe.py
+      - name: Test source-owned H1 MapEnts fixed root and bounded strings
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_mapents_root_probe.py
       - name: Test H1 complete source-order renderer batch topology
         run: python3 -m unittest discover -s tests -p test_mwr_h1_draw_batch_verify.py
       - name: Test authentic first H1 240-slot technique set source-order reader
