@@ -1,0 +1,42 @@
+name: BO3 offline flate2 Rust dependency handoff
+
+on:
+  push:
+    branches: [work/bo3-exact-ff-handoff-20261027]
+    paths: [".github/workflows/bo3-rust-deps-handoff.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  vendor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Gather public flate2 crates for offline Rust importer compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$RUNNER_TEMP/bo3-offline-deps"
+          mkdir -p "$root/src"
+          cat > "$root/Cargo.toml" <<'EOF'
+          [package]
+          name = "bo3_vendor_handoff"
+          version = "0.1.0"
+          edition = "2021"
+          [dependencies]
+          flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+          EOF
+          echo 'pub fn anchor() {}' > "$root/src/lib.rs"
+          cd "$root"
+          cargo generate-lockfile
+          cargo vendor vendor > vendor-config.toml
+          find vendor -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort
+      - name: Publish public crates and lockfile for offline importer testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: bo3-public-cargo-vendor
+          path: ${{ runner.temp }}/bo3-offline-deps/
+          retention-days: 7
+          if-no-files-found: error
