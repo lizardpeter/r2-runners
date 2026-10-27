@@ -30,7 +30,7 @@ jobs:
           import json,sys
           data=json.load(open('out/'+sys.argv[1]+'.json'))
           assert data['version']==int(sys.argv[2])
-          assert data['platform_by_t6_header_version']==sys.argv[1]
+          assert data['platform_by_t6_header_version']==('ps3_or_xbox360' if sys.argv[1]=='ps3' else sys.argv[1])
           assert data['source_bytes']>0
           assert data['terminated_at_zero_chunk']
           print('verified platform',sys.argv[1],'XChunks',data['chunk_count'],'expanded bytes',data['expanded_bytes'])
