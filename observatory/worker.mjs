@@ -21,6 +21,16 @@ const asJson = (data, status = 200) => new Response(JSON.stringify(data), {
     "Access-Control-Allow-Origin": "same-origin"
   }
 });
+// Only trust the pinned public code branch as a source of provenance metadata.
+// Reports contain SHA-256 and byte-range metadata, never original game binaries.
+const PROOF_BASE = "https://raw.githubusercontent.com/lizardpeter/r2-runners/feature/source-coverage-observatory-v1/observatory/reports/t6/";
+async function getProof(name) {
+  const response = await fetch(PROOF_BASE + name, {headers: {"Accept":"application/json"}});
+  if(!response.ok) return null;
+  const content = await response.text();
+  if(content.length > 6_000_000) throw new Error("Proof document is unexpectedly large");
+  return JSON.parse(content);
+}
 const PAGE = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Source Observatory · Asset Coverage</title>
@@ -33,7 +43,7 @@ main{min-width:0;padding:26px 32px 45px;max-width:1600px;width:100%;margin:auto}
 .banner{background:#1b2436;border:1px solid var(--border);border-left:3px solid var(--amber);padding:13px 16px;border-radius:9px;color:#ccd8ea;margin:0 0 20px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:18px}.stat .k{font-size:12px;color:var(--muted)}.stat .v{font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:5px;letter-spacing:-.8px}
 .panels{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:17px}.panel{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:20px;min-width:0}.controls{display:flex;gap:10px;margin:0 0 13px;align-items:center;flex-wrap:wrap}input,select{background:#0b1425;color:var(--text);border:1px solid #34435b;padding:11px 13px;border-radius:8px;font:inherit}input{flex:1;min-width:150px}select{min-width:110px}
-table{width:100%;border-collapse:collapse}th{font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;text-align:left;border-bottom:1px solid var(--border);padding:10px 9px}td{border-bottom:1px solid #222e41;padding:11px 9px;vertical-align:middle}td.path{max-width:520px;overflow-wrap:anywhere;color:#dbe8ff}tr.pick{cursor:pointer}tr.pick:hover,tr.selected{background:#1a2b46}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}.pill{display:inline-block;border:1px solid #3a516c;background:#1a2e49;color:#b8d8ff;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:700}.tag{font-size:11px;color:var(--amber)}.bars{display:grid;gap:12px}.track{height:7px;border-radius:8px;background:#344058;margin-top:5px;overflow:hidden}.track span{height:100%;display:block;background:var(--mint)}.measure{display:flex;justify-content:space-between;font-size:12px;gap:12px}.details{overflow-wrap:anywhere}.detailrow{border-bottom:1px solid var(--border);padding:12px 0}.detailrow:last-child{border:0}.detailrow .k{font-size:12px;color:var(--muted);margin-bottom:3px}.detailrow .v{font-variant-numeric:tabular-nums}.types{margin-top:20px}.typerow{display:grid;grid-template-columns:65px 1fr 38px;align-items:center;gap:10px;font-size:12px;margin:10px 0}.typerow .track{margin:0}
+table{width:100%;border-collapse:collapse}th{font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;text-align:left;border-bottom:1px solid var(--border);padding:10px 9px}td{border-bottom:1px solid #222e41;padding:11px 9px;vertical-align:middle}td.path{max-width:520px;overflow-wrap:anywhere;color:#dbe8ff}tr.pick{cursor:pointer}tr.pick:hover,tr.selected{background:#1a2b46}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}.pill{display:inline-block;border:1px solid #3a516c;background:#1a2e49;color:#b8d8ff;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:700}.tag{font-size:11px;color:var(--amber)}.bars{display:grid;gap:12px}.track{height:7px;border-radius:8px;background:#344058;margin-top:5px;overflow:hidden}.track span{height:100%;display:block;background:var(--mint)}.measure{display:flex;justify-content:space-between;font-size:12px;gap:12px}.details{overflow-wrap:anywhere}.detailrow{border-bottom:1px solid var(--border);padding:12px 0}.detailrow:last-child{border:0}.detailrow .k{font-size:12px;color:var(--muted);margin-bottom:3px}.detailrow .v{font-variant-numeric:tabular-nums}.types{margin-top:20px}.typerow{display:grid;grid-template-columns:65px 1fr 38px;align-items:center;gap:10px;font-size:12px;margin:10px 0}.typerow .track{margin:0}.proof{margin-top:20px;padding:18px;border:1px solid #37536b;border-radius:12px;background:#102333}.proof h3{font-size:16px;margin:0 0 7px}.proof p{font-size:12px;color:#bacbde}.proofbar{display:flex;width:100%;height:16px;border-radius:6px;background:#423c42;overflow:hidden;margin:12px 0}.proofbar .understood{background:#64c5ac}.proofbar .unknown{background:#987b56}.proofmetrics{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.proofmetrics>div{background:#162b40;border-radius:8px;padding:9px}.proofmetrics strong{display:block;font-size:17px;font-variant-numeric:tabular-nums}.proofmetrics small{font-size:10px}.scrollproof{max-height:310px;overflow:auto}.scrollproof table td{font-size:11px}.proofclick{cursor:pointer;color:#a9d5ff}.prooferr{font-size:12px;color:var(--amber)}.assetlist{font-size:11px;color:#a9c8db;max-height:120px;overflow:auto}
 button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-radius:9px;padding:11px 18px;cursor:pointer;margin-top:17px;font:inherit}button.more:disabled{cursor:not-allowed;opacity:.5}
 .foot{font-size:12px;color:var(--muted);margin-top:16px}.empty{padding:35px;text-align:center;color:var(--muted)}a{color:#9dc5ff}
 @media(max-width:1050px){.panels{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.app{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--border);padding:12px}nav{display:flex;gap:5px;overflow-x:auto}nav button{min-width:150px}header{padding:25px 18px}main{padding:18px 12px}.stats{grid-template-columns:repeat(2,1fr)}h1{font-size:25px}.live{display:none}.panel{padding:13px}th:nth-child(3),td:nth-child(3){display:none}}
@@ -46,22 +56,65 @@ button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-rad
 <div style="overflow-x:auto"><table><thead><tr><th>File / path</th><th>Type</th><th>Size</th><th>Evidence</th></tr></thead><tbody id="rows"></tbody></table></div>
 <div id="empty" class="empty" hidden>No matching files on loaded pages.</div>
 <button class="more" id="more">Load next 400 files</button><div class="foot" id="pageNote">Search applies to loaded pages. Use “Load next” to inspect the whole collection.</div>
-</section><div><section class="panel details"><h2>File inspector</h2><div id="inspector" class="muted">Select a file to inspect its source identity and coverage status.</div></section><section class="panel types"><h2>File types · loaded pages only</h2><div id="typeBars"></div></section></div></div>
+</section><div><section class="panel details"><h2>File inspector</h2><div id="inspector" class="muted">Select a file to inspect its source identity and coverage status.</div></section><section id="proofPanel" class="proof" style="display:none"><h3>Authenticated T6 evidence</h3><div id="proofContent">Choose a verified FastFile to see its original hashes and byte accountability.</div></section><section class="panel types"><h2>File types · loaded pages only</h2><div id="typeBars"></div></section></div></div>
 <div class="foot">Source bytes are never served by this site. R2 metadata proves file presence and physical size only. Future authenticated audit manifests will add signatures, decompression, XAsset ordinals, field ranges, and independent P0–P8 proof statuses.</div></main></div>
 <script>
 const games=[{id:"bo1",name:"Black Ops",observed:133},{id:"bo2",name:"Black Ops II · T6",observed:1287},{id:"bo3",name:"Black Ops III",observed:76},{id:"destiny",name:"Destiny",observed:2156},{id:"ghosts",name:"Call of Duty: Ghosts",observed:7539},{id:"h1",name:"Modern Warfare Remastered",observed:7},{id:"fortnite",name:"Fortnite",observed:352},{id:"smg",name:"Super Mario Galaxy",observed:2426}];
 const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString(), pretty=n=>n>=1073741824?(n/1073741824).toFixed(2)+" GiB":n>=1048576?(n/1048576).toFixed(2)+" MiB":n>=1024?(n/1024).toFixed(1)+" KiB":fmt(n)+" B";
-let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null;
+let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false;
+async function loadProofIndex(){
+ proofIndex={}; proofLoaded=false;
+ if(game!=="bo2")return;
+ try {const r=await fetch("/api/t6/index",{cache:"no-store"}); if(!r.ok)return;const d=await r.json();
+ if(d.schema!=="source-observatory/t6-index/v1")return;
+ for(const f of d.files||[])proofIndex[f.source_key]=f;
+ proofLoaded=true;render();
+ }catch(e){console.warn("T6 evidence unavailable",e)}
+}
+function renderProof(p,item){
+ const panel=$("proofPanel"),content=$("proofContent");panel.style.display="block";content.replaceChildren();
+ if(!p||!item){content.textContent="No independently authenticated report for this original source file. The R2 object is inventoried but its decoded contents have not been evaluated here.";return}
+ const source=p.source,expanded=p.expanded,cov=p.coverage;
+ const n=(label,value)=>{const d=el("div");d.append(el("small","",label),el("strong","",value));return d};
+ const lead=el("p","", "Verified original SHA-256 and "+(expanded.independent_expected_sha256_matched?"independently retained expanded SHA-256.":"expanded stream SHA-256 from this run.")+" Only header and XAsset directory bytes are structurally classified; the remaining asset-body bytes are unknown.");
+ content.append(lead);
+ const bar=el("div","proofbar"),seen=el("div","understood"),not=el("div","unknown");
+ const structural=cov.known_structural_expanded_bytes||0,unknown=cov.unclassified_expanded_bytes||0;
+ seen.style.width=100*structural/Math.max(1,expanded.bytes)+"%";not.style.width=100*unknown/Math.max(1,expanded.bytes)+"%";bar.append(seen,not);content.append(bar);
+ const m=el("div","proofmetrics");m.append(n("Structurally classified expanded bytes",pretty(structural)),n("Unknown expanded bytes",pretty(unknown)),n("XAsset directory entries",fmt(p.xfile.asset_count)),n("Asset types present",fmt(Object.keys(p.type_counts).length)));content.append(m);
+ const h=el("h3","","Nested XAsset type inventory");h.style.marginTop="15px";content.append(h);
+ const list=el("div","scrollproof"),table=el("table"),body=el("tbody");
+ for(const [t,c] of Object.entries(p.type_counts).sort((a,b)=>b[1]-a[1])){const row=el("tr");row.append(el("td","mono",t),el("td","mono",fmt(c)));body.append(row)}table.append(body);list.append(table);content.append(list);
+ content.append(el("h3","","Byte-range ownership"));
+ const ranges=el("div","scrollproof"),rt=el("table"),rb=el("tbody");
+ for(const r of p.expanded_ranges){const tr=el("tr");tr.append(el("td","mono",r.start+"–"+r.end),el("td","",r.kind),el("td","",r.name));rb.append(tr)}rt.append(rb);ranges.append(rt);content.append(ranges);
+ content.append(el("h3","","Source verification"));
+ content.append(el("div","mono assetlist","R2: "+source.r2_key+"\nSHA256: "+source.sha256+"\nExpanded SHA256: "+expanded.sha256));
+ content.append(el("p","","Rust-test production importer: NOT TESTED by this evidence. Byte-complete: NO. Semantic-complete: NO."));
+}
+async function loadReport(item){
+ const key=item.key,panel=$("proofPanel"),content=$("proofContent");panel.style.display="block";content.textContent="Loading authenticated source byte ranges…";
+ try{const r=await fetch("/api/t6/report?key="+encodeURIComponent(key),{cache:"no-store"});
+ if(key!==chosen?.key||game!=="bo2")return;
+ if(!r.ok){renderProof(null,item);return}
+ const proof=await r.json();
+ if(proof.source?.r2_key!==key||proof.source?.bytes!==item.bytes){content.textContent="Proof/report disagrees with live R2 object identity. Rejecting stale evidence.";return}
+ renderProof(proof,item)
+ }catch(e){content.textContent="T6 proof report unavailable: "+e.message}
+}
 function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=String(txt);return e}
 function nav(){const root=$("games");root.replaceChildren();games.forEach(g=>{const b=el("button",g.id===game?"active":"");b.append(el("span","",g.name),el("span","count",fmt(g.observed)));b.onclick=()=>select(g.id);root.append(b)})}
-function inspect(item){chosen=item;const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const rows=[["Original R2 object key",item.key],["Detected format","."+item.extension+" (extension only; signature not read)"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets","Not audited"],["Byte-range ownership","Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
-function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td","tag","Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
+function inspect(item){chosen=item;
+ if(game==="bo2"&&item?.extension==="ff"&&proofIndex[item.key])loadReport(item);
+ else {$("proofPanel").style.display=game==="bo2"&&item?.extension==="ff"?"block":"none";$("proofContent").textContent="No pinned decoded FastFile report yet; inventory metadata only."}
+ const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const rows=[["Original R2 object key",item.key],["Detected format","."+item.extension+" (extension only; signature not read)"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets","Not audited"],["Byte-range ownership","Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
+function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]?"pill":"tag",proofIndex[item.key]?"Verified directory":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
 $("more").disabled=!hasMore||busy;$("more").textContent=busy?"Reading R2 listing…":hasMore?"Load next 400 files":"All objects in this collection loaded";
 const types={};for(const f of items)types[f.extension]=(types[f.extension]||0)+1;const keys=Object.keys(types).sort((a,b)=>types[b]-types[a]);const current=$("type").value;$("type").replaceChildren();$("type").append(el("option","","All extensions"));$("type").firstChild.value="";keys.sort().forEach(k=>{const o=el("option","",k+" ("+types[k]+")");o.value=k;$("type").append(o)});$("type").value=keys.includes(current)?current:"";
 const bars=$("typeBars");bars.replaceChildren();const max=Math.max(1,...Object.values(types));Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([k,n])=>{const row=el("div","typerow");row.append(el("span","mono",k));const track=el("div","track"),fill=el("span");fill.style.width=(n/max*100)+"%";track.append(fill);row.append(track,el("span","mono",fmt(n)));bars.append(row)});if(!items.length)bars.textContent="No files loaded yet."}
 async function more(){if(busy||!hasMore)return;busy=true;render();try{const params=new URLSearchParams({game,limit:"400"});if(cursor)params.set("cursor",cursor);const target=game,res=await fetch("/api/files?"+params.toString(),{cache:"no-store"});if(!res.ok)throw Error("R2 metadata request failed: "+res.status);const data=await res.json();if(target!==game)return;items.push(...data.files);cursor=data.cursor;hasMore=data.truncated;render()}catch(e){$("pageNote").textContent="Unable to read R2: "+e.message}finally{busy=false;render()}}
-function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";nav();inspect(null);render();more()}
-$("find").oninput=render;$("type").onchange=render;$("more").onclick=more;nav();render();more();
+function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";nav();inspect(null);render();loadProofIndex();more()}
+$("find").oninput=render;$("type").onchange=render;$("more").onclick=more;nav();render();loadProofIndex();more();
 </script></body></html>`;
 function fileExtension(key) {
   const name = key.slice(key.lastIndexOf("/") + 1);
@@ -73,6 +126,21 @@ export default {
     if(request.method !== "GET") return asJson({error:"Read-only explorer"},405);
     const url = new URL(request.url);
     if(url.pathname==="/api/games") return asJson({schema:"source-observatory/v1",snapshot_date:"2026-10-27",games:GAMES});
+    if(url.pathname==="/api/t6/index"){
+      try {const proof=await getProof("index.json");return proof?.schema==="source-observatory/t6-index/v1"?asJson(proof):asJson({error:"No completed runner evidence index has been published"},404)}
+      catch(e){return asJson({error:"Source proof index unavailable",detail:String(e)},503)}
+    }
+    if(url.pathname==="/api/t6/report"){
+      const key=url.searchParams.get("key")||"";
+      const found=/^bo2\/zone\/all\/([a-z0-9_]+)\.ff$/.exec(key);
+      if(!found)return asJson({error:"Only allowlisted T6 source identities accepted"},400);
+      try {const idx=await getProof("index.json");const row=idx?.files?.find(x=>x.source_key===key);
+        if(!row||row.report_file!==found[1]+".json")return asJson({error:"No verified report for this original R2 object"},404);
+        const proof=await getProof(row.report_file);
+        if(proof?.schema!=="source-observatory/t6-expanded/v1"||proof.source?.r2_key!==key||proof.source?.sha256!==row.source_sha256)return asJson({error:"Proof identity mismatch"},409);
+        return asJson(proof)}
+      catch(e){return asJson({error:"Authenticated report unavailable",detail:String(e)},503)}
+    }
     if(url.pathname==="/api/files"){
       const game = GAMES.find(x=>x.id===url.searchParams.get("game"));
       if(!game) return asJson({error:"Unknown source collection"},400);
