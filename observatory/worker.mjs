@@ -59,7 +59,7 @@ button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-rad
 <div class="app"><aside><h2>Source collections</h2><nav id="games"></nav><p class="foot" style="padding:13px">Inventories reflect the original R2 keys, not files nested inside containers. Counts are verified snapshots from October 27, 2026.</p></aside>
 <main><div class="banner"><strong>Proof boundary:</strong> listed ≠ parsed ≠ semantically understood. Every file begins as <strong>metadata indexed</strong>. No byte or semantic completion is asserted without source-range evidence.</div>
 <div class="stats"><div class="stat"><div class="k">R2 objects · all 8 collections</div><div class="v" id="total">13,976</div></div><div class="stat"><div class="k">Selected collection</div><div class="v" id="observed">—</div></div><div class="stat"><div class="k">File records loaded in browser</div><div class="v" id="loaded">0</div></div><div class="stat"><div class="k">Byte-level semantic proof</div><div class="v" style="font-size:19px;color:var(--amber)">Not measured</div></div></div>
-<div class="panels"><section class="panel"><h2 id="heading">Files</h2><div class="controls"><input id="find" type="search" placeholder="Filter loaded files by name or path" aria-label="Filter loaded files"><select id="type" aria-label="File type"><option value="">All extensions</option></select></div>
+<div class="panels"><section class="panel"><h2 id="heading">Files</h2><div class="controls"><input id="find" type="search" placeholder="Filter loaded files by name or path" aria-label="Filter loaded files"><select id="type" aria-label="File type"><option value="">All extensions</option></select><select id="family" aria-label="T6 source family"><option value="">All T6 families</option><option value="client">Client zones</option><option value="server_pc">PC server</option><option value="server_ps3">PS3 server</option><option value="server_xbox360">Xbox 360 server</option><option value="server_wiiu">Wii U server</option><option value="other">Other BO2 files</option></select></div>
 <div style="overflow-x:auto"><table><thead><tr><th>File / path</th><th>Type</th><th>Size</th><th>Evidence</th></tr></thead><tbody id="rows"></tbody></table></div>
 <div id="empty" class="empty" hidden>No matching files on loaded pages.</div>
 <button class="more" id="more">Load next 400 files</button><div class="foot" id="pageNote">Search applies to loaded pages. Use “Load next” to inspect the whole collection.</div>
@@ -68,7 +68,28 @@ button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-rad
 <script>
 const games=[{id:"bo1",name:"Black Ops",observed:133},{id:"bo2",name:"Black Ops II · T6",observed:1287},{id:"bo3",name:"Black Ops III",observed:76},{id:"destiny",name:"Destiny",observed:2156},{id:"ghosts",name:"Call of Duty: Ghosts",observed:7539},{id:"h1",name:"Modern Warfare Remastered",observed:7},{id:"fortnite",name:"Fortnite",observed:352},{id:"smg",name:"Super Mario Galaxy",observed:2426}];
 const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString(), pretty=n=>n>=1073741824?(n/1073741824).toFixed(2)+" GiB":n>=1048576?(n/1048576).toFixed(2)+" MiB":n>=1024?(n/1024).toFixed(1)+" KiB":fmt(n)+" B";
-let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false,clientIndex={},clientOverview=null;
+let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false,clientIndex={},clientOverview=null,serverIndex={},serverOverview=null;
+function familyOf(item){
+ const k=item.key;
+ if(k.startsWith("bo2/zone/"))return "client";
+ if(k.includes("/PC Server/"))return "server_pc";
+ if(k.includes("/PS3 Server/"))return "server_ps3";
+ if(k.includes("/Xbox 360 Server/"))return "server_xbox360";
+ if(k.includes("/WiiU Server/"))return "server_wiiu";
+ return "other";
+}
+async function loadServerCorpus(){
+ serverIndex={};serverOverview=null;
+ if(game!=="bo2")return;
+ try{const res=await fetch("/api/t6/server-corpus",{cache:"no-store"});if(!res.ok)return;
+ const d=await res.json();
+ if(d.schema!=="source-observatory/t6-server-corpus/v1"||!d.complete_source_listing||d.files?.length!==356)return;
+ for(const f of d.files)serverIndex[f.source_key]=f;
+ serverOverview=d;
+ if(chosen)inspect(chosen);
+ render();
+ }catch(e){console.warn("Unsigned server proof not available",e)}
+}
 async function loadClientCorpus(){
  clientIndex={};clientOverview=null;
  if(game!=="bo2")return;
@@ -156,6 +177,10 @@ function nav(){const root=$("games");root.replaceChildren();games.forEach(g=>{co
 function inspect(item){chosen=item;
  if(game==="bo2"&&item?.extension==="ff"&&proofIndex[item.key])loadReport(item);
  else if(game==="bo2"&&item?.extension==="ff"&&clientIndex[item.key]&&clientIndex[item.key].original_listed_bytes===item.bytes)renderClientProof(clientIndex[item.key],item);
+ else if(game==="bo2"&&item?.extension==="ff"&&serverIndex[item.key]&&serverIndex[item.key].original_listed_bytes===item.bytes){
+   const proof=serverIndex[item.key];
+   renderClientProof({...proof,structural_expanded_bytes:proof.expanded_directory_bytes,unknown_expanded_bytes:proof.expanded_unknown_bytes,actual_original_bytes:proof.original_authenticated_bytes},item);
+ }
  else {
   const hdr=headerIndex[item?.key],verified=hdr?.r2_content_range_verified&&hdr?.r2_listed_bytes===item?.bytes;
   $("proofPanel").style.display=game==="bo2"&&item?.extension==="ff"?"block":"none";
@@ -163,15 +188,17 @@ function inspect(item){chosen=item;
     "Source header checked using original HTTP 206 bytes 0–63. Signature: "+hdr.signature_status+"; version: "+(hdr.version??"unknown")+". Full-file SHA-256, decryption, nested assets, and semantic byte meaning have NOT been checked for this object.":
     "No completed original-source byte audit yet; R2 inventory metadata only.";
  }
- const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const rows=[["Original R2 object key",item.key],["Detected format","."+item.extension+" (extension only; signature not read)"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets","Not audited"],["Byte-range ownership","Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
-function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes,clientProof=clientIndex[item.key]?.original_listed_bytes===item.bytes?clientIndex[item.key]:null;
- tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader||clientProof?"pill":"tag",proofIndex[item.key]?"Verified directory":clientProof?.state==="xasset_directory_validated"?"Verified directory":clientProof?.state==="empty_expanded_stream"?"Empty expanded":clientProof?.state?"Parse issue":verifiedHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
+ const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const rows=[["Original R2 object key",item.key],["Signature / version",headerIndex[item.key]?.r2_content_range_verified?
+ (headerIndex[item.key].signature_prefix8_ascii+" / "+headerIndex[item.key].version):
+ ("."+item.extension+" (extension only)")],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets","Not audited"],["Byte-range ownership","Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
+function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,family=$("family").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type)&&(!family||familyOf(x)===family));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes,clientProof=clientIndex[item.key]?.original_listed_bytes===item.bytes?clientIndex[item.key]:null,serverProof=serverIndex[item.key]?.original_listed_bytes===item.bytes?serverIndex[item.key]:null;
+ tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader||clientProof||serverProof?"pill":"tag",proofIndex[item.key]?"Verified directory":clientProof?.state==="xasset_directory_validated"||serverProof?.state==="xasset_directory_validated"?"Verified directory":clientProof?.state==="empty_expanded_stream"?"Empty expanded":serverProof?.state==="unsigned_xchunks_decoded_directory_unresolved"?"Decompressed":clientProof?.state||serverProof?.state?"Parse issue":verifiedHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("family").style.display=game==="bo2"?"":"none";$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
 $("more").disabled=!hasMore||busy;$("more").textContent=busy?"Reading R2 listing…":hasMore?"Load next 400 files":"All objects in this collection loaded";
 const types={};for(const f of items)types[f.extension]=(types[f.extension]||0)+1;const keys=Object.keys(types).sort((a,b)=>types[b]-types[a]);const current=$("type").value;$("type").replaceChildren();$("type").append(el("option","","All extensions"));$("type").firstChild.value="";keys.sort().forEach(k=>{const o=el("option","",k+" ("+types[k]+")");o.value=k;$("type").append(o)});$("type").value=keys.includes(current)?current:"";
 const bars=$("typeBars");bars.replaceChildren();const max=Math.max(1,...Object.values(types));Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([k,n])=>{const row=el("div","typerow");row.append(el("span","mono",k));const track=el("div","track"),fill=el("span");fill.style.width=(n/max*100)+"%";track.append(fill);row.append(track,el("span","mono",fmt(n)));bars.append(row)});if(!items.length)bars.textContent="No files loaded yet."}
 async function more(){if(busy||!hasMore)return;busy=true;render();try{const params=new URLSearchParams({game,limit:"400"});if(cursor)params.set("cursor",cursor);const target=game,res=await fetch("/api/files?"+params.toString(),{cache:"no-store"});if(!res.ok)throw Error("R2 metadata request failed: "+res.status);const data=await res.json();if(target!==game)return;items.push(...data.files);cursor=data.cursor;hasMore=data.truncated;render()}catch(e){$("pageNote").textContent="Unable to read R2: "+e.message}finally{busy=false;render()}}
-function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";nav();inspect(null);render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();more()}
-$("find").oninput=render;$("type").onchange=render;$("more").onclick=more;nav();render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();more();
+function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";$("family").value="";nav();inspect(null);render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();loadServerCorpus();more()}
+$("find").oninput=render;$("type").onchange=render;$("family").onchange=render;$("more").onclick=more;nav();render();loadProofIndex();loadHeaderSurvey();loadClientCorpus();loadServerCorpus();more();
 </script></body></html>`;
 function fileExtension(key) {
   const name = key.slice(key.lastIndexOf("/") + 1);
@@ -183,6 +210,10 @@ export default {
     if(request.method !== "GET") return asJson({error:"Read-only explorer"},405);
     const url = new URL(request.url);
     if(url.pathname==="/api/games") return asJson({schema:"source-observatory/v1",snapshot_date:"2026-10-27",games:GAMES});
+    if(url.pathname==="/api/t6/server-corpus"){
+      try{const p=await getProof("server-corpus.json");return p?.schema==="source-observatory/t6-server-corpus/v1"&&p?.files?.length===356?asJson(p):asJson({error:"Remote server corpus evidence not published yet"},404)}
+      catch(e){return asJson({error:"Server corpus unavailable",detail:String(e)},503)}
+    }
     if(url.pathname==="/api/t6/client-corpus"){
       try{const p=await getProof("client-corpus.json");return p?.schema==="source-observatory/t6-client-corpus/v1"&&p?.files?.length===215?asJson(p):asJson({error:"Remote full-client scan has not published 215 accountable reports yet"},404)}
       catch(e){return asJson({error:"Client corpus unavailable",detail:String(e)},503)}
