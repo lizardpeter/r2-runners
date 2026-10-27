@@ -36,7 +36,7 @@ jobs:
           name: rust-linux-x86-64-complete-toolchain
           path: ${{ runner.temp }}/rust-toolchain/*.tar
           compression-level: 0
-          retention-days: 2
+          retention-days: 3
           if-no-files-found: error
  "$RUNNER_TEMP/rust-toolchain/file-list.txt" | head -20
       - name: Expose original toolchain archive for container handoff
