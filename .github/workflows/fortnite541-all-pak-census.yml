@@ -64,7 +64,17 @@ jobs:
             -o "$RUNNER_TEMP/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar" \
             https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar
           test "$(stat -c %s "$RUNNER_TEMP/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar")" = 210515736
-          tar tf "$RUNNER_TEMP/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar" | grep -m1 '/bin/rustc$'
+          tar tf "$RUNNER_TEMP/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar" > "$RUNNER_TEMP/rust/archive-entries.txt"
+          grep '/bin/rustc
+      - name: Deliver verifiable original Rust toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-toolchain-1.99.1-original-r2-${{ github.run_id }}
+          path: ${{ runner.temp }}/rust/*.tar
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: error
+ "$RUNNER_TEMP/rust/archive-entries.txt"
       - name: Deliver verifiable original Rust toolchain
         uses: actions/upload-artifact@v4
         with:
