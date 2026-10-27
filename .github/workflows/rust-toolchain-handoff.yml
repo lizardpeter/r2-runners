@@ -1,6 +1,8 @@
 name: Rust Linux toolchain R2 handoff
 
 on:
+  pull_request:
+    paths: [".github/workflows/rust-toolchain-handoff.yml"]
   push:
     branches: [main]
     paths:
@@ -26,7 +28,17 @@ jobs:
             "https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar"
           stat -c 'Downloaded %s bytes from persistent R2 toolchain' "$RUNNER_TEMP/rust-toolchain/"*.tar
           test "$(stat -c%s "$RUNNER_TEMP/rust-toolchain/"*.tar)" = "210515736"
-          tar -tf "$RUNNER_TEMP/rust-toolchain/"*.tar | grep -E '/(bin/(cargo|rustc)|install.sh)$' | head -20
+          tar -tf "$RUNNER_TEMP/rust-toolchain/"*.tar > "$RUNNER_TEMP/rust-toolchain/file-list.txt"
+          grep -E '/(bin/(cargo|rustc)|install.sh)
+      - name: Expose original toolchain archive for container handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-linux-x86-64-complete-toolchain
+          path: ${{ runner.temp }}/rust-toolchain/*.tar
+          compression-level: 0
+          retention-days: 2
+          if-no-files-found: error
+ "$RUNNER_TEMP/rust-toolchain/file-list.txt" | head -20
       - name: Expose original toolchain archive for container handoff
         uses: actions/upload-artifact@v4
         with:
