@@ -1,0 +1,50 @@
+name: Fortnite 5.41 full R2 UE4 PAK byte census
+
+on:
+  pull_request:
+    paths:
+      - "scripts/fortnite541_all_pak_byte_census.py"
+      - ".github/workflows/fortnite541-all-pak-census.yml"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/fortnite541_all_pak_byte_census.py"
+      - ".github/workflows/fortnite541-all-pak-census.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout original public source verifier
+        uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/Fortnite-reverse
+          ref: 0742a8de70e692d9a994d50480fbce27905f0156
+          persist-credentials: false
+          path: source-decoder
+      - name: Checkout public R2 census tools at this commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: workbench
+      - name: Run synthetic partition and manifest tests
+        run: python3 workbench/scripts/fortnite541_all_pak_byte_census.py --self-test
+      - name: Authenticate every original Fortnite 5.41 PAK index from R2
+        run: |
+          mkdir -p "$RUNNER_TEMP/fortnite541-source-census"
+          python3 workbench/scripts/fortnite541_all_pak_byte_census.py \
+            --output "$RUNNER_TEMP/fortnite541-source-census/all-10-pak-byte-census.jsonl" \
+            2>&1 | tee "$RUNNER_TEMP/fortnite541-source-census/run.log"
+      - name: Save authenticated index and byte accounting evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fortnite541-all-pak-index-byte-census-${{ github.run_id }}
+          path: ${{ runner.temp }}/fortnite541-source-census/
+          if-no-files-found: warn
+          retention-days: 90
