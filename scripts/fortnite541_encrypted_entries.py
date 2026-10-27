@@ -97,7 +97,10 @@ def run(out:Path):
             "sha1_verified_encrypted_payloads":ok,
             "sha1_verified_plaintext_payloads":sum(r.get("payload_plaintext_sha1_verified",False) for r in rows),
             "sha1_verified_stored_ciphertexts":sum(r.get("payload_stored_source_sha1_verified",False) for r in rows),
-            "verified_encrypted_payload_bytes":sum(r["indexed_bytes"] for r in rows if r["payload_plaintext_sha1_verified"]),
+            "verified_original_stored_encrypted_payload_bytes":sum(
+                r["indexed_bytes"] for r in rows if r.get("payload_stored_source_sha1_verified",False)),
+            "verified_encrypted_payload_bytes":sum(
+                r["indexed_bytes"] for r in rows if r.get("source_sha1_matching_domains")),
             "unknown_encrypted_payloads":len(rows)-ok,
             "complete_original_encrypted_payload_authentication":ok==len(rows),
             "retail_shader_semantics":None,"entries":rows}
