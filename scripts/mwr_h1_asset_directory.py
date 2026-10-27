@@ -8,6 +8,7 @@ from mwr_h1_asset_payload import analyze_first_source_body, inspect_sequential_s
 from mwr_h1_netconst_source import inspect_ordered_netconst_bodies
 from mwr_h1_clipmap_source import inspect_first_authored_clipmap
 from mwr_h1_technique_order_source import inspect_first_authored_technique_set
+from mwr_h1_technique_pass_source import inspect_first_inline_technique_after_set
 import struct
 
 XFILE_BYTES = 72
@@ -433,8 +434,11 @@ def inspect_prefix(data: bytes) -> dict:
             data,result["complete_xasset_directory_evidence"])
         result["source_order_first_clipmap_audit"]=inspect_first_authored_clipmap(
             data,result["complete_xasset_directory_evidence"])
-        result["source_order_first_technique_set_audit"]=inspect_first_authored_technique_set(
+        technique_set_report=inspect_first_authored_technique_set(
             data,result["complete_xasset_directory_evidence"])
+        result["source_order_first_technique_set_audit"]=technique_set_report
+        result["source_order_first_technique_pass_cursor_probe"]=(
+            inspect_first_inline_technique_after_set(data,technique_set_report))
     result["xasset_array_candidates_near_root"]=probe_xasset_array_after_strings(
         data,asset_count,end_of_strings)
     return result
