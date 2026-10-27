@@ -36,6 +36,7 @@ jobs:
         run: python3 workbench/scripts/fortnite541_all_pak_byte_census.py --self-test
       - name: Authenticate every original Fortnite 5.41 PAK index from R2
         run: |
+          set -euo pipefail
           mkdir -p "$RUNNER_TEMP/fortnite541-source-census"
           python3 workbench/scripts/fortnite541_all_pak_byte_census.py \
             --output "$RUNNER_TEMP/fortnite541-source-census/all-10-pak-byte-census.jsonl" \
