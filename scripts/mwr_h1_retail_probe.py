@@ -32,6 +32,7 @@ from mwr_h1_dxbc_probe import H1DXBCSourceScanner
 from mwr_h1_dxbc_verify import verify_retail_dxbc_samples
 from mwr_h1_clipmap_named_scanner import H1NamedClipMapScanner
 from mwr_h1_shader_ownership_probe import verify_dxbc_shader_ownership_windows
+from mwr_h1_draw_batch_verify import inspect_original_draw_batch_source
 
 CHUNK = 1 << 20
 # The research target is selected by --stem; never embed map-specific codec paths.
@@ -355,6 +356,11 @@ def main()->int:
                             if checked.get("status")=="complete" and surfaces.get("status")=="complete_original_surface_struct_array_verified":
                                 scanned["world_index_all_surfaces_linked_verification"]=verify_original_index_bytes(
                                     local,header,LogicalSignedStream,roots[0],checked,surfaces)
+                                # A separate source-byte read checks the complete
+                                # source-order draw partitions the game will use.
+                                scanned["original_renderer_draw_batch_closure"]=inspect_original_draw_batch_source(
+                                    local,header,LogicalSignedStream,roots[0],checked,surfaces,
+                                    scanned["world_index_all_surfaces_linked_verification"])
                             scanned["original_static_draw_full_count_followup"]=inspect_retained_draw_window(
                                 local,header,LogicalSignedStream,roots[0],
                                 scanned["gfxworld_static_model_draw_source_scan"])
