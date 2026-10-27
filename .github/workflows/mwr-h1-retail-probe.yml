@@ -44,6 +44,8 @@ on:
       - "tests/test_mwr_h1_shader_ownership_probe.py"
       - "scripts/mwr_h1_technique_order_source.py"
       - "tests/test_mwr_h1_technique_order_source.py"
+      - "scripts/mwr_h1_technique_pass_source.py"
+      - "tests/test_mwr_h1_technique_pass_source.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   pull_request:
     paths:
@@ -77,6 +79,8 @@ on:
       - "tests/test_mwr_h1_shader_ownership_probe.py"
       - "scripts/mwr_h1_technique_order_source.py"
       - "tests/test_mwr_h1_technique_order_source.py"
+      - "scripts/mwr_h1_technique_pass_source.py"
+      - "tests/test_mwr_h1_technique_pass_source.py"
       - ".github/workflows/mwr-h1-retail-probe.yml"
   workflow_dispatch:
     inputs:
@@ -125,6 +129,8 @@ jobs:
         run: python3 -m unittest discover -s tests -p test_mwr_h1_shader_ownership_probe.py
       - name: Test authentic first H1 240-slot technique set source-order reader
         run: python3 -m unittest discover -s tests -p test_mwr_h1_technique_order_source.py
+      - name: Test bounded first H1 native MaterialTechnique and MaterialPass cursor
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_technique_pass_source.py
       - name: Fetch exact original H1 FastFiles and inspect headers and LZ4 framing
         shell: bash
         env:
