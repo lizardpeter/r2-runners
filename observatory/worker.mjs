@@ -1,0 +1,97 @@
+
+/**
+ * Source Coverage Observatory v1.
+ * Metadata only. Source bytes never leave R2 through this Worker.
+ * An R2 listing proves inventory presence, not decoding or semantic coverage.
+ */
+const GAMES = [
+  { id: "bo1", name: "Black Ops", prefix: "bo1/", observed: 133 },
+  { id: "bo2", name: "Black Ops II · T6", prefix: "bo2/", observed: 1287 },
+  { id: "bo3", name: "Black Ops III", prefix: "bo3/", observed: 76 },
+  { id: "destiny", name: "Destiny", prefix: "destiny/", observed: 2156 },
+  { id: "ghosts", name: "Call of Duty: Ghosts", prefix: "ghosts/", observed: 7539 },
+  { id: "h1", name: "Modern Warfare Remastered", prefix: "h1/", observed: 7 },
+  { id: "fortnite", name: "Fortnite", prefix: "Fortnite/", observed: 352 },
+  { id: "smg", name: "Super Mario Galaxy", prefix: "super-mario-galaxy/", observed: 2426 }
+];
+const asJson = (data, status = 200) => new Response(JSON.stringify(data), {
+  status, headers: {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff",
+    "Access-Control-Allow-Origin": "same-origin"
+  }
+});
+const PAGE = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Source Observatory · Asset Coverage</title>
+<style>
+:root{color-scheme:dark;--bg:#090e18;--surface:#111929;--surface2:#182338;--border:#29344b;--text:#edf3ff;--muted:#91a1be;--blue:#7db1ff;--mint:#77debe;--amber:#f3c980}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 78% 0,#142a4a 0,transparent 35%),var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:30px 36px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:18px}h1{font-size:30px;line-height:1.15;margin:5px 0 8px;letter-spacing:-.9px}h2{font-size:17px;margin:0 0 15px;letter-spacing:-.3px}p{margin:0}small,.muted{color:var(--muted)}.eyebrow{text-transform:uppercase;font-size:11px;letter-spacing:2.5px;color:var(--mint);font-weight:800}.live{border:1px solid #245a53;background:#10332f;border-radius:999px;padding:7px 13px;color:#9df2d5;white-space:nowrap;font-size:12px}
+.app{display:grid;grid-template-columns:238px minmax(0,1fr);min-height:calc(100vh - 112px)}aside{border-right:1px solid var(--border);padding:25px 14px 40px}aside h2{padding:0 12px}nav button{display:flex;width:100%;justify-content:space-between;align-items:center;text-align:left;background:transparent;color:var(--muted);border:1px solid transparent;padding:12px 12px;border-radius:10px;cursor:pointer;font:inherit;margin:3px 0}nav button.active,nav button:hover{background:#1b2e4c;border-color:#375177;color:var(--text)}.count{font-size:12px;color:#8b9cb7;font-variant-numeric:tabular-nums}
+main{min-width:0;padding:26px 32px 45px;max-width:1600px;width:100%;margin:auto}
+.banner{background:#1b2436;border:1px solid var(--border);border-left:3px solid var(--amber);padding:13px 16px;border-radius:9px;color:#ccd8ea;margin:0 0 20px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}.stat{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:18px}.stat .k{font-size:12px;color:var(--muted)}.stat .v{font-size:27px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:5px;letter-spacing:-.8px}
+.panels{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:17px}.panel{border:1px solid var(--border);background:var(--surface);border-radius:12px;padding:20px;min-width:0}.controls{display:flex;gap:10px;margin:0 0 13px;align-items:center;flex-wrap:wrap}input,select{background:#0b1425;color:var(--text);border:1px solid #34435b;padding:11px 13px;border-radius:8px;font:inherit}input{flex:1;min-width:150px}select{min-width:110px}
+table{width:100%;border-collapse:collapse}th{font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px;text-align:left;border-bottom:1px solid var(--border);padding:10px 9px}td{border-bottom:1px solid #222e41;padding:11px 9px;vertical-align:middle}td.path{max-width:520px;overflow-wrap:anywhere;color:#dbe8ff}tr.pick{cursor:pointer}tr.pick:hover,tr.selected{background:#1a2b46}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:12px}.pill{display:inline-block;border:1px solid #3a516c;background:#1a2e49;color:#b8d8ff;border-radius:6px;padding:2px 7px;font-size:11px;font-weight:700}.tag{font-size:11px;color:var(--amber)}.bars{display:grid;gap:12px}.track{height:7px;border-radius:8px;background:#344058;margin-top:5px;overflow:hidden}.track span{height:100%;display:block;background:var(--mint)}.measure{display:flex;justify-content:space-between;font-size:12px;gap:12px}.details{overflow-wrap:anywhere}.detailrow{border-bottom:1px solid var(--border);padding:12px 0}.detailrow:last-child{border:0}.detailrow .k{font-size:12px;color:var(--muted);margin-bottom:3px}.detailrow .v{font-variant-numeric:tabular-nums}.types{margin-top:20px}.typerow{display:grid;grid-template-columns:65px 1fr 38px;align-items:center;gap:10px;font-size:12px;margin:10px 0}.typerow .track{margin:0}
+button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-radius:9px;padding:11px 18px;cursor:pointer;margin-top:17px;font:inherit}button.more:disabled{cursor:not-allowed;opacity:.5}
+.foot{font-size:12px;color:var(--muted);margin-top:16px}.empty{padding:35px;text-align:center;color:var(--muted)}a{color:#9dc5ff}
+@media(max-width:1050px){.panels{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.app{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--border);padding:12px}nav{display:flex;gap:5px;overflow-x:auto}nav button{min-width:150px}header{padding:25px 18px}main{padding:18px 12px}.stats{grid-template-columns:repeat(2,1fr)}h1{font-size:25px}.live{display:none}.panel{padding:13px}th:nth-child(3),td:nth-child(3){display:none}}
+</style></head><body>
+<header><div><div class="eyebrow">Original source · Evidence tracker</div><h1>Source Observatory</h1><p class="muted">One explorer for every indexed source file, archive, and future byte-level proof.</p></div><div class="live">● Live Cloudflare R2 listing</div></header>
+<div class="app"><aside><h2>Source collections</h2><nav id="games"></nav><p class="foot" style="padding:13px">Inventories reflect the original R2 keys, not files nested inside containers. Counts are verified snapshots from October 27, 2026.</p></aside>
+<main><div class="banner"><strong>Proof boundary:</strong> listed ≠ parsed ≠ semantically understood. Every file begins as <strong>metadata indexed</strong>. No byte or semantic completion is asserted without source-range evidence.</div>
+<div class="stats"><div class="stat"><div class="k">R2 objects · all 8 collections</div><div class="v" id="total">13,976</div></div><div class="stat"><div class="k">Selected collection</div><div class="v" id="observed">—</div></div><div class="stat"><div class="k">File records loaded in browser</div><div class="v" id="loaded">0</div></div><div class="stat"><div class="k">Byte-level semantic proof</div><div class="v" style="font-size:19px;color:var(--amber)">Not measured</div></div></div>
+<div class="panels"><section class="panel"><h2 id="heading">Files</h2><div class="controls"><input id="find" type="search" placeholder="Filter loaded files by name or path" aria-label="Filter loaded files"><select id="type" aria-label="File type"><option value="">All extensions</option></select></div>
+<div style="overflow-x:auto"><table><thead><tr><th>File / path</th><th>Type</th><th>Size</th><th>Evidence</th></tr></thead><tbody id="rows"></tbody></table></div>
+<div id="empty" class="empty" hidden>No matching files on loaded pages.</div>
+<button class="more" id="more">Load next 400 files</button><div class="foot" id="pageNote">Search applies to loaded pages. Use “Load next” to inspect the whole collection.</div>
+</section><div><section class="panel details"><h2>File inspector</h2><div id="inspector" class="muted">Select a file to inspect its source identity and coverage status.</div></section><section class="panel types"><h2>File types · loaded pages only</h2><div id="typeBars"></div></section></div></div>
+<div class="foot">Source bytes are never served by this site. R2 metadata proves file presence and physical size only. Future authenticated audit manifests will add signatures, decompression, XAsset ordinals, field ranges, and independent P0–P8 proof statuses.</div></main></div>
+<script>
+const games=[{id:"bo1",name:"Black Ops",observed:133},{id:"bo2",name:"Black Ops II · T6",observed:1287},{id:"bo3",name:"Black Ops III",observed:76},{id:"destiny",name:"Destiny",observed:2156},{id:"ghosts",name:"Call of Duty: Ghosts",observed:7539},{id:"h1",name:"Modern Warfare Remastered",observed:7},{id:"fortnite",name:"Fortnite",observed:352},{id:"smg",name:"Super Mario Galaxy",observed:2426}];
+const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString(), pretty=n=>n>=1073741824?(n/1073741824).toFixed(2)+" GiB":n>=1048576?(n/1048576).toFixed(2)+" MiB":n>=1024?(n/1024).toFixed(1)+" KiB":fmt(n)+" B";
+let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null;
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!==undefined)e.textContent=String(txt);return e}
+function nav(){const root=$("games");root.replaceChildren();games.forEach(g=>{const b=el("button",g.id===game?"active":"");b.append(el("span","",g.name),el("span","count",fmt(g.observed)));b.onclick=()=>select(g.id);root.append(b)})}
+function inspect(item){chosen=item;const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const rows=[["Original R2 object key",item.key],["Detected format","."+item.extension+" (extension only; signature not read)"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets","Not audited"],["Byte-range ownership","Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
+function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td","tag","Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
+$("more").disabled=!hasMore||busy;$("more").textContent=busy?"Reading R2 listing…":hasMore?"Load next 400 files":"All objects in this collection loaded";
+const types={};for(const f of items)types[f.extension]=(types[f.extension]||0)+1;const keys=Object.keys(types).sort((a,b)=>types[b]-types[a]);const current=$("type").value;$("type").replaceChildren();$("type").append(el("option","","All extensions"));$("type").firstChild.value="";keys.sort().forEach(k=>{const o=el("option","",k+" ("+types[k]+")");o.value=k;$("type").append(o)});$("type").value=keys.includes(current)?current:"";
+const bars=$("typeBars");bars.replaceChildren();const max=Math.max(1,...Object.values(types));Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([k,n])=>{const row=el("div","typerow");row.append(el("span","mono",k));const track=el("div","track"),fill=el("span");fill.style.width=(n/max*100)+"%";track.append(fill);row.append(track,el("span","mono",fmt(n)));bars.append(row)});if(!items.length)bars.textContent="No files loaded yet."}
+async function more(){if(busy||!hasMore)return;busy=true;render();try{const params=new URLSearchParams({game,limit:"400"});if(cursor)params.set("cursor",cursor);const target=game,res=await fetch("/api/files?"+params.toString(),{cache:"no-store"});if(!res.ok)throw Error("R2 metadata request failed: "+res.status);const data=await res.json();if(target!==game)return;items.push(...data.files);cursor=data.cursor;hasMore=data.truncated;render()}catch(e){$("pageNote").textContent="Unable to read R2: "+e.message}finally{busy=false;render()}}
+function select(id){game=id;items=[];cursor=null;hasMore=true;chosen=null;$("find").value="";$("type").value="";nav();inspect(null);render();more()}
+$("find").oninput=render;$("type").onchange=render;$("more").onclick=more;nav();render();more();
+</script></body></html>`;
+function fileExtension(key) {
+  const name = key.slice(key.lastIndexOf("/") + 1);
+  const at = name.lastIndexOf(".");
+  return at > 0 ? name.slice(at+1).toLowerCase() : "(none)";
+}
+export default {
+  async fetch(request, env) {
+    if(request.method !== "GET") return asJson({error:"Read-only explorer"},405);
+    const url = new URL(request.url);
+    if(url.pathname==="/api/games") return asJson({schema:"source-observatory/v1",snapshot_date:"2026-10-27",games:GAMES});
+    if(url.pathname==="/api/files"){
+      const game = GAMES.find(x=>x.id===url.searchParams.get("game"));
+      if(!game) return asJson({error:"Unknown source collection"},400);
+      const limit = Math.min(400,Math.max(1,Number(url.searchParams.get("limit")||400)));
+      const cursor = url.searchParams.get("cursor");
+      if(cursor && (cursor.length>2048 || !/^[A-Za-z0-9_+=.\/-]+$/.test(cursor))) return asJson({error:"Invalid cursor"},400);
+      try{
+        const options={prefix:game.prefix,limit,include:[]};
+        if(cursor)options.cursor=cursor;
+        const result=await env.SOURCES.list(options);
+        const files=result.objects.filter(o=>o.key!==game.prefix&&!o.key.endsWith("/")).map(o=>({
+          key:o.key,path:o.key.slice(game.prefix.length),bytes:o.size,extension:fileExtension(o.key),
+          uploaded:o.uploaded?o.uploaded.toISOString():null,etag:o.etag||null,
+          coverage:{inventory:"metadata-indexed",structure:"not-evaluated",byte_ranges:"not-evaluated",semantics:"not-evaluated"}
+        }));
+        return asJson({schema:"source-observatory/v1",game:game.id,files,truncated:result.truncated,cursor:result.truncated?result.cursor:null,proof_boundary:"Metadata listing only. No original bytes examined."});
+      }catch(e){return asJson({error:"R2 listing unavailable; no completeness claim",detail:String(e)},503)}
+    }
+    if(url.pathname==="/" || url.pathname==="/index.html") return new Response(PAGE,{headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"public, max-age=300","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer"}});
+    return new Response("Not found",{status:404});
+  }
+};
