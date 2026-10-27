@@ -70,14 +70,33 @@ def run(out:Path):
                     if len(decoded)<unpacked:
                         row["status"]="decrypted_source_too_short"
                     else:
-                        original_sha1=hashlib.sha1(decoded[:unpacked]).digest()
-                        row["payload_plaintext_sha1_verified"]=original_sha1==digest
-                        row["status"]="sha1_verified" if row["payload_plaintext_sha1_verified"] else "decrypted_source_sha1_mismatch"
+                        # UE4 may authenticate the stored encrypted bytes
+                        # rather than the decrypted logical file. Do not guess
+                        # a hash domain: verify every plausible exact interval.
+                        candidates={
+                            "stored_ciphertext":cipher[:stored],
+                            "aes_aligned_ciphertext":cipher,
+                            "decrypted_logical_file":decoded[:unpacked],
+                            "decrypted_stored_extent":decoded[:stored],
+                            "decrypted_aes_aligned":decoded,
+                        }
+                        matches=sorted(k for k,v in candidates.items()
+                                       if hashlib.sha1(v).digest()==digest)
+                        row["source_sha1_matching_domains"]=matches
+                        row["payload_stored_source_sha1_verified"]=any(
+                            x in matches for x in ("stored_ciphertext","aes_aligned_ciphertext"))
+                        row["payload_plaintext_sha1_verified"]=any(
+                            x in matches for x in ("decrypted_logical_file",
+                                                  "decrypted_stored_extent",
+                                                  "decrypted_aes_aligned"))
+                        row["status"]="sha1_domain_"+matches[0] if matches else "original_source_sha1_unmatched"
         rows.append(row)
-    ok=sum(r["payload_plaintext_sha1_verified"] for r in rows)
+    ok=sum(bool(r.get("source_sha1_matching_domains")) for r in rows)
     result={"source":"actual main 5.41 original R2 retail PAK","index_proof":proof,
             "original_indexed_encrypted_entries":len(rows),
             "sha1_verified_encrypted_payloads":ok,
+            "sha1_verified_plaintext_payloads":sum(r.get("payload_plaintext_sha1_verified",False) for r in rows),
+            "sha1_verified_stored_ciphertexts":sum(r.get("payload_stored_source_sha1_verified",False) for r in rows),
             "verified_encrypted_payload_bytes":sum(r["indexed_bytes"] for r in rows if r["payload_plaintext_sha1_verified"]),
             "unknown_encrypted_payloads":len(rows)-ok,
             "complete_original_encrypted_payload_authentication":ok==len(rows),
