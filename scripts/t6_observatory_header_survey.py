@@ -52,6 +52,8 @@ def check_one(row):
                 buf=r.read(LIMIT+1)
                 if len(buf)!=LIMIT:raise ValueError(f"Wrong range payload length {len(buf)}")
             kind,version=classify(buf)
+            entry["signature_prefix8_hex"]=buf[:8].hex()
+            entry["signature_prefix8_ascii"]="".join(chr(c) if 32<=c<127 else "." for c in buf[:8])
             entry["signature_status"]=kind
             entry["version"]=version
             entry["r2_content_range_verified"]=True
