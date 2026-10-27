@@ -68,16 +68,17 @@ button.more{border:1px solid #425b7f;background:#21416b;color:#f0f6ff;border-rad
 <script>
 const games=[{id:"bo1",name:"Black Ops",observed:133},{id:"bo2",name:"Black Ops II · T6",observed:1287},{id:"bo3",name:"Black Ops III",observed:76},{id:"destiny",name:"Destiny",observed:2156},{id:"ghosts",name:"Call of Duty: Ghosts",observed:7539},{id:"h1",name:"Modern Warfare Remastered",observed:7},{id:"fortnite",name:"Fortnite",observed:352},{id:"smg",name:"Super Mario Galaxy",observed:2426}];
 const $=id=>document.getElementById(id), fmt=n=>Number(n||0).toLocaleString(), pretty=n=>n>=1073741824?(n/1073741824).toFixed(2)+" GiB":n>=1048576?(n/1048576).toFixed(2)+" MiB":n>=1024?(n/1024).toFixed(1)+" KiB":fmt(n)+" B";
-let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false,clientIndex={},clientOverview=null,serverIndex={},serverOverview=null,typeInventory=null,sourceHeaderIndex={},sourceHeaderOverview=null,ipakIndex={},soundIndex={};
+let game="bo2",items=[],cursor=null,hasMore=true,busy=false,chosen=null,proofIndex={},proofLoaded=false,headerIndex={},headerSurveyComplete=false,clientIndex={},clientOverview=null,serverIndex={},serverOverview=null,typeInventory=null,sourceHeaderIndex={},sourceHeaderOverview=null,ipakIndex={},soundIndex={},wadIndex={};
 async function loadNestedDirectories(){
- ipakIndex={};soundIndex={};
+ ipakIndex={};soundIndex={};wadIndex={};
  if(game!=="bo2")return;
  const sources=[["/api/t6/ipaks","source-observatory/t6-ipak-index/v1","ipak"],
-                ["/api/t6/sound-banks","source-observatory/t6-sound-bank-index/v1","sound"]];
+                ["/api/t6/sound-banks","source-observatory/t6-sound-bank-index/v1","sound"],
+                ["/api/t6/wads","source-observatory/t6-wad-index/v1","wad"]];
  for(const [url,schema,kind] of sources){
   try{const res=await fetch(url,{cache:"no-store"});if(!res.ok)continue;
     const d=await res.json();if(d.schema!==schema)continue;
-    for(const row of d.files||[]){if(kind==="ipak")ipakIndex[row.source_key]=row;else soundIndex[row.source_key]=row}
+    for(const row of d.files||[]){if(kind==="ipak")ipakIndex[row.source_key]=row;else if(kind==="sound")soundIndex[row.source_key]=row;else wadIndex[row.source_key]=row}
   }catch(e){console.warn("Nested source directory not yet available",e)}
  }
  if(chosen)inspect(chosen);
@@ -85,14 +86,14 @@ async function loadNestedDirectories(){
 }
 function renderNestedProof(p,item,kind){
  const panel=$("proofPanel"),box=$("proofContent");panel.style.display="block";box.replaceChildren();
- const verified=kind==="ipak"?p.status==="ipak_index_validated":p.status==="bank_entry_index_validated";
+ const verified=kind==="ipak"?p.status==="ipak_index_validated":kind==="sound"?p.status==="bank_entry_index_validated":p.status==="wad_directory_validated";
  const count=kind==="ipak"?p.index_entry_count:p.entry_count;
- const intro=el("p","",(kind==="ipak"?"IPAK index":"Sound bank index")+" — "+(verified?"structure verified":"not fully verified")+
+ const intro=el("p","",(kind==="ipak"?"IPAK index":kind==="sound"?"Sound bank index":"T3w WAD nested directory")+" — "+(verified?"structure verified":"not fully verified")+
  ". Actual original R2 byte ranges were checked, but payload contents were not downloaded or semantically decoded.");
  box.append(intro);
  const cells=el("div","proofmetrics");const metric=(k,v)=>{const d=el("div");d.append(el("small","",k),el("strong","",v));return d};
  cells.append(metric("Original file",pretty(p.original_r2_size)),metric("Indexed records",count===undefined?"Unresolved":fmt(count)),
- metric("Validated index bytes",pretty(kind==="ipak"?(p.index_entry_table_bytes||0):(p.entry_directory_bytes||0))),
+ metric("Validated index bytes",pretty(kind==="ipak"?(p.index_entry_table_bytes||0):(kind==="sound"?(p.entry_directory_bytes||0):(p.entry_table_bytes||0)))),
  metric("Full original SHA256","Not collected in range audit"));box.append(cells);
  if(p.sections){
   box.append(el("h3","","Physical source sections"));
@@ -107,6 +108,14 @@ function renderNestedProof(p,item,kind){
   const list=el("div","scrollproof"),tab=el("table"),body=el("tbody");
   for(const [fmtCode,n] of Object.entries(p.audio_format_code_counts)){const row=el("tr");row.append(el("td","mono","Code "+fmtCode),el("td","mono",fmt(n)+" indexed clips"));body.append(row)}
   tab.append(body);list.append(tab);box.append(list);
+ }
+ if(p.entries_sample?.length){
+  box.append(el("h3","","Original WAD nested filenames (sample)"));
+  const scroll=el("div","scrollproof"),table=el("table"),body=el("tbody");
+  for(const entry of p.entries_sample){const tr=el("tr");
+   tr.append(el("td","mono",entry.name),el("td","mono",pretty(entry.compressed_bytes)),el("td","mono",fmt(entry.source_offset)));
+   body.append(tr)}table.append(body);scroll.append(table);box.append(scroll);
+  if(p.entries_sample_truncated)box.append(el("p","foot","Showing first "+p.entries_sample.length+" indexed entries; full table validated on original R2."));
  }
  if(p.error)box.append(el("p","prooferr",p.error));
  box.append(el("h3","","Source evidence"));
@@ -265,6 +274,8 @@ function inspect(item){chosen=item;
    renderNestedProof(ipakIndex[item.key],item,"ipak");
  else if(game==="bo2"&&(item?.extension==="sabs"||item?.extension==="sabl")&&soundIndex[item.key]&&soundIndex[item.key].original_r2_size===item.bytes)
    renderNestedProof(soundIndex[item.key],item,"sound");
+ else if(game==="bo2"&&item?.extension==="wad"&&wadIndex[item.key]&&wadIndex[item.key].original_r2_size===item.bytes)
+   renderNestedProof(wadIndex[item.key],item,"wad");
  else if(game==="bo2"&&item?.extension==="ff"&&serverIndex[item.key]&&serverIndex[item.key].original_listed_bytes===item.bytes){
    const proof=serverIndex[item.key];
    renderClientProof({...proof,structural_expanded_bytes:proof.expanded_directory_bytes,unknown_expanded_bytes:proof.expanded_unknown_bytes,actual_original_bytes:proof.original_authenticated_bytes},item);
@@ -276,12 +287,12 @@ function inspect(item){chosen=item;
     "Source header checked using original HTTP 206 bytes 0–63. Signature: "+hdr.signature_status+"; version: "+(hdr.version??"unknown")+". Full-file SHA-256, decryption, nested assets, and semantic byte meaning have NOT been checked for this object.":
     "No completed original-source byte audit yet; R2 inventory metadata only.";
  }
- const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const general=sourceHeaderIndex[item.key],authMagic=general?.http_range_verified&&general?.r2_size===item.bytes?general:null,ip=ipakIndex[item.key],snd=soundIndex[item.key],deep=ip?.original_r2_size===item.bytes?ip:snd?.original_r2_size===item.bytes?snd:null;
+ const box=$("inspector");box.replaceChildren();if(!item){box.textContent="Select a file to inspect its source identity and coverage status.";return}const general=sourceHeaderIndex[item.key],authMagic=general?.http_range_verified&&general?.r2_size===item.bytes?general:null,ip=ipakIndex[item.key],snd=soundIndex[item.key],wad=wadIndex[item.key],deep=ip?.original_r2_size===item.bytes?ip:snd?.original_r2_size===item.bytes?snd:wad?.original_r2_size===item.bytes?wad:null;
  const rows=[["Original R2 object key",item.key],["Verified source magic",authMagic?
    (authMagic.signature+" | "+(authMagic.signature8_ascii||"no signature")+" | "+(authMagic.signature8_hex||"")):
-   (headerIndex[item.key]?.signature_prefix8_ascii||"Not checked")],["Header evidence",authMagic?"Original bytes 0–"+(authMagic.bytes_sampled-1)+" / HTTP 206 exact Content-Range":"Not evaluated"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets",deep?.status==="ipak_index_validated"?"IPAK entries validated: "+fmt(deep.index_entry_count):deep?.status==="bank_entry_index_validated"?"Audio entries validated: "+fmt(deep.entry_count):"Not audited"],["Byte-range ownership",deep?"Header and directory physical ranges identified; payload unknown":"Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
-function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,family=$("family").value,asset=$("xasset").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type)&&(!family||familyOf(x)===family)&&(!asset||(clientIndex[x.key]?.type_counts?.[asset]||serverIndex[x.key]?.type_counts?.[asset])));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes,clientProof=clientIndex[item.key]?.original_listed_bytes===item.bytes?clientIndex[item.key]:null,serverProof=serverIndex[item.key]?.original_listed_bytes===item.bytes?serverIndex[item.key]:null,sourceHeader=sourceHeaderIndex[item.key]?.http_range_verified&&sourceHeaderIndex[item.key]?.r2_size===item.bytes?sourceHeaderIndex[item.key]:null,ipak=ipakIndex[item.key]?.original_r2_size===item.bytes?ipakIndex[item.key]:null,sound=soundIndex[item.key]?.original_r2_size===item.bytes?soundIndex[item.key]:null;
- tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader||clientProof||serverProof||sourceHeader||ipak||sound?"pill":"tag",proofIndex[item.key]?"Verified directory":clientProof?.state==="xasset_directory_validated"||serverProof?.state==="xasset_directory_validated"?"Verified directory":clientProof?.state==="empty_expanded_stream"?"Empty expanded":serverProof?.state==="unsigned_xchunks_decoded_directory_unresolved"?"Decompressed":clientProof?.state||serverProof?.state?"Parse issue":ipak?.status==="ipak_index_validated"?"IPAK index":sound?.status==="bank_entry_index_validated"?"Audio index":ipak||sound?"Index issue":verifiedHeader||sourceHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("family").style.display=game==="bo2"?"":"none";$("xasset").style.display=game==="bo2"&&typeInventory?"":"none";renderTypeInventory();$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
+   (headerIndex[item.key]?.signature_prefix8_ascii||"Not checked")],["Header evidence",authMagic?"Original bytes 0–"+(authMagic.bytes_sampled-1)+" / HTTP 206 exact Content-Range":"Not evaluated"],["Physical size",fmt(item.bytes)+" bytes"],["Last modified",item.uploaded||"Not supplied"],["R2 ETag",item.etag||"Not supplied (not a SHA-256 proof)"],["Object inventory","Indexed (R2 listing)"],["Container / nested assets",deep?.status==="ipak_index_validated"?"IPAK entries validated: "+fmt(deep.index_entry_count):deep?.status==="bank_entry_index_validated"?"Audio entries validated: "+fmt(deep.entry_count):deep?.status==="wad_directory_validated"?"Nested WAD entries validated: "+fmt(deep.entry_count):"Not audited"],["Byte-range ownership",deep?"Header and directory physical ranges identified; payload unknown":"Not audited"],["Meaning of each field","Not audited"],["Cross-fixture validation","Not audited"],["Original source bytes","Not available through this website"]];for(const [key,value] of rows){const d=el("div","detailrow");d.append(el("div","k",key),el("div","v mono",value));box.append(d)}}
+function render(){const q=$("find").value.trim().toLowerCase(),type=$("type").value,family=$("family").value,asset=$("xasset").value,filtered=items.filter(x=>(!q||x.path.toLowerCase().includes(q))&&(!type||x.extension===type)&&(!family||familyOf(x)===family)&&(!asset||(clientIndex[x.key]?.type_counts?.[asset]||serverIndex[x.key]?.type_counts?.[asset])));const tbody=$("rows");tbody.replaceChildren();for(const item of filtered.slice(0,500)){const tr=el("tr","pick"+(item.key===chosen?.key?" selected":""));tr.tabIndex=0;const header=headerIndex[item.key],verifiedHeader=header?.r2_content_range_verified&&header?.r2_listed_bytes===item.bytes,clientProof=clientIndex[item.key]?.original_listed_bytes===item.bytes?clientIndex[item.key]:null,serverProof=serverIndex[item.key]?.original_listed_bytes===item.bytes?serverIndex[item.key]:null,sourceHeader=sourceHeaderIndex[item.key]?.http_range_verified&&sourceHeaderIndex[item.key]?.r2_size===item.bytes?sourceHeaderIndex[item.key]:null,ipak=ipakIndex[item.key]?.original_r2_size===item.bytes?ipakIndex[item.key]:null,sound=soundIndex[item.key]?.original_r2_size===item.bytes?soundIndex[item.key]:null,wad=wadIndex[item.key]?.original_r2_size===item.bytes?wadIndex[item.key]:null;
+ tr.append(el("td","path mono",item.path),el("td","",item.extension),el("td","mono",pretty(item.bytes)),el("td",proofIndex[item.key]||verifiedHeader||clientProof||serverProof||sourceHeader||ipak||sound||wad?"pill":"tag",proofIndex[item.key]?"Verified directory":clientProof?.state==="xasset_directory_validated"||serverProof?.state==="xasset_directory_validated"?"Verified directory":clientProof?.state==="empty_expanded_stream"?"Empty expanded":serverProof?.state==="unsigned_xchunks_decoded_directory_unresolved"?"Decompressed":clientProof?.state||serverProof?.state?"Parse issue":ipak?.status==="ipak_index_validated"?"IPAK index":sound?.status==="bank_entry_index_validated"?"Audio index":wad?.status==="wad_directory_validated"?"WAD directory":ipak||sound||wad?"Index issue":verifiedHeader||sourceHeader?"Header checked":"Indexed only"));tr.onclick=()=>{inspect(item);render()};tr.onkeydown=e=>{if(e.key==="Enter"){inspect(item);render()}};tbody.append(tr)}$("empty").hidden=filtered.length!==0;$("family").style.display=game==="bo2"?"":"none";$("xasset").style.display=game==="bo2"&&typeInventory?"":"none";renderTypeInventory();$("loaded").textContent=fmt(items.length);$("observed").textContent=fmt(games.find(x=>x.id===game).observed);$("heading").textContent=games.find(x=>x.id===game).name+" · original files";$("pageNote").textContent=(filtered.length>500?"Showing first 500 matched rows. ":"")+"Filtering "+fmt(items.length)+" loaded file records; "+fmt(filtered.length)+" match. Full prefix count from Oct 27 snapshot: "+fmt(games.find(x=>x.id===game).observed)+".";
 $("more").disabled=!hasMore||busy;$("more").textContent=busy?"Reading R2 listing…":hasMore?"Load next 400 files":"All objects in this collection loaded";
 const types={};for(const f of items)types[f.extension]=(types[f.extension]||0)+1;const keys=Object.keys(types).sort((a,b)=>types[b]-types[a]);const current=$("type").value;$("type").replaceChildren();$("type").append(el("option","","All extensions"));$("type").firstChild.value="";keys.sort().forEach(k=>{const o=el("option","",k+" ("+types[k]+")");o.value=k;$("type").append(o)});$("type").value=keys.includes(current)?current:"";
 const bars=$("typeBars");bars.replaceChildren();const max=Math.max(1,...Object.values(types));Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,12).forEach(([k,n])=>{const row=el("div","typerow");row.append(el("span","mono",k));const track=el("div","track"),fill=el("span");fill.style.width=(n/max*100)+"%";track.append(fill);row.append(track,el("span","mono",fmt(n)));bars.append(row)});if(!items.length)bars.textContent="No files loaded yet."}
@@ -307,6 +318,10 @@ export default {
     if(request.method !== "GET") return asJson({error:"Read-only explorer"},405);
     const url = new URL(request.url);
     if(url.pathname==="/api/games") return asJson({schema:"source-observatory/v1",snapshot_date:"2026-10-27",games:GAMES});
+    if(url.pathname==="/api/t6/wads"){
+      try{const j=await getProof("wad-index.json");return j?.schema==="source-observatory/t6-wad-index/v1"&&j?.files?.length===366?asJson(j):asJson({error:"WAD directory report pending"},404)}
+      catch(e){return asJson({error:"WAD directory report unavailable",detail:String(e)},503)}
+    }
     if(url.pathname==="/api/t6/ipaks"){
       try{const j=await getProof("ipak-index.json");return j?.schema==="source-observatory/t6-ipak-index/v1"&&j?.files?.length===23?asJson(j):asJson({error:"IPAK proof unavailable"},404)}
       catch(e){return asJson({error:"IPAK index cannot be loaded",detail:String(e)},503)}
