@@ -1,0 +1,47 @@
+name: H1 original uploaded image PAK range audit
+on:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/mwr_h1_pak_range_probe.py"
+      - "tests/test_mwr_h1_pak_range_probe.py"
+      - ".github/workflows/mwr-h1-pak-range-audit.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit-original-pak-ranges:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate H1 64-bit source offsets without downloading source files
+        run: python3 -m unittest discover -s tests -p test_mwr_h1_pak_range_probe.py -v
+      - name: Check original map descriptor ranges against newly uploaded PAK objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/mwr_h1_pak_range_probe.py \
+            --stem mp_crash_snow \
+            --origin https://r2.houseofkublai.com \
+            --prefix h1/h1_full_files/zone \
+            --report "$RUNNER_TEMP/mwr-h1-pak-range-audit.json"
+          python3 - "$RUNNER_TEMP/mwr-h1-pak-range-audit.json" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1]))
+          if d["source_rows"]!=13580 or d["referenced_archives"]!=33:
+              raise SystemExit("unexpected original H1 map descriptor census")
+          present=[a for a in d["archives"]
+                   if a["status"]=="original_range_proven_not_texture_owned"]
+          print("Original source-backed PAK byte windows checked:",len(present))
+          print("Covered descriptor rows:",d["covered_descriptor_rows"])
+          if not present:raise SystemExit("No uploaded H1 source PAK windows readable")
+          PY
+      - name: Preserve metadata-only provenance; never upload proprietary texture bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mwr-h1-pak-range-audit
+          path: ${{ runner.temp }}/mwr-h1-pak-range-audit.json
+          if-no-files-found: warn
+          retention-days: 4
