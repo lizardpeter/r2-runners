@@ -143,7 +143,9 @@ def inspect_comworld_after_prefix(raw,decoded_cursor):
         radius,cos_outer,cos_inner=struct.unpack_from("<3f",raw,off+80)
         physically_based=raw[off+2]
         shadow=raw[off+1]
-        nice_color=all(math.isfinite(x) and 0<=x<=64 for x in color) and any(x>0 for x in color)
+        # Native H1 physically based local RGB can exceed 50,000;
+        # the common game preview preserves chromaticity by peak-normalizing.
+        nice_color=all(math.isfinite(x) and 0<=x<2_000_000 for x in color) and any(x>0 for x in color)
         norm=sum(x*x for x in direction)**0.5
         nice_direction=math.isfinite(norm) and norm>1e-6
         good_fields=(math.isfinite(radius) and math.isfinite(cos_outer)
