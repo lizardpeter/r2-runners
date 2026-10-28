@@ -1,0 +1,56 @@
+name: MWR public Cargo crates for private offline local build
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mwr-public-cargo-vendor.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-public-rust-crates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Resolve and vendor only public crates used by the H1 importer and neutral scene
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/mwr-public-deps"
+          mkdir -p "$work/src" "$work/.cargo"
+          cat > "$work/Cargo.toml" <<'TOML'
+          [package]
+          name = "mwr-public-deps-only"
+          version = "0.1.0"
+          edition = "2021"
+          [dependencies]
+          lz4_flex = "0.11"
+          flate2 = "1"
+          memchr = "2"
+          serde = { version = "1", features = ["derive", "rc"] }
+          bytemuck = { version = "1", features = ["min_const_generics", "extern_crate_alloc"] }
+          half = "2"
+          TOML
+          echo 'fn main() {}' > "$work/src/main.rs"
+          cd "$work"
+          cargo generate-lockfile
+          cargo vendor --locked --versioned-dirs vendor > /dev/null
+          cat > .cargo/config.toml <<'CONFIG'
+          [source.crates-io]
+          replace-with = "vendored-sources"
+          [source.vendored-sources]
+          directory = "vendor"
+          CONFIG
+          for pkg in lz4_flex flate2 memchr serde bytemuck half; do
+            find vendor -maxdepth 1 -type d -name "$pkg-*" | grep -q .
+          done
+          tar -czf "$RUNNER_TEMP/mwr-public-vendor.tar.gz" -C "$work" Cargo.lock vendor .cargo
+          ls -lh "$RUNNER_TEMP/mwr-public-vendor.tar.gz"
+      - name: Transfer only publicly redistributable dependency source crates
+        uses: actions/upload-artifact@v4
+        with:
+          name: mwr-public-cargo-vendor
+          path: ${{ runner.temp }}/mwr-public-vendor.tar.gz
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 2
