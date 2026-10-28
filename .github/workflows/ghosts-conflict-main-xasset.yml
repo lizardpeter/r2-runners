@@ -162,7 +162,16 @@ jobs:
                               assert end>=body_at,"ComPrimaryLight original name missing"
                               original_name=x[body_at:end].decode("utf8","replace")
                               body_at=end+1
-                          lights.append(dict(type=x[at],name=original_name))
+                          vectors=struct.unpack_from("<3f3f3f3ffff",x,at+4)
+                          lights.append(dict(
+                              type=x[at],name=original_name,
+                              color=[round(c,7) for c in vectors[0:3]],
+                              direction=[round(c,7) for c in vectors[3:6]],
+                              origin_inches=[round(c,3) for c in vectors[9:12]],
+                              radius_inches=round(vectors[12],4),
+                              cos_outer=round(vectors[13],7),
+                              cos_inner=round(vectors[14],7),
+                          ))
                   else:
                       assert nlights==0,"original ComWorld lights have unresolved source handle"
                   brushes=u32(x,com_at+24)
@@ -186,6 +195,14 @@ jobs:
                       original_comworld_primary_lights=nlights,
                       original_comworld_light_types=original_light_types,
                       original_comworld_first_lights=lights[:8],
+                      original_comworld_all_light_types_directions_cones=[
+                          dict(type=entry["type"],
+                               radius_inches=entry["radius_inches"],
+                               direction=entry["direction"],
+                               cos_outer=entry["cos_outer"],
+                               cos_inner=entry["cos_inner"],
+                               name=entry["name"]) for entry in lights
+                      ],
                       original_next_asset_body_offset=body_at,
                       limitation="Actual XAsset 0..22 body walk only; not a complete 1707-XAsset map or Vulkan frame"
                   )
