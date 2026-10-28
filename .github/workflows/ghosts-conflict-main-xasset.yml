@@ -203,8 +203,6 @@ jobs:
                           original_directory_offset=directory,
                           original_netconst_asset_count=source_netconst_count,
                           original_inline_netconst_strings=authored_strings,
-                      original_rawfile_assets_walked=rawfiles,
-                      original_comworld_asset_index=current_asset,
                           original_rawfile_assets_walked=rawfiles,
                           first_unwalked_asset=current_asset,
                           first_unwalked_type=next_type,
