@@ -54,10 +54,11 @@ jobs:
                   if not decoder.eof:
                       decoded=decoder.decompress(b)
                       tmp.write(decoded);hasher.update(decoded)
-                      if decoder.eof:
-                          assert not any(decoder.unused_data),"nonzero signed FastFile suffix"
-                  else:
-                      assert not any(b),"nonzero signed trailing source block"
+                      # Signed IW6 physical blocks MAY carry original
+                      # nonzero bytes beyond compressed XFile EOF. The
+                      # production Rust decoder authenticates those blocks
+                      # but stops the zlib reader at its genuine source EOF.
+                      # Do not demand invented zero padding.
                   blocks+=1
               assert offset==len(src) and decoder.eof,"incomplete signed retail source"
               remainder=decoder.flush()
