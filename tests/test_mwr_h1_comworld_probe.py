@@ -18,6 +18,37 @@ class H1ComWorldTest(unittest.TestCase):
         self.assertEqual(result["env_status"],"complete_original_light_environment_records")
         self.assertEqual(result["light_env_records_verified"],1)
         self.assertEqual(result["next_source_asset_candidate_cursor"],len(raw))
+    def test_authentic_h1_hdr_spots_and_directional_light_are_preview_eligible(self):
+        root=struct.pack("<QIIQIIQ",INLINE,1,3,INLINE,1,0,INLINE)
+        lights=[]
+        for kind,color,radius in [
+            (1,(0.13695666,0.22819264,0.4),0.0),
+            (2,(54250.113,44205.47,34963.06),380.0),
+            (3,(6200.012,2427.758,1249.654),65.0),
+        ]:
+            light=bytearray(LIGHT_BYTES)
+            light[0]=kind
+            light[1]=1
+            light[2]=1
+            struct.pack_into("<3f",light,8,*color)
+            struct.pack_into("<3f",light,20,0.0,0.0,1.0)
+            struct.pack_into("<f",light,80,radius)
+            struct.pack_into("<f",light,84,0.5)
+            struct.pack_into("<f",light,88,0.8)
+            lights.append(light)
+        env=struct.pack("<4HBx",0,1,2,0,3)
+        raw=root+b"maps/mp/test.d3dbsp\0"+b"".join(lights)+env
+        report=inspect_comworld_after_prefix(raw,0)
+        counts=report["original_H1_neutral_light_preview_eligibility"][
+            "source_native_light_classes_and_ranges"]
+        self.assertEqual(counts,{
+            "sun_candidates":1,"spot_candidates":1,"omni_candidates":1,
+            "rejected_source_lights":0,
+        })
+        self.assertEqual(
+            report["original_H1_neutral_light_preview_eligibility"][
+                "max_eligible_native_local_radius"],380.0)
+        self.assertEqual(report["env_status"],"complete_original_light_environment_records")
     def test_corrupted_light_environment_reference_not_admitted(self):
         root=struct.pack("<QIIQIIQ",INLINE,1,1,INLINE,1,0,INLINE)
         light=bytes(LIGHT_BYTES)
