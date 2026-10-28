@@ -1,0 +1,2292 @@
+{
+  "schema": "source-observatory/r2-fastfile-corpus/v1",
+  "snapshot_date": "2026-10-27",
+  "prefix": "bo2/",
+  "complete_prefix_listing": true,
+  "objects": [
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/code_post_gfx_mp.ff",
+      "bytes": 261440
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/code_pre_gfx_mp.ff",
+      "bytes": 6272
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/common_mp.ff",
+      "bytes": 22237824
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/common_patch_mp.ff",
+      "bytes": 549760
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/dev_mp.ff",
+      "bytes": 36672
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/dlc1_load_mp.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/dlc2_load_mp.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/dlc3_load_mp.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/dlc4_load_mp.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_cd_mp.ff",
+      "bytes": 32960
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_cd_sand_mp.ff",
+      "bytes": 33024
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_fbi_mp.ff",
+      "bytes": 27008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_isa_mp.ff",
+      "bytes": 30528
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_isa_sand_mp.ff",
+      "bytes": 30592
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_multiteam_mp.ff",
+      "bytes": 46144
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_multiteam_sand_mp.ff",
+      "bytes": 45056
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_multiteam_snow_mp.ff",
+      "bytes": 43008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_multiteam_wet_mp.ff",
+      "bytes": 46528
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_pla_mp.ff",
+      "bytes": 27648
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_pla_wet_mp.ff",
+      "bytes": 27648
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_pmc_mp.ff",
+      "bytes": 27200
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_pmc_snow_mp.ff",
+      "bytes": 31744
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_seals_mp.ff",
+      "bytes": 28096
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_seals_snow_mp.ff",
+      "bytes": 29248
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/faction_seals_wet_mp.ff",
+      "bytes": 28160
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/ffotd_tu0_mp_147.ff",
+      "bytes": 2624
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_bridge.ff",
+      "bytes": 3649088
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_carrier.ff",
+      "bytes": 2773504
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_castaway.ff",
+      "bytes": 3298496
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_concert.ff",
+      "bytes": 3589952
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_dig.ff",
+      "bytes": 3301952
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_dockside.ff",
+      "bytes": 2459520
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_downhill.ff",
+      "bytes": 4612544
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_drone.ff",
+      "bytes": 3567488
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_express.ff",
+      "bytes": 4148160
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_frostbite.ff",
+      "bytes": 3903488
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_hijacked.ff",
+      "bytes": 3661184
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_hydro.ff",
+      "bytes": 3193856
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_la.ff",
+      "bytes": 4195712
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_magma.ff",
+      "bytes": 4353600
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_meltdown.ff",
+      "bytes": 3701760
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_mirage.ff",
+      "bytes": 5223680
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_nightclub.ff",
+      "bytes": 4178368
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_nuketown_2020.ff",
+      "bytes": 4995264
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_overflow.ff",
+      "bytes": 3364352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_paintball.ff",
+      "bytes": 2592768
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_pod.ff",
+      "bytes": 4935040
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_raid.ff",
+      "bytes": 4048256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_skate.ff",
+      "bytes": 4086784
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_slums.ff",
+      "bytes": 2742656
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_socotra.ff",
+      "bytes": 5731456
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_studio.ff",
+      "bytes": 3378304
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_takeoff.ff",
+      "bytes": 3065280
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_turbine.ff",
+      "bytes": 4678400
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_uplink.ff",
+      "bytes": 4174400
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_vertigo.ff",
+      "bytes": 3357440
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/mp_village.ff",
+      "bytes": 3597248
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/patch_mp.ff",
+      "bytes": 2701504
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/patch_ui_mp.ff",
+      "bytes": 1061824
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PC Server/zone/dedicated/ui_mp.ff",
+      "bytes": 9920
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/code_post_gfx_1080_mp.ff",
+      "bytes": 23360
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/code_post_gfx_720_mp.ff",
+      "bytes": 20736
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/code_post_gfx_mp.ff",
+      "bytes": 260928
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/code_pre_gfx_mp.ff",
+      "bytes": 5888
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/common_mp.ff",
+      "bytes": 22237632
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/common_patch_mp.ff",
+      "bytes": 441216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dev_mp.ff",
+      "bytes": 36864
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dev_zm.ff",
+      "bytes": 35008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dev.ff",
+      "bytes": 38144
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dlc0_load_mp.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dlc0_load.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dlc1_load_mp.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dlc2_load_mp.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/dlczm0_load_zm.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/en_patch_loc_mp.ff",
+      "bytes": 41536
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/en_patch_ui_loc_mp.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_cd_mp.ff",
+      "bytes": 32960
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_fbi_mp.ff",
+      "bytes": 27008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_isa_mp.ff",
+      "bytes": 30528
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_multiteam_mp.ff",
+      "bytes": 46144
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_multiteam_snow_mp_loc.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_multiteam_snow_mp.ff",
+      "bytes": 43008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_pla_mp.ff",
+      "bytes": 27648
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_pmc_mp.ff",
+      "bytes": 27200
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_pmc_snow_mp_loc.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_pmc_snow_mp.ff",
+      "bytes": 31744
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_seals_mp.ff",
+      "bytes": 28096
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_seals_snow_mp_loc.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/faction_seals_snow_mp.ff",
+      "bytes": 29248
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu0_mp_146.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu1_146.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu1_mp_146.ff",
+      "bytes": 3840
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu1_zm_146.ff",
+      "bytes": 1664
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu2_146.ff",
+      "bytes": 448
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu2_mp_146.ff",
+      "bytes": 45888
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu2_zm_146.ff",
+      "bytes": 1728
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu3_mp_146.ff",
+      "bytes": 128448
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu4_mp_146.ff",
+      "bytes": 3904
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu5_mp_146.ff",
+      "bytes": 4032
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu6_mp_146.ff",
+      "bytes": 4224
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu7_146.ff",
+      "bytes": 1536
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu7_mp_146.ff",
+      "bytes": 4480
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu7_zm_146.ff",
+      "bytes": 3072
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotd_tu8_mp_146.ff",
+      "bytes": 4992
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ffotdb_tu0_mp_146.ff",
+      "bytes": 27584
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/frontend_patch.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_carrier.ff",
+      "bytes": 2773568
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_concert_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_concert.ff",
+      "bytes": 849088
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_dockside.ff",
+      "bytes": 2459520
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_downhill_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_downhill.ff",
+      "bytes": 4612544
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_drone.ff",
+      "bytes": 3567488
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_express.ff",
+      "bytes": 4148160
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_hijacked.ff",
+      "bytes": 3661184
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_hydro_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_hydro.ff",
+      "bytes": 3193728
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_la.ff",
+      "bytes": 4195712
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_magma_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_magma.ff",
+      "bytes": 2871680
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_meltdown.ff",
+      "bytes": 3701824
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_mirage_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_mirage.ff",
+      "bytes": 5223680
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_nightclub.ff",
+      "bytes": 4178368
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_nuketown_2020_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_nuketown_2020.ff",
+      "bytes": 4997184
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_overflow.ff",
+      "bytes": 3364352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_raid.ff",
+      "bytes": 4048256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_skate_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_skate.ff",
+      "bytes": 4086784
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_slums.ff",
+      "bytes": 2742720
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_socotra.ff",
+      "bytes": 5731520
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_studio_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_studio.ff",
+      "bytes": 3801216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_turbine.ff",
+      "bytes": 4678400
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_vertigo_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_vertigo.ff",
+      "bytes": 1006592
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/mp_village.ff",
+      "bytes": 3597248
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_loc_mp.ff",
+      "bytes": 41664
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_loc_zm.ff",
+      "bytes": 30976
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_loc.ff",
+      "bytes": 181696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_mp.ff",
+      "bytes": 2625984
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_ui_loc_mp.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_ui_mp.ff",
+      "bytes": 1021760
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_ui_zm.ff",
+      "bytes": 215552
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch_zm.ff",
+      "bytes": 1824320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/patch.ff",
+      "bytes": 2601984
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu0_mp_146.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu1_mp_146.ff",
+      "bytes": 3712
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu2_mp_146.ff",
+      "bytes": 54144
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu3_mp_146.ff",
+      "bytes": 85312
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu4_mp_146.ff",
+      "bytes": 3776
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu5_mp_146.ff",
+      "bytes": 3968
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu6_mp_146.ff",
+      "bytes": 4160
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu7_mp_146.ff",
+      "bytes": 4352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotd_tu8_mp_146.ff",
+      "bytes": 4352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/sv_ffotdb_tu0_mp_146.ff",
+      "bytes": 27584
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/ui_mp.ff",
+      "bytes": 9920
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/zm_prison_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/zm_prison_patch.ff",
+      "bytes": 153728
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/zm_prison.ff",
+      "bytes": 15952384
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/zm_tomb_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/PS3 Server/zone/dedicated/zm_tomb.ff",
+      "bytes": 15010496
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_1080_mp.ff",
+      "bytes": 25216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_1080_zm.ff",
+      "bytes": 25216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_1080.ff",
+      "bytes": 25216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_720_mp.ff",
+      "bytes": 23104
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_720_zm.ff",
+      "bytes": 23104
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_720.ff",
+      "bytes": 23104
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_mp.ff",
+      "bytes": 258944
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx_zm.ff",
+      "bytes": 232448
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_post_gfx.ff",
+      "bytes": 75392
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_pre_gfx_mp.ff",
+      "bytes": 6784
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_pre_gfx_zm.ff",
+      "bytes": 6848
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/code_pre_gfx.ff",
+      "bytes": 5632
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/common_mp.ff",
+      "bytes": 22696064
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/common_patch_mp.ff",
+      "bytes": 176768
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/common_zm.ff",
+      "bytes": 9573632
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/common.ff",
+      "bytes": 20894656
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/dev_mp.ff",
+      "bytes": 42304
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/dev_zm.ff",
+      "bytes": 40704
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/dev.ff",
+      "bytes": 43648
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/dlc0_load_mp.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/dlc1_load_zm.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/dlczm0_load_zm.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/faction_cd_mp.ff",
+      "bytes": 33856
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/faction_fbi_mp.ff",
+      "bytes": 27776
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/faction_isa_mp.ff",
+      "bytes": 31296
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/faction_multiteam_mp.ff",
+      "bytes": 47680
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/faction_pla_mp.ff",
+      "bytes": 28352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/faction_pmc_mp.ff",
+      "bytes": 27968
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/faction_seals_mp.ff",
+      "bytes": 28864
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu0_148.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu0_mp_148.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu0_zm_148.ff",
+      "bytes": 1600
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu1_148.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu1_mp_148.ff",
+      "bytes": 2880
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu1_zm_148.ff",
+      "bytes": 1664
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu2_148.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu2_mp_148.ff",
+      "bytes": 25216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu2_zm_148.ff",
+      "bytes": 51584
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu3_148.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu3_mp_148.ff",
+      "bytes": 2880
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ffotd_tu3_zm_148.ff",
+      "bytes": 1664
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/frontend_gump_sf_a.ff",
+      "bytes": 17809792
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/frontend_patch.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/frontend.ff",
+      "bytes": 8047232
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_carrier.ff",
+      "bytes": 2953856
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_courtyard.ff",
+      "bytes": 925568
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_dockside.ff",
+      "bytes": 2669120
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_downhill.ff",
+      "bytes": 3016320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_drone.ff",
+      "bytes": 3852032
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_express.ff",
+      "bytes": 4431936
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_firingrange.ff",
+      "bytes": 1913792
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_hijacked.ff",
+      "bytes": 3891712
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_hydro.ff",
+      "bytes": 1419776
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_la.ff",
+      "bytes": 4455552
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_lockdown.ff",
+      "bytes": 782016
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_meltdown.ff",
+      "bytes": 3976512
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_mirage.ff",
+      "bytes": 3814272
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_mountain.ff",
+      "bytes": 2698944
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_nightclub.ff",
+      "bytes": 4449600
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_nuketown_2020_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_nuketown_2020.ff",
+      "bytes": 7595008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_overflow.ff",
+      "bytes": 3632448
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_raid.ff",
+      "bytes": 4251712
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_skate.ff",
+      "bytes": 1373184
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_slums.ff",
+      "bytes": 2931328
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_socotra.ff",
+      "bytes": 6053056
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_turbine.ff",
+      "bytes": 4861888
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_vertigo.ff",
+      "bytes": 138240
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_village.ff",
+      "bytes": 3853952
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/mp_warmuseum.ff",
+      "bytes": 1293312
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_loc_mp.ff",
+      "bytes": 41472
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_loc_zm.ff",
+      "bytes": 36352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_loc.ff",
+      "bytes": 204096
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_mp.ff",
+      "bytes": 2733888
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_ui_loc_mp.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_ui_mp.ff",
+      "bytes": 1139328
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_ui_zm.ff",
+      "bytes": 259776
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch_zm.ff",
+      "bytes": 2024320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/patch.ff",
+      "bytes": 2842112
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/sv_ffotd_tu0_mp_148.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/sv_ffotd_tu1_mp_148.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/sv_ffotd_tu2_mp_148.ff",
+      "bytes": 55424
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/sv_ffotd_tu3_mp_148.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/ui_mp.ff",
+      "bytes": 11456
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/weapon_attach_shared.ff",
+      "bytes": 5760
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/WiiU Server/zone/dedicated/weapons.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/code_post_gfx_1080_mp.ff",
+      "bytes": 23360
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/code_post_gfx_720_mp.ff",
+      "bytes": 20736
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/code_post_gfx_mp.ff",
+      "bytes": 260928
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/code_pre_gfx_mp.ff",
+      "bytes": 5888
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/common_mp.ff",
+      "bytes": 22237632
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/common_patch_mp.ff",
+      "bytes": 441216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dev_mp.ff",
+      "bytes": 36864
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dev_zm.ff",
+      "bytes": 35008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dev.ff",
+      "bytes": 38144
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dlc0_load_mp.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dlc0_load.ff",
+      "bytes": 256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dlc1_load_mp.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dlc2_load_mp.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dlc2_load_zm.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/dlczm0_load_zm.ff",
+      "bytes": 320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/en_patch_loc_mp.ff",
+      "bytes": 41536
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/en_patch_ui_loc_mp.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_cd_mp.ff",
+      "bytes": 32960
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_fbi_mp.ff",
+      "bytes": 27008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_isa_mp.ff",
+      "bytes": 30528
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_multiteam_mp.ff",
+      "bytes": 46144
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_multiteam_snow_mp_loc.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_multiteam_snow_mp.ff",
+      "bytes": 43008
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_pla_mp.ff",
+      "bytes": 27648
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_pmc_mp.ff",
+      "bytes": 27200
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_pmc_snow_mp_loc.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_pmc_snow_mp.ff",
+      "bytes": 31744
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_seals_mp.ff",
+      "bytes": 28096
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_seals_snow_mp_loc.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/faction_seals_snow_mp.ff",
+      "bytes": 29248
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu0_mp_146.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu1_146.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu1_mp_146.ff",
+      "bytes": 3840
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu1_zm_146.ff",
+      "bytes": 1664
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu2_146.ff",
+      "bytes": 448
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu2_mp_146.ff",
+      "bytes": 45888
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu2_zm_146.ff",
+      "bytes": 1728
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu3_mp_146.ff",
+      "bytes": 128448
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu4_mp_146.ff",
+      "bytes": 3904
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu5_mp_146.ff",
+      "bytes": 4032
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu6_mp_146.ff",
+      "bytes": 4224
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu7_146.ff",
+      "bytes": 1536
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu7_mp_146.ff",
+      "bytes": 4480
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu7_zm_146.ff",
+      "bytes": 3072
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu8_146.ff",
+      "bytes": 1792
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu8_mp_146.ff",
+      "bytes": 4992
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotd_tu8_zm_146.ff",
+      "bytes": 3904
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ffotdb_tu0_mp_146.ff",
+      "bytes": 27584
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/frontend_patch.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_carrier.ff",
+      "bytes": 2773568
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_concert_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_concert.ff",
+      "bytes": 849088
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_dockside.ff",
+      "bytes": 2459520
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_downhill_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_downhill.ff",
+      "bytes": 4612544
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_drone.ff",
+      "bytes": 3567488
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_express.ff",
+      "bytes": 4148160
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_hijacked.ff",
+      "bytes": 3661184
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_hydro_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_hydro.ff",
+      "bytes": 3193728
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_la.ff",
+      "bytes": 4195712
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_magma_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_magma.ff",
+      "bytes": 2871680
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_meltdown.ff",
+      "bytes": 3701824
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_mirage_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_mirage.ff",
+      "bytes": 5223680
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_nightclub.ff",
+      "bytes": 4178368
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_nuketown_2020_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_nuketown_2020.ff",
+      "bytes": 4997184
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_overflow.ff",
+      "bytes": 3364352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_raid.ff",
+      "bytes": 4048256
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_skate_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_skate.ff",
+      "bytes": 4086784
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_slums.ff",
+      "bytes": 2742720
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_socotra.ff",
+      "bytes": 5731520
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_studio_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_studio.ff",
+      "bytes": 3801216
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_turbine.ff",
+      "bytes": 4678400
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_vertigo_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_vertigo.ff",
+      "bytes": 1006592
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/mp_village.ff",
+      "bytes": 3597248
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_loc_mp.ff",
+      "bytes": 41664
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_loc_zm.ff",
+      "bytes": 30976
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_loc.ff",
+      "bytes": 181696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_mp.ff",
+      "bytes": 2625984
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_ui_loc_mp.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_ui_loc_zm.ff",
+      "bytes": 192
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_ui_mp.ff",
+      "bytes": 1021760
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_ui_zm.ff",
+      "bytes": 215552
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch_zm.ff",
+      "bytes": 1824320
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/patch.ff",
+      "bytes": 2601984
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu0_mp_146.ff",
+      "bytes": 2816
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu1_mp_146.ff",
+      "bytes": 3712
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu2_mp_146.ff",
+      "bytes": 54144
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu3_mp_146.ff",
+      "bytes": 85312
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu4_mp_146.ff",
+      "bytes": 3776
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu5_mp_146.ff",
+      "bytes": 3968
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu6_mp_146.ff",
+      "bytes": 4160
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu7_mp_146.ff",
+      "bytes": 4352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotd_tu8_mp_146.ff",
+      "bytes": 4352
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/sv_ffotdb_tu0_mp_146.ff",
+      "bytes": 27584
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/ui_mp.ff",
+      "bytes": 9920
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/zm_prison_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/zm_prison_patch.ff",
+      "bytes": 153728
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/zm_prison.ff",
+      "bytes": 15952384
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/zm_tomb_loc.ff",
+      "bytes": 5696
+    },
+    {
+      "key": "bo2/exes/Call of Duty - Black Ops 2 (Server Files) [2013-03-11]/Xbox 360 Server/zone/dedicated/zm_tomb.ff",
+      "bytes": 15010496
+    },
+    {
+      "key": "bo2/zone/all/code_post_gfx_mp.ff",
+      "bytes": 319040
+    },
+    {
+      "key": "bo2/zone/all/code_post_gfx_zm.ff",
+      "bytes": 300608
+    },
+    {
+      "key": "bo2/zone/all/code_post_gfx.ff",
+      "bytes": 414912
+    },
+    {
+      "key": "bo2/zone/all/code_pre_gfx_mp.ff",
+      "bytes": 6912
+    },
+    {
+      "key": "bo2/zone/all/code_pre_gfx_zm.ff",
+      "bytes": 6720
+    },
+    {
+      "key": "bo2/zone/all/code_pre_gfx.ff",
+      "bytes": 5632
+    },
+    {
+      "key": "bo2/zone/all/common_mp.ff",
+      "bytes": 40307072
+    },
+    {
+      "key": "bo2/zone/all/common_patch_mp.ff",
+      "bytes": 907392
+    },
+    {
+      "key": "bo2/zone/all/common_zm.ff",
+      "bytes": 10488640
+    },
+    {
+      "key": "bo2/zone/all/dlc0_load_mp.ff",
+      "bytes": 2880
+    },
+    {
+      "key": "bo2/zone/all/dlc1_load_mp.ff",
+      "bytes": 3008
+    },
+    {
+      "key": "bo2/zone/all/dlc1_load_zm.ff",
+      "bytes": 3328
+    },
+    {
+      "key": "bo2/zone/all/dlc2_load_mp.ff",
+      "bytes": 2944
+    },
+    {
+      "key": "bo2/zone/all/dlc2_load_zm.ff",
+      "bytes": 3264
+    },
+    {
+      "key": "bo2/zone/all/dlc3_load_mp.ff",
+      "bytes": 2944
+    },
+    {
+      "key": "bo2/zone/all/dlc3_load_zm.ff",
+      "bytes": 3456
+    },
+    {
+      "key": "bo2/zone/all/dlc4_load_mp.ff",
+      "bytes": 2944
+    },
+    {
+      "key": "bo2/zone/all/dlc4_load_zm.ff",
+      "bytes": 3328
+    },
+    {
+      "key": "bo2/zone/all/dlczm0_load_zm.ff",
+      "bytes": 3200
+    },
+    {
+      "key": "bo2/zone/all/faction_cd_mp.ff",
+      "bytes": 2536960
+    },
+    {
+      "key": "bo2/zone/all/faction_cd_sand_mp.ff",
+      "bytes": 2537280
+    },
+    {
+      "key": "bo2/zone/all/faction_fbi_mp.ff",
+      "bytes": 3262592
+    },
+    {
+      "key": "bo2/zone/all/faction_isa_mp.ff",
+      "bytes": 2749760
+    },
+    {
+      "key": "bo2/zone/all/faction_isa_sand_mp.ff",
+      "bytes": 2749824
+    },
+    {
+      "key": "bo2/zone/all/faction_multiteam_mp.ff",
+      "bytes": 4420352
+    },
+    {
+      "key": "bo2/zone/all/faction_multiteam_sand_mp.ff",
+      "bytes": 4426816
+    },
+    {
+      "key": "bo2/zone/all/faction_multiteam_snow_mp.ff",
+      "bytes": 4567808
+    },
+    {
+      "key": "bo2/zone/all/faction_multiteam_wet_mp.ff",
+      "bytes": 4421376
+    },
+    {
+      "key": "bo2/zone/all/faction_pla_mp.ff",
+      "bytes": 3281920
+    },
+    {
+      "key": "bo2/zone/all/faction_pla_wet_mp.ff",
+      "bytes": 3282112
+    },
+    {
+      "key": "bo2/zone/all/faction_pmc_mp.ff",
+      "bytes": 3173184
+    },
+    {
+      "key": "bo2/zone/all/faction_pmc_snow_mp.ff",
+      "bytes": 3376192
+    },
+    {
+      "key": "bo2/zone/all/faction_seals_mp.ff",
+      "bytes": 3095232
+    },
+    {
+      "key": "bo2/zone/all/faction_seals_snow_mp.ff",
+      "bytes": 3266688
+    },
+    {
+      "key": "bo2/zone/all/faction_seals_wet_mp.ff",
+      "bytes": 3094592
+    },
+    {
+      "key": "bo2/zone/all/mp_bridge.ff",
+      "bytes": 38450112
+    },
+    {
+      "key": "bo2/zone/all/mp_carrier.ff",
+      "bytes": 30267776
+    },
+    {
+      "key": "bo2/zone/all/mp_castaway.ff",
+      "bytes": 28199488
+    },
+    {
+      "key": "bo2/zone/all/mp_concert.ff",
+      "bytes": 34625536
+    },
+    {
+      "key": "bo2/zone/all/mp_dig.ff",
+      "bytes": 30684288
+    },
+    {
+      "key": "bo2/zone/all/mp_dockside.ff",
+      "bytes": 33729728
+    },
+    {
+      "key": "bo2/zone/all/mp_downhill.ff",
+      "bytes": 38993152
+    },
+    {
+      "key": "bo2/zone/all/mp_drone.ff",
+      "bytes": 34643840
+    },
+    {
+      "key": "bo2/zone/all/mp_express.ff",
+      "bytes": 34712000
+    },
+    {
+      "key": "bo2/zone/all/mp_frostbite.ff",
+      "bytes": 39856064
+    },
+    {
+      "key": "bo2/zone/all/mp_hijacked.ff",
+      "bytes": 30292736
+    },
+    {
+      "key": "bo2/zone/all/mp_hydro.ff",
+      "bytes": 34081984
+    },
+    {
+      "key": "bo2/zone/all/mp_la.ff",
+      "bytes": 36467840
+    },
+    {
+      "key": "bo2/zone/all/mp_magma.ff",
+      "bytes": 39483712
+    },
+    {
+      "key": "bo2/zone/all/mp_meltdown.ff",
+      "bytes": 35719872
+    },
+    {
+      "key": "bo2/zone/all/mp_mirage.ff",
+      "bytes": 41342656
+    },
+    {
+      "key": "bo2/zone/all/mp_nightclub.ff",
+      "bytes": 35839872
+    },
+    {
+      "key": "bo2/zone/all/mp_nuketown_2020.ff",
+      "bytes": 38472064
+    },
+    {
+      "key": "bo2/zone/all/mp_overflow.ff",
+      "bytes": 41972736
+    },
+    {
+      "key": "bo2/zone/all/mp_paintball.ff",
+      "bytes": 35977728
+    },
+    {
+      "key": "bo2/zone/all/mp_pod.ff",
+      "bytes": 36414016
+    },
+    {
+      "key": "bo2/zone/all/mp_raid.ff",
+      "bytes": 35718144
+    },
+    {
+      "key": "bo2/zone/all/mp_skate.ff",
+      "bytes": 41165184
+    },
+    {
+      "key": "bo2/zone/all/mp_slums.ff",
+      "bytes": 41128512
+    },
+    {
+      "key": "bo2/zone/all/mp_socotra.ff",
+      "bytes": 38051200
+    },
+    {
+      "key": "bo2/zone/all/mp_studio.ff",
+      "bytes": 34216640
+    },
+    {
+      "key": "bo2/zone/all/mp_takeoff.ff",
+      "bytes": 33924352
+    },
+    {
+      "key": "bo2/zone/all/mp_turbine.ff",
+      "bytes": 36373504
+    },
+    {
+      "key": "bo2/zone/all/mp_uplink.ff",
+      "bytes": 32782784
+    },
+    {
+      "key": "bo2/zone/all/mp_vertigo.ff",
+      "bytes": 37817600
+    },
+    {
+      "key": "bo2/zone/all/mp_village.ff",
+      "bytes": 35811520
+    },
+    {
+      "key": "bo2/zone/all/patch_mp.ff",
+      "bytes": 3638592
+    },
+    {
+      "key": "bo2/zone/all/patch_ui_mp.ff",
+      "bytes": 1072832
+    },
+    {
+      "key": "bo2/zone/all/patch_ui_zm.ff",
+      "bytes": 265600
+    },
+    {
+      "key": "bo2/zone/all/patch_zm.ff",
+      "bytes": 3001792
+    },
+    {
+      "key": "bo2/zone/all/so_zclassic_zm_buried.ff",
+      "bytes": 19512448
+    },
+    {
+      "key": "bo2/zone/all/so_zclassic_zm_prison.ff",
+      "bytes": 2088384
+    },
+    {
+      "key": "bo2/zone/all/so_zclassic_zm_transit.ff",
+      "bytes": 17538176
+    },
+    {
+      "key": "bo2/zone/all/so_zencounter_zm_buried.ff",
+      "bytes": 15582976
+    },
+    {
+      "key": "bo2/zone/all/so_zencounter_zm_prison.ff",
+      "bytes": 1099392
+    },
+    {
+      "key": "bo2/zone/all/so_zencounter_zm_transit.ff",
+      "bytes": 16097280
+    },
+    {
+      "key": "bo2/zone/all/so_zsurvival_zm_transit.ff",
+      "bytes": 15392832
+    },
+    {
+      "key": "bo2/zone/all/ui_mp.ff",
+      "bytes": 404544
+    },
+    {
+      "key": "bo2/zone/all/ui_zm.ff",
+      "bytes": 384576
+    },
+    {
+      "key": "bo2/zone/all/weapons.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/zone/all/zm_buried_patch.ff",
+      "bytes": 580928
+    },
+    {
+      "key": "bo2/zone/all/zm_buried.ff",
+      "bytes": 53051072
+    },
+    {
+      "key": "bo2/zone/all/zm_highrise_patch.ff",
+      "bytes": 399104
+    },
+    {
+      "key": "bo2/zone/all/zm_highrise.ff",
+      "bytes": 71021440
+    },
+    {
+      "key": "bo2/zone/all/zm_nuked_patch.ff",
+      "bytes": 318080
+    },
+    {
+      "key": "bo2/zone/all/zm_nuked.ff",
+      "bytes": 81817024
+    },
+    {
+      "key": "bo2/zone/all/zm_prison_patch.ff",
+      "bytes": 1476096
+    },
+    {
+      "key": "bo2/zone/all/zm_prison.ff",
+      "bytes": 65981312
+    },
+    {
+      "key": "bo2/zone/all/zm_tomb_patch.ff",
+      "bytes": 1288384
+    },
+    {
+      "key": "bo2/zone/all/zm_tomb.ff",
+      "bytes": 78753344
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_dr_patch.ff",
+      "bytes": 1170048
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_dr.ff",
+      "bytes": 29750976
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_bridge.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_busstation.ff",
+      "bytes": 1814784
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_cornfield.ff",
+      "bytes": 622720
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_diner.ff",
+      "bytes": 2122816
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_farm.ff",
+      "bytes": 1209088
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_forest.ff",
+      "bytes": 53568
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_forest2.ff",
+      "bytes": 557056
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_labs.ff",
+      "bytes": 468160
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_powerstation.ff",
+      "bytes": 2336512
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_prealloc_0.ff",
+      "bytes": 10368
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_prealloc_1.ff",
+      "bytes": 10368
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_prealloc_2.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_prealloc_3.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_town.ff",
+      "bytes": 1589696
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_gump_tunnel.ff",
+      "bytes": 202816
+    },
+    {
+      "key": "bo2/zone/all/zm_transit_patch.ff",
+      "bytes": 685312
+    },
+    {
+      "key": "bo2/zone/all/zm_transit.ff",
+      "bytes": 58935232
+    },
+    {
+      "key": "bo2/zone/english/en_afghanistan.ff",
+      "bytes": 10432
+    },
+    {
+      "key": "bo2/zone/english/en_angola_2.ff",
+      "bytes": 71104
+    },
+    {
+      "key": "bo2/zone/english/en_angola.ff",
+      "bytes": 56704
+    },
+    {
+      "key": "bo2/zone/english/en_blackout.ff",
+      "bytes": 55424
+    },
+    {
+      "key": "bo2/zone/english/en_code_post_gfx_mp.ff",
+      "bytes": 209728
+    },
+    {
+      "key": "bo2/zone/english/en_code_post_gfx_zm.ff",
+      "bytes": 170496
+    },
+    {
+      "key": "bo2/zone/english/en_code_post_gfx.ff",
+      "bytes": 27584
+    },
+    {
+      "key": "bo2/zone/english/en_common_mp.ff",
+      "bytes": 5952
+    },
+    {
+      "key": "bo2/zone/english/en_common_zm.ff",
+      "bytes": 576
+    },
+    {
+      "key": "bo2/zone/english/en_common.ff",
+      "bytes": 7744
+    },
+    {
+      "key": "bo2/zone/english/en_dlc1_load_zm.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_dlc2_load_zm.ff",
+      "bytes": 768
+    },
+    {
+      "key": "bo2/zone/english/en_dlc3_load_zm.ff",
+      "bytes": 640
+    },
+    {
+      "key": "bo2/zone/english/en_dlc4_load_zm.ff",
+      "bytes": 768
+    },
+    {
+      "key": "bo2/zone/english/en_faction_cd_mp.ff",
+      "bytes": 24768
+    },
+    {
+      "key": "bo2/zone/english/en_faction_cd_sand_mp.ff",
+      "bytes": 24768
+    },
+    {
+      "key": "bo2/zone/english/en_faction_fbi_mp.ff",
+      "bytes": 24640
+    },
+    {
+      "key": "bo2/zone/english/en_faction_isa_mp.ff",
+      "bytes": 24704
+    },
+    {
+      "key": "bo2/zone/english/en_faction_isa_sand_mp.ff",
+      "bytes": 24704
+    },
+    {
+      "key": "bo2/zone/english/en_faction_multiteam_mp.ff",
+      "bytes": 148544
+    },
+    {
+      "key": "bo2/zone/english/en_faction_multiteam_sand_mp.ff",
+      "bytes": 148544
+    },
+    {
+      "key": "bo2/zone/english/en_faction_multiteam_snow_mp.ff",
+      "bytes": 148544
+    },
+    {
+      "key": "bo2/zone/english/en_faction_multiteam_wet_mp.ff",
+      "bytes": 148544
+    },
+    {
+      "key": "bo2/zone/english/en_faction_pla_mp.ff",
+      "bytes": 22208
+    },
+    {
+      "key": "bo2/zone/english/en_faction_pla_wet_mp.ff",
+      "bytes": 22208
+    },
+    {
+      "key": "bo2/zone/english/en_faction_pmc_mp.ff",
+      "bytes": 24640
+    },
+    {
+      "key": "bo2/zone/english/en_faction_pmc_snow_mp.ff",
+      "bytes": 24640
+    },
+    {
+      "key": "bo2/zone/english/en_faction_seals_mp.ff",
+      "bytes": 25664
+    },
+    {
+      "key": "bo2/zone/english/en_faction_seals_snow_mp.ff",
+      "bytes": 25664
+    },
+    {
+      "key": "bo2/zone/english/en_faction_seals_wet_mp.ff",
+      "bytes": 25664
+    },
+    {
+      "key": "bo2/zone/english/en_frontend.ff",
+      "bytes": 11392
+    },
+    {
+      "key": "bo2/zone/english/en_haiti.ff",
+      "bytes": 44352
+    },
+    {
+      "key": "bo2/zone/english/en_karma_2.ff",
+      "bytes": 50432
+    },
+    {
+      "key": "bo2/zone/english/en_karma.ff",
+      "bytes": 66048
+    },
+    {
+      "key": "bo2/zone/english/en_la_1.ff",
+      "bytes": 40128
+    },
+    {
+      "key": "bo2/zone/english/en_la_1b.ff",
+      "bytes": 47936
+    },
+    {
+      "key": "bo2/zone/english/en_la_2.ff",
+      "bytes": 19840
+    },
+    {
+      "key": "bo2/zone/english/en_monsoon.ff",
+      "bytes": 48192
+    },
+    {
+      "key": "bo2/zone/english/en_mp_bridge.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_carrier.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_castaway.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_concert.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_dig.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_dockside.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_downhill.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_drone.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_express.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_frostbite.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_hijacked.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_hydro.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_la.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_magma.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_meltdown.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_mirage.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_nightclub.ff",
+      "bytes": 960
+    },
+    {
+      "key": "bo2/zone/english/en_mp_nuketown_2020.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_overflow.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_paintball.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_pod.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_raid.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_skate.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_slums.ff",
+      "bytes": 960
+    },
+    {
+      "key": "bo2/zone/english/en_mp_socotra.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_studio.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_takeoff.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_turbine.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_uplink.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_vertigo.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_mp_village.ff",
+      "bytes": 832
+    },
+    {
+      "key": "bo2/zone/english/en_nicaragua.ff",
+      "bytes": 49280
+    },
+    {
+      "key": "bo2/zone/english/en_pakistan_2.ff",
+      "bytes": 45376
+    },
+    {
+      "key": "bo2/zone/english/en_pakistan_3.ff",
+      "bytes": 11136
+    },
+    {
+      "key": "bo2/zone/english/en_pakistan.ff",
+      "bytes": 43392
+    },
+    {
+      "key": "bo2/zone/english/en_panama_2.ff",
+      "bytes": 44416
+    },
+    {
+      "key": "bo2/zone/english/en_panama_3.ff",
+      "bytes": 42176
+    },
+    {
+      "key": "bo2/zone/english/en_panama.ff",
+      "bytes": 44928
+    },
+    {
+      "key": "bo2/zone/english/en_patch_mp.ff",
+      "bytes": 51584
+    },
+    {
+      "key": "bo2/zone/english/en_patch_ui_mp.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/zone/english/en_patch_ui_zm.ff",
+      "bytes": 512
+    },
+    {
+      "key": "bo2/zone/english/en_patch_zm.ff",
+      "bytes": 48384
+    },
+    {
+      "key": "bo2/zone/english/en_patch.ff",
+      "bytes": 186304
+    },
+    {
+      "key": "bo2/zone/english/en_so_cmp_afghanistan.ff",
+      "bytes": 71936
+    },
+    {
+      "key": "bo2/zone/english/en_so_cmp_frontend.ff",
+      "bytes": 1216
+    },
+    {
+      "key": "bo2/zone/english/en_so_rts_afghanistan.ff",
+      "bytes": 54592
+    },
+    {
+      "key": "bo2/zone/english/en_so_rts_mp_dockside.ff",
+      "bytes": 8768
+    },
+    {
+      "key": "bo2/zone/english/en_so_rts_mp_drone.ff",
+      "bytes": 8832
+    },
+    {
+      "key": "bo2/zone/english/en_so_rts_mp_overflow.ff",
+      "bytes": 8704
+    },
+    {
+      "key": "bo2/zone/english/en_so_rts_mp_socotra.ff",
+      "bytes": 9152
+    },
+    {
+      "key": "bo2/zone/english/en_so_tut_mp_drone.ff",
+      "bytes": 12352
+    },
+    {
+      "key": "bo2/zone/english/en_so_zclassic_zm_transit.ff",
+      "bytes": 71744
+    },
+    {
+      "key": "bo2/zone/english/en_so_zencounter_zm_transit.ff",
+      "bytes": 67840
+    },
+    {
+      "key": "bo2/zone/english/en_so_zsurvival_zm_transit.ff",
+      "bytes": 67840
+    },
+    {
+      "key": "bo2/zone/english/en_su_rts_mp_dockside.ff",
+      "bytes": 49920
+    },
+    {
+      "key": "bo2/zone/english/en_su_rts_mp_drone.ff",
+      "bytes": 68672
+    },
+    {
+      "key": "bo2/zone/english/en_su_rts_mp_overflow.ff",
+      "bytes": 48000
+    },
+    {
+      "key": "bo2/zone/english/en_su_rts_mp_socotra.ff",
+      "bytes": 49472
+    },
+    {
+      "key": "bo2/zone/english/en_su_tut_mp_drone.ff",
+      "bytes": 17280
+    },
+    {
+      "key": "bo2/zone/english/en_ui_mp.ff",
+      "bytes": 6080
+    },
+    {
+      "key": "bo2/zone/english/en_ui_zm.ff",
+      "bytes": 6080
+    },
+    {
+      "key": "bo2/zone/english/en_yemen.ff",
+      "bytes": 45120
+    },
+    {
+      "key": "bo2/zone/english/en_zm_buried.ff",
+      "bytes": 72768
+    },
+    {
+      "key": "bo2/zone/english/en_zm_highrise.ff",
+      "bytes": 55936
+    },
+    {
+      "key": "bo2/zone/english/en_zm_nuked.ff",
+      "bytes": 5440
+    },
+    {
+      "key": "bo2/zone/english/en_zm_prison.ff",
+      "bytes": 72896
+    },
+    {
+      "key": "bo2/zone/english/en_zm_tomb.ff",
+      "bytes": 74176
+    },
+    {
+      "key": "bo2/zone/english/en_zm_transit.ff",
+      "bytes": 704
+    }
+  ]
+}

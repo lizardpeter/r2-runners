@@ -1,0 +1,842 @@
+{
+  "schema": "source-observatory/t6-ipak-index/v1",
+  "all_r2_ipaks_accounted": true,
+  "original_ipaks": 23,
+  "indexes_validated": 23,
+  "state_counts": {
+    "ipak_index_validated": 23
+  },
+  "total_indexed_entries": 32227,
+  "proof_boundary": "Range-read exact original R2 headers, section tables and 16-byte entry directory spans. Source whole-file SHA256 not established by this range audit; compressed LZO/RAW texture blocks and image semantics remain unevaluated.",
+  "files": [
+    {
+      "source_key": "bo2/zone/all/base.ipak",
+      "original_r2_size": 2614362112,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 2613821056,
+          "item_count": 13366
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 2614099968,
+          "size": 213856,
+          "item_count": 13366
+        }
+      ],
+      "index_entry_count": 13366,
+      "index_entry_table_bytes": 213856,
+      "index_entry_bytes_sha256": "5235476eab453941c8a1a10e02b0d6bdc0254ae6005ff147c090a67be5698f20",
+      "payload_serialized_bytes_summed": 2613821056,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlc0.ipak",
+      "original_r2_size": 106954752,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 106311680,
+          "item_count": 678
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 106692608,
+          "size": 10848,
+          "item_count": 678
+        }
+      ],
+      "index_entry_count": 678,
+      "index_entry_table_bytes": 10848,
+      "index_entry_bytes_sha256": "2eb29f750abb83b5c0b81e57fa103916d8fc2d804dad1d0f77b5858ceb7720a7",
+      "payload_serialized_bytes_summed": 106311680,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlc0_load_mp.ipak",
+      "original_r2_size": 688128,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 4,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 32768,
+          "size": 524736,
+          "item_count": 1
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 589824,
+          "size": 16,
+          "item_count": 1
+        },
+        {
+          "id": 2,
+          "type": 4,
+          "offset": 622592,
+          "size": 8,
+          "item_count": 1
+        },
+        {
+          "id": 3,
+          "type": 3,
+          "offset": 655360,
+          "size": 99,
+          "item_count": 1
+        }
+      ],
+      "index_entry_count": 1,
+      "index_entry_table_bytes": 16,
+      "index_entry_bytes_sha256": "9864c9863111acc248f16ac403529dd86db776516207c0ae64bc132519eeefe7",
+      "payload_serialized_bytes_summed": 524736,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlc1.ipak",
+      "original_r2_size": 556531712,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 555775104,
+          "item_count": 1858
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 556269568,
+          "size": 29728,
+          "item_count": 1858
+        }
+      ],
+      "index_entry_count": 1858,
+      "index_entry_table_bytes": 29728,
+      "index_entry_bytes_sha256": "89e78aafd0f5d1dda7a22a16a118005493f9ddbba2d85c7aa25e16395a52f46b",
+      "payload_serialized_bytes_summed": 555775104,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlc2.ipak",
+      "original_r2_size": 437256192,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 436484992,
+          "item_count": 2002
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 436994048,
+          "size": 32032,
+          "item_count": 2002
+        }
+      ],
+      "index_entry_count": 2002,
+      "index_entry_table_bytes": 32032,
+      "index_entry_bytes_sha256": "a8425931efe884a973faa5f290d9c21bd1e8e651e45a72c8e3dc1d46be387971",
+      "payload_serialized_bytes_summed": 436484992,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlc3.ipak",
+      "original_r2_size": 501219328,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 500613760,
+          "item_count": 1466
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 500957184,
+          "size": 23456,
+          "item_count": 1466
+        }
+      ],
+      "index_entry_count": 1466,
+      "index_entry_table_bytes": 23456,
+      "index_entry_bytes_sha256": "203b61886e98347345aeea35340e76ef753e1a28fc92fa14137df440222750e8",
+      "payload_serialized_bytes_summed": 500613760,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlc4.ipak",
+      "original_r2_size": 464257024,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 463567616,
+          "item_count": 1794
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 463994880,
+          "size": 28704,
+          "item_count": 1794
+        }
+      ],
+      "index_entry_count": 1794,
+      "index_entry_table_bytes": 28704,
+      "index_entry_bytes_sha256": "26bc39752199170e3149b37b41505dd68e072f3c1582128d142f802b61cf23bc",
+      "payload_serialized_bytes_summed": 463567616,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlczm0.ipak",
+      "original_r2_size": 98828288,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 98129664,
+          "item_count": 393
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 98566144,
+          "size": 6288,
+          "item_count": 393
+        }
+      ],
+      "index_entry_count": 393,
+      "index_entry_table_bytes": 6288,
+      "index_entry_bytes_sha256": "aac410218087fab3ae4595d26780219050fafc1eebbf0ce4aab277760a871c74",
+      "payload_serialized_bytes_summed": 98129664,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlczm0_load_zm.ipak",
+      "original_r2_size": 5079040,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 4,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 32768,
+          "size": 4916672,
+          "item_count": 4
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 4980736,
+          "size": 64,
+          "item_count": 4
+        },
+        {
+          "id": 2,
+          "type": 4,
+          "offset": 5013504,
+          "size": 32,
+          "item_count": 4
+        },
+        {
+          "id": 3,
+          "type": 3,
+          "offset": 5046272,
+          "size": 387,
+          "item_count": 4
+        }
+      ],
+      "index_entry_count": 4,
+      "index_entry_table_bytes": 64,
+      "index_entry_bytes_sha256": "0d8bbdc6a60288a18725de590866048f40566f2019aabd57e53277cc3efa9934",
+      "payload_serialized_bytes_summed": 4852736,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlczm1.ipak",
+      "original_r2_size": 109051904,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 108336768,
+          "item_count": 606
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 108789760,
+          "size": 9696,
+          "item_count": 606
+        }
+      ],
+      "index_entry_count": 606,
+      "index_entry_table_bytes": 9696,
+      "index_entry_bytes_sha256": "4f779db304b740b16ee757c492f84dfe549d7e45efa9b61d6b77901a5f7dec59",
+      "payload_serialized_bytes_summed": 108336768,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlczm2.ipak",
+      "original_r2_size": 245104640,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 244375296,
+          "item_count": 987
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 244842496,
+          "size": 15792,
+          "item_count": 987
+        }
+      ],
+      "index_entry_count": 987,
+      "index_entry_table_bytes": 15792,
+      "index_entry_bytes_sha256": "1bb06248cdcf6d59aa25dc0b3747666fead3e3e2d790996d63dcdaae1f4fbdde",
+      "payload_serialized_bytes_summed": 244375296,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlczm3.ipak",
+      "original_r2_size": 231473152,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 230765312,
+          "item_count": 996
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 231211008,
+          "size": 15936,
+          "item_count": 996
+        }
+      ],
+      "index_entry_count": 996,
+      "index_entry_table_bytes": 15936,
+      "index_entry_bytes_sha256": "a9882f606a58970691694b54914477c5cf7adff71aa71c6b5dea10726545607e",
+      "payload_serialized_bytes_summed": 230765312,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/dlczm4.ipak",
+      "original_r2_size": 407896064,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 407280000,
+          "item_count": 1234
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 407633920,
+          "size": 19744,
+          "item_count": 1234
+        }
+      ],
+      "index_entry_count": 1234,
+      "index_entry_table_bytes": 19744,
+      "index_entry_bytes_sha256": "a071dbe1f187bf1edd7b3f9a08d802ceb7abdb1f799aa78390e6003b6f6d7a6e",
+      "payload_serialized_bytes_summed": 407280000,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/mp.ipak",
+      "original_r2_size": 348651520,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 347977088,
+          "item_count": 3298
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 348389376,
+          "size": 52768,
+          "item_count": 3298
+        }
+      ],
+      "index_entry_count": 3298,
+      "index_entry_table_bytes": 52768,
+      "index_entry_bytes_sha256": "1ca126f5a19269977a3340d58271ff96928afc630d08cd4a21e439f5d7433bc3",
+      "payload_serialized_bytes_summed": 347977088,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/mp_frostbite.ipak",
+      "original_r2_size": 90439680,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 89697536,
+          "item_count": 201
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 90177536,
+          "size": 3216,
+          "item_count": 201
+        }
+      ],
+      "index_entry_count": 201,
+      "index_entry_table_bytes": 3216,
+      "index_entry_bytes_sha256": "a19c603fa127e3cfca383f749e70a61c10189d8af678397ab9395fecbdd56fd6",
+      "payload_serialized_bytes_summed": 89697536,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/mp_nuketown_2020.ipak",
+      "original_r2_size": 165543936,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 4,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 32768,
+          "size": 165249344,
+          "item_count": 677
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 165314560,
+          "size": 10832,
+          "item_count": 677
+        },
+        {
+          "id": 2,
+          "type": 4,
+          "offset": 165347328,
+          "size": 10808,
+          "item_count": 1351
+        },
+        {
+          "id": 3,
+          "type": 3,
+          "offset": 165380096,
+          "size": 134220,
+          "item_count": 1351
+        }
+      ],
+      "index_entry_count": 677,
+      "index_entry_table_bytes": 10832,
+      "index_entry_bytes_sha256": "64e326ff617fe327066d8fa766657e8ecd84a7ef67b3abba5237e573a784ca66",
+      "payload_serialized_bytes_summed": 161273360,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/patch_mp.ipak",
+      "original_r2_size": 56623104,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 56074240,
+          "item_count": 800
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 56360960,
+          "size": 12800,
+          "item_count": 800
+        }
+      ],
+      "index_entry_count": 800,
+      "index_entry_table_bytes": 12800,
+      "index_entry_bytes_sha256": "bbf26a5428dfc682351308eafdbbf76a156cdd5f4bd0d27e808f124688c1d51a",
+      "payload_serialized_bytes_summed": 56074240,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/patch_zm.ipak",
+      "original_r2_size": 20971520,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 20223232,
+          "item_count": 159
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 20709376,
+          "size": 2544,
+          "item_count": 159
+        }
+      ],
+      "index_entry_count": 159,
+      "index_entry_table_bytes": 2544,
+      "index_entry_bytes_sha256": "f0b3d79297aa388dcd0d546165e0715faeba8cf4ba54137feeefe94891e5080c",
+      "payload_serialized_bytes_summed": 20223232,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/so.ipak",
+      "original_r2_size": 146538496,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 145866624,
+          "item_count": 656
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 146276352,
+          "size": 10496,
+          "item_count": 656
+        }
+      ],
+      "index_entry_count": 656,
+      "index_entry_table_bytes": 10496,
+      "index_entry_bytes_sha256": "84a4c90902cf1e346091ae5495492ad5b7e51e7bce5c4109cf2c3d37e2594833",
+      "payload_serialized_bytes_summed": 145866624,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/zm.ipak",
+      "original_r2_size": 132120576,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 131405312,
+          "item_count": 510
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 131858432,
+          "size": 8160,
+          "item_count": 510
+        }
+      ],
+      "index_entry_count": 510,
+      "index_entry_table_bytes": 8160,
+      "index_entry_bytes_sha256": "22d718ccb3f13ff8938aa72861c682d343284f9de0abe5539bcf00a95320e4f7",
+      "payload_serialized_bytes_summed": 131405312,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/zm_nuked.ipak",
+      "original_r2_size": 142868480,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 4,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 32768,
+          "size": 142600640,
+          "item_count": 467
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 142639104,
+          "size": 7472,
+          "item_count": 467
+        },
+        {
+          "id": 2,
+          "type": 4,
+          "offset": 142671872,
+          "size": 12256,
+          "item_count": 1532
+        },
+        {
+          "id": 3,
+          "type": 3,
+          "offset": 142704640,
+          "size": 152510,
+          "item_count": 1532
+        }
+      ],
+      "index_entry_count": 467,
+      "index_entry_table_bytes": 7472,
+      "index_entry_bytes_sha256": "fc8e5ad2597cb6f05dda365bb9c78e8182feef1dc689ad2046c8cb1bde035283",
+      "payload_serialized_bytes_summed": 139015272,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/all/zm_nuked_patch.ipak",
+      "original_r2_size": 1343488,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 4,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 32768,
+          "size": 1194032,
+          "item_count": 9
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 1245184,
+          "size": 144,
+          "item_count": 9
+        },
+        {
+          "id": 2,
+          "type": 4,
+          "offset": 1277952,
+          "size": 72,
+          "item_count": 9
+        },
+        {
+          "id": 3,
+          "type": 3,
+          "offset": 1310720,
+          "size": 871,
+          "item_count": 9
+        }
+      ],
+      "index_entry_count": 9,
+      "index_entry_table_bytes": 144,
+      "index_entry_bytes_sha256": "092d594739ff851604e06f91c01812d1d31c75cba6fe4a1fb7e281be897e2444",
+      "payload_serialized_bytes_summed": 1183004,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    },
+    {
+      "source_key": "bo2/zone/english/en_base.ipak",
+      "original_r2_size": 786432,
+      "status": "ipak_index_validated",
+      "source_original_sha256": "not_hashed_full_object",
+      "proof_boundary": "Original R2 header, section table and index ranges only; data payloads not fetched or understood",
+      "magic": "KAPI",
+      "endian": "little",
+      "version": 327680,
+      "section_count": 2,
+      "sections": [
+        {
+          "id": 0,
+          "type": 2,
+          "offset": 262144,
+          "size": 213248,
+          "item_count": 65
+        },
+        {
+          "id": 1,
+          "type": 1,
+          "offset": 524288,
+          "size": 1040,
+          "item_count": 65
+        }
+      ],
+      "index_entry_count": 65,
+      "index_entry_table_bytes": 1040,
+      "index_entry_bytes_sha256": "46517deb11d200c35ed322f9de6458e80dd7bef802559c91c3fe48c9437c3bc6",
+      "payload_serialized_bytes_summed": 213248,
+      "original_r2_ranges_verified": 3,
+      "non_index_data_contents": "not_examined"
+    }
+  ]
+}

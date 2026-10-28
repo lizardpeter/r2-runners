@@ -1,0 +1,68 @@
+name: Source Observatory hosted website and T6 proof smoke test
+
+# No user device involved: remote runner checks the deployed Worker and its
+# exact-source report endpoints, including client-side JavaScript syntax.
+on:
+  push:
+    branches:
+      - feature/source-coverage-observatory-v1
+    paths:
+      - .github/workflows/source-observatory-smoke.yml
+      - observatory/worker.mjs
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-website:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Inspect live Cloudflare Worker dashboard and evidence API
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=https://source-coverage-observatory.hokroute.workers.dev
+          mkdir -p "$RUNNER_TEMP/observatory"
+          curl --fail-with-body --show-error --location --retry 4 --retry-delay 2 \
+            "$BASE/" -o "$RUNNER_TEMP/observatory/index.html"
+          curl --fail-with-body --show-error --location --retry 4 --retry-delay 2 \
+            "$BASE/api/t6/index" -o "$RUNNER_TEMP/observatory/evidence-index.json"
+          curl --fail-with-body --show-error --location --retry 4 --retry-delay 2 \
+            "$BASE/api/files?game=bo2&limit=12" -o "$RUNNER_TEMP/observatory/bo2-files.json"
+          curl --fail-with-body --show-error --location --retry 4 --retry-delay 2 \
+            "$BASE/api/t6/report?key=bo2%2Fzone%2Fall%2Fcommon_mp.ff" \
+            -o "$RUNNER_TEMP/observatory/common_mp-report.json"
+          python3 - "$RUNNER_TEMP/observatory" <<'PY'
+          import json,sys
+          from pathlib import Path
+          root=Path(sys.argv[1])
+          page=(root/'index.html').read_text()
+          assert "<title>Source Observatory" in page
+          client=page.split("<script>",1)[1].split("</script>",1)[0]
+          (root/'browser.js').write_text(client)
+          index=json.loads((root/'evidence-index.json').read_text())
+          assert index["schema"]=="source-observatory/t6-index/v1"
+          assert len(index["files"])>=3
+          assert sum(int(f["asset_count"]) for f in index["files"])>=11379
+          listing=json.loads((root/'bo2-files.json').read_text())
+          assert listing["game"]=="bo2" and len(listing["files"])>0
+          proof=json.loads((root/'common_mp-report.json').read_text())
+          assert proof["schema"]=="source-observatory/t6-expanded/v1"
+          assert proof["source"]["sha256"]=="93fe48b0f0d8cc6844be875ccad94e0cfcf635f62eeff00ac33f2f668a77cb77"
+          assert proof["expanded"]["sha256"]=="fbd91d0ede8e27bcaaf7af9638a7118050f27519524be36e9234f980bd6170ce"
+          assert proof["xfile"]["asset_count"]==6082
+          assert proof["coverage"]["semantic_complete"] is False
+          assert proof["coverage"]["unclassified_expanded_bytes"]>200000000
+          print("LIVE R2 listing & 3 SHA-pinned T6 reports passed")
+          PY
+          node --check "$RUNNER_TEMP/observatory/browser.js"
+      - name: Preserve safe test metadata, never original game bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-observatory-live-smoke-metadata
+          path: |
+            ${{ runner.temp }}/observatory/evidence-index.json
+            ${{ runner.temp }}/observatory/bo2-files.json
+          retention-days: 14
+          if-no-files-found: warn

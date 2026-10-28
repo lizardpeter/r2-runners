@@ -1,0 +1,106 @@
+name: T6 original-source byte accounting for Source Observatory
+
+# Explicitly requested remote evidence audit. Public runner NEVER checks out
+# Rust-test private code. It emits only metadata reports to Git; originals are
+# shipped as separate exact-source Actions artifacts, not committed.
+on:
+  push:
+    branches:
+      - feature/source-coverage-observatory-v1
+    paths:
+      - .github/workflows/t6-observatory-proof.yml
+      - scripts/t6_observatory_audit.py
+      - scripts/t6_observatory_index.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: source-observatory-t6
+  cancel-in-progress: false
+
+jobs:
+  verified-t6:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Install independent public FastFile parser tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/t6-tools"
+          BASE=https://raw.githubusercontent.com/lizardpeter/bo2-t6-assets/4a435b8fe21a849e178c24a1075bde6e0e19da7f/tools
+          curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 \
+            "$BASE/t6_fastfile_expand_pc_v1.c" -o "$RUNNER_TEMP/t6-tools/expand.c"
+          curl --fail --location --retry 4 --retry-all-errors --connect-timeout 20 \
+            "$BASE/t6_raw_xasset_inventory.py" -o "$RUNNER_TEMP/t6-tools/xassets.py"
+          gcc -O2 -std=c11 -Wall -Wextra -o "$RUNNER_TEMP/t6-tools/expand" \
+            "$RUNNER_TEMP/t6-tools/expand.c" -lcrypto -lz
+
+      - name: Acquire exact R2 FastFiles and verify every original SHA256
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/t6-work" observatory/reports/t6
+          while IFS='|' read -r name original_hash expanded_hash; do
+            [[ -n "$name" ]] || continue
+            echo "::group::Exact original $name.ff"
+            key="bo2/zone/all/$name.ff"
+            python3 scripts/r2_download.py \
+              --base-url https://r2.houseofkublai.com \
+              --key "$key" \
+              --output-dir "$RUNNER_TEMP/t6-work/$name"
+            input="$RUNNER_TEMP/t6-work/$name/artifact/$key"
+            echo "$original_hash  $input" | sha256sum --check --
+            "$RUNNER_TEMP/t6-tools/expand" "$input" "$RUNNER_TEMP/t6-work/$name.bin" "$name"
+            python3 scripts/t6_observatory_audit.py \
+              --source "$input" --expanded "$RUNNER_TEMP/t6-work/$name.bin" \
+              --parser "$RUNNER_TEMP/t6-tools/xassets.py" \
+              --expected-source-sha256 "$original_hash" \
+              --expected-expanded-sha256 "$expanded_hash" \
+              --r2-key "$key" --out "observatory/reports/t6/$name.json"
+            echo "::endgroup::"
+          done <<'PINNED_T6'
+          common_mp|93fe48b0f0d8cc6844be875ccad94e0cfcf635f62eeff00ac33f2f668a77cb77|fbd91d0ede8e27bcaaf7af9638a7118050f27519524be36e9234f980bd6170ce
+          common_patch_mp|95622d93d4fb761db311a123cd073bed34ea48c9c711d2c11bce4170dd08bae9|486ac8742cafad195c4e2f997fb55c77ffd49fdbec78ba516a477f78d577420c
+          patch_mp|459077cda8e4a1457f7ee7d8f6c5e0abf30f41767a21ff6744df6a4307cbce1e|1bd82b0e99fcea3a9cb1c2342634f1da0d699b3fdadfa9f7c7fe15595952a7b9
+          PINNED_T6
+          python3 scripts/t6_observatory_index.py observatory/reports/t6
+
+      - name: Upload complete authentic source objects (separate from metadata)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-observatory-authenticated-original-fastfiles
+          path: ${{ runner.temp }}/t6-work/*/artifact/bo2/zone/all/*.ff
+          compression-level: 0
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Publish computed proof reports as runner artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-observatory-sha256-verified-structural-reports
+          path: observatory/reports/t6/*.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Publish authenticated reports to dashboard source branch
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add observatory/reports/t6/*.json
+          if git diff --cached --quiet; then
+            echo 'Proof reports already committed.'
+          else
+            git commit -m "proof(t6): pinned original FastFile source and expanded-byte inventory"
+            git push origin HEAD:feature/source-coverage-observatory-v1
+          fi

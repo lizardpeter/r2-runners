@@ -1,0 +1,44 @@
+name: T6 original WAD full-file SHA, every-byte ownership and zlib proof
+on:
+  push:
+    branches: [feature/source-coverage-observatory-v1]
+    paths:
+      - .github/workflows/t6-observatory-wad-full.yml
+      - scripts/t6_observatory_wad_full_bytes.py
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  exact-wads:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify all 366 complete original WAD bytes and nested compressed streams
+        run: |
+          set -euo pipefail
+          python3 scripts/t6_observatory_wad_full_bytes.py \
+            --indexes observatory/reports/t6/wad-index.json \
+            --out observatory/reports/t6/wad-full.json --workers 12
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t6-full-original-wad-byte-ownership-and-zlib-proof
+          path: observatory/reports/t6/wad-full.json
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Commit complete physical source-byte report
+        if: success()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add observatory/reports/t6/wad-full.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "proof(t6): full original WAD physical bytes and exact zlib closure"
+          for attempt in 1 2 3; do
+            git fetch origin feature/source-coverage-observatory-v1
+            git rebase origin/feature/source-coverage-observatory-v1
+            if git push origin HEAD:feature/source-coverage-observatory-v1; then exit 0; fi
+            if [ "$attempt" = 3 ]; then exit 1; fi
+          done
