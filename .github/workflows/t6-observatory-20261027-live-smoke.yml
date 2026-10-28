@@ -1,7 +1,7 @@
 name: Source Observatory live T6 all-family verified byte-coverage smoke
 on:
   push:
-    branches: [feature/source-coverage-observatory-v1]
+    branches: [main]
     paths:
       - .github/workflows/t6-observatory-20261027-live-smoke.yml
   workflow_dispatch:
@@ -54,6 +54,8 @@ jobs:
           assert len(wfull['files'])==366
           html=(root/'index.html').read_text()
           assert 'renderFullWad' in html and '/api/t6/wads/full' in html
+          assert 'raw.githubusercontent.com/lizardpeter/r2-runners/main/' in html
+          assert 'original FLAC-coded clips are passed through' in html
           assert 'renderNestedProof' in html
           (root/'browser.js').write_text(html.split('<script>',1)[1].split('</script>',1)[0])
           print('SUCCESS: Live Worker serves entire 1287 BO2 R2 source inventory, 571 FF directories, 23 IPAKs, 116 audio, 366 WADs with source-complete zlib byte proofs')
