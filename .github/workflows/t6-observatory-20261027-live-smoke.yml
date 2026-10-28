@@ -54,7 +54,7 @@ jobs:
           assert len(wfull['files'])==366
           html=(root/'index.html').read_text()
           assert 'renderFullWad' in html and '/api/t6/wads/full' in html
-          assert 'raw.githubusercontent.com/lizardpeter/r2-runners/main/' in html
+          assert 'loadNestedDirectories' in html
           assert 'original FLAC-coded clips are passed through' in html
           assert 'renderNestedProof' in html
           (root/'browser.js').write_text(html.split('<script>',1)[1].split('</script>',1)[0])
