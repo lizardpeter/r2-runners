@@ -1,0 +1,34 @@
+name: T6 Nuketown original geometry source handoff
+
+on:
+  push:
+    branches: [work/t6-nuketown-geometry-handoff-20261028]
+    paths: [".github/workflows/t6-nuketown-geometry-handoff.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-map:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Transfer and SHA-verify original Nuketown FastFile
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/r2_download.py \
+            --base-url https://r2.houseofkublai.com \
+            --key bo2/zone/all/mp_nuketown_2020.ff \
+            --output-dir "$RUNNER_TEMP/t6"
+          echo "6c026322a713c461a03de9815bf6eef0e959fb2ab5d82299b029b775fa1ab1e0  $RUNNER_TEMP/t6/artifact/bo2/zone/all/mp_nuketown_2020.ff" | sha256sum -c -
+      - name: Publish original bytes for offline investigation
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-nuketown-2020-original-map-verified
+          path: ${{ runner.temp }}/t6/artifact/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
