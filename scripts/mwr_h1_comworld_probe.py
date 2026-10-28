@@ -127,6 +127,62 @@ def inspect_comworld_after_prefix(raw,decoded_cursor):
                                "original_color":color,
                                "original_origin":origin,
                                "def_name_pointer":f"{ptr:016x}"})
+    # The public H1 runtime ComPrimaryLight layout certifies offset+80
+    # native radius and +84/+88 spotlight half-FOV cosines. This is
+    # source-field validation only; no image-cookie/shader radiometry.
+    projection={"sun_candidates":0,"spot_candidates":0,"omni_candidates":0,
+                "rejected_source_lights":0}
+    rejected=[]
+    radii=[]
+    directional=[]
+    for i in range(lights_count):
+        off=report["source_after_name"]+i*LIGHT_BYTES
+        kind_id=raw[off]
+        color=struct.unpack_from("<3f",raw,off+8)
+        direction=struct.unpack_from("<3f",raw,off+20)
+        radius,cos_outer,cos_inner=struct.unpack_from("<3f",raw,off+80)
+        physically_based=raw[off+2]
+        shadow=raw[off+1]
+        nice_color=all(math.isfinite(x) and 0<=x<=64 for x in color) and any(x>0 for x in color)
+        norm=sum(x*x for x in direction)**0.5
+        nice_direction=math.isfinite(norm) and norm>1e-6
+        good_fields=(math.isfinite(radius) and math.isfinite(cos_outer)
+                     and math.isfinite(cos_inner) and physically_based in (0,1)
+                     and shadow in (0,1))
+        if kind_id in (1,4):
+            valid=nice_color and nice_direction and good_fields
+            tag="sun_candidates"
+            if i<4:
+                directional.append({"type":kind_id,"color":color,
+                                    "source_direction":direction,
+                                    "direction_norm":norm})
+        elif kind_id in (2,5,7):
+            valid=(nice_color and nice_direction and good_fields
+                   and radius>0 and -1<=cos_outer<=cos_inner<=1)
+            tag="spot_candidates"
+        elif kind_id in (3,6):
+            valid=nice_color and good_fields and radius>0
+            tag="omni_candidates"
+        else:
+            valid=False
+            tag="rejected_source_lights"
+        projection[tag if valid else "rejected_source_lights"]+=1
+        if valid and tag!="sun_candidates":
+            radii.append(radius)
+        if not valid and len(rejected)<10:
+            rejected.append({"ordinal":i,"type":kind_id,
+                             "native_radius":radius,"cos_outer":cos_outer,
+                             "cos_inner":cos_inner,
+                             "direction_norm":norm,"shadow":shadow,
+                             "physically_based":physically_based})
+    report["original_H1_neutral_light_preview_eligibility"]={
+        "source_native_light_classes_and_ranges":projection,
+        "min_eligible_native_local_radius":min(radii) if radii else None,
+        "max_eligible_native_local_radius":max(radii) if radii else None,
+        "source_directional_samples":directional,
+        "first_rejected_source_lights":rejected,
+        "preview_only_not_native_rendered_lighting":True
+    }
     report.update({"light_status":"all_source_light_record_fields_structural"
                        if not bad else "some_light_source_fields_invalid",
                    "typed_light_array_end":end,
