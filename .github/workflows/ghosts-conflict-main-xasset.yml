@@ -1,0 +1,124 @@
+name: Ghosts IW6 authenticated Conflict main XAsset layout
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/ghosts-conflict-main-xasset.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-conflict:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Download exact original retail Conflict map
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/iw6"
+          curl -fLsS --retry 4 --retry-all-errors --retry-delay 3 \
+            --connect-timeout 30 --max-time 1000 \
+            https://r2.houseofkublai.com/ghosts/DUMP/mp_conflict.ff \
+            -o "$RUNNER_TEMP/iw6/mp_conflict.ff"
+          test "$(stat -c%s "$RUNNER_TEMP/iw6/mp_conflict.ff")" -eq 93133772
+          echo "0030fe53fc2259ab3d1019a1bfc44adb1859ed2111521a741109b8518bacaa9c  $RUNNER_TEMP/iw6/mp_conflict.ff" | sha256sum -c
+      - name: Validate every signed source block and original source XAsset directory
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import collections,hashlib,json,mmap,os,pathlib,struct,tempfile,zlib
+          root=pathlib.Path(os.environ["RUNNER_TEMP"])/"iw6"
+          src=(root/"mp_conflict.ff").read_bytes()
+          u32=lambda b,i:struct.unpack_from("<I",b,i)[0]
+          u64=lambda b,i:struct.unpack_from("<Q",b,i)[0]
+          inline=lambda p:(p&0xfffffff0_00000000)==0xfdfdfdf0_00000000 and (p&0xffffffff) in (0xfffffffe,0xffffffff)
+          assert src[:8]==b"IWff0100" and len(src)==93133772
+          rows=u32(src,24);assert rows==5756
+          offset=44+24*rows
+          assert len(src[offset:offset+8192])==8192
+          offset+=8192
+          decoder=zlib.decompressobj()
+          hasher=hashlib.sha256()
+          blocks=0
+          with tempfile.TemporaryFile() as tmp:
+              while offset<len(src):
+                  if blocks%256==0:
+                      master=src[offset:offset+8192]
+                      assert len(master)==8192
+                      offset+=8192
+                  b=src[offset:offset+8192]
+                  assert len(b)==8192
+                  offset+=8192
+                  assert hashlib.sha256(b).digest()==master[(blocks%256)*32:(blocks%256+1)*32],f"invalid original source block {blocks}"
+                  if not decoder.eof:
+                      decoded=decoder.decompress(b)
+                      tmp.write(decoded);hasher.update(decoded)
+                      if decoder.eof:
+                          assert not any(decoder.unused_data),"nonzero signed FastFile suffix"
+                  else:
+                      assert not any(b),"nonzero signed trailing source block"
+                  blocks+=1
+              assert offset==len(src) and decoder.eof,"incomplete signed retail source"
+              remainder=decoder.flush()
+              tmp.write(remainder);hasher.update(remainder)
+              length=tmp.tell()
+              tmp.flush();tmp.seek(0)
+              with mmap.mmap(tmp.fileno(),0,access=mmap.ACCESS_READ) as x:
+                  assert u64(x,0)+72==length,"original XFile size mismatch"
+                  strings=u64(x,72);assets=u64(x,88)
+                  assert 0<assets<100000 and strings<100000
+                  script_array=u64(x,80);assert inline(script_array)
+                  at=112
+                  refs=[u64(x,at+8*i) for i in range(strings)]
+                  at+=strings*8
+                  string_samples=[]
+                  for ref in refs:
+                      if inline(ref):
+                          end=x.find(b"\0",at,at+65536)
+                          assert end>=at,"original XString terminator missing"
+                          if len(string_samples)<6:string_samples.append(x[at:end].decode("utf8","replace"))
+                          at=end+1
+                  globals_counts={}
+                  if inline(u64(x,104)):
+                      nested=u64(x,at);at+=8
+                      if inline(nested):
+                          original=at
+                          depth,blend,primitive,obj,stable=[u32(x,original+i) for i in (0,4,40,44,48)]
+                          globals_counts=dict(depth=depth,blend=blend,primitive=primitive,object=obj,stable=stable)
+                          at+=104
+                          for off,n,width in ((8,depth,8),(16,blend,4),(56,primitive,4),(64,obj,4),(72,stable,4)):
+                              if inline(u64(x,original+off)):at+=n*width
+                      elif nested!=0:raise ValueError("packed XGfxGlobals source offset unresolved")
+                  directory=at
+                  assert directory+16*assets<=length,"original source XAsset directory out of bounds"
+                  types=collections.Counter()
+                  first=[]
+                  for i in range(assets):
+                      kind=u64(x,directory+i*16)
+                      ptr=u64(x,directory+i*16+8)
+                      types[kind]+=1
+                      if i<40:first.append(dict(index=i,kind=kind,pointer=hex(ptr)))
+                  summary=dict(
+                      source="original SHA256-authenticated mp_conflict.ff",
+                      signed_physical_blocks=blocks,streamed_rows=rows,
+                      decoded_bytes=length,decoded_sha256=hasher.hexdigest(),
+                      script_strings=strings,first_script_strings=string_samples,
+                      graphics_globals=globals_counts,xassets=assets,
+                      original_directory_offset=directory,
+                      original_first_body_offset=directory+16*assets,
+                      source_types=dict(sorted(types.items())),
+                      first_original_assets=first,
+                      limitation="Source XAsset prelude/directory ONLY; no full body or Vulkan validation"
+                  )
+                  print(json.dumps(summary,indent=2))
+                  (root/"original_xasset_directory.json").write_text(json.dumps(summary,indent=2))
+          PY
+      - name: Keep metadata proof only (never redistribute original game files)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ghosts-conflict-original-xasset-directory
+          path: ${{ runner.temp }}/iw6/original_xasset_directory.json
+          retention-days: 3
+          if-no-files-found: warn
