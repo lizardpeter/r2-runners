@@ -159,14 +159,69 @@ jobs:
                       else:
                           assert count==0,"original net string handles require new packed-alias owner"
                       source_netconst.append(dict(asset=i,name=name,count=count))
+                  # Original MP maps are not required to put ComWorld
+                  # immediately after NetConstStrings. Lonestar has
+                  # original RawFile XAssets before ComWorld; Boneyard has
+                  # source TechniqueSet/Material XAssets first. Follow
+                  # genuine bounded RawFile bodies and stop on unfamiliar
+                  # nested types without guessing how many bytes to skip.
+                  current_asset=source_netconst_count
+                  rawfiles=[]
+                  while (current_asset<assets
+                          and u64(x,directory+current_asset*16)==44):
+                      at=body_at
+                      assert at+24<=len(x),"original RawFile header truncated"
+                      nameptr=u64(x,at)
+                      compressed=u32(x,at+8)
+                      ordinary=u32(x,at+12)
+                      data_ptr=u64(x,at+16)
+                      payload=compressed if compressed else ordinary+1
+                      assert payload<=128*1024*1024,"original RawFile exceeds source guard"
+                      body_at+=24
+                      rawname=None
+                      if inline(nameptr):
+                          end=x.find(b"\0",body_at,body_at+4096)
+                          assert end>=body_at,"original RawFile name truncated"
+                          rawname=x[body_at:end].decode("utf8","replace")
+                          body_at=end+1
+                      if inline(data_ptr):
+                          assert body_at+payload<=len(x),"original RawFile payload truncated"
+                          body_at+=payload
+                      elif payload:
+                          raise AssertionError("RawFile payload has unresolved source owner")
+                      rawfiles.append(dict(
+                          asset=current_asset,name=rawname,
+                          authored_bytes=payload))
+                      current_asset+=1
+                  next_type=u64(x,directory+current_asset*16)
+                  if next_type!=20:
+                      partial=dict(
+                          source="original signed+hashed "+source_name,
+                          signed_physical_blocks=blocks,streamed_rows=rows,
+                          decoded_bytes=length,decoded_sha256=hasher.hexdigest(),
+                          xassets=assets,source_types=dict(sorted(types.items())),
+                          original_directory_offset=directory,
+                          original_netconst_asset_count=source_netconst_count,
+                          original_inline_netconst_strings=authored_strings,
+                      original_rawfile_assets_walked=rawfiles,
+                      original_comworld_asset_index=current_asset,
+                          original_rawfile_assets_walked=rawfiles,
+                          first_unwalked_asset=current_asset,
+                          first_unwalked_type=next_type,
+                          original_source_cursor_after_walk=body_at,
+                          limitation="Exact original partial body source walk: next technique/material requires its own nested decoder; no false ComWorld or full-map claim")
+                      print(json.dumps(partial,indent=2),flush=True)
+                      (root/"original_xasset_directory.json").write_text(
+                          json.dumps(partial,indent=2))
+                      import sys
+                      sys.exit(0)
                   print(json.dumps(dict(
                       probe=source_name,
-                      first_non_netconst_asset=source_netconst_count,
-                      first_non_netconst_kind=u64(x,directory+source_netconst_count*16),
-                      prefix_kinds=[u64(x,directory+16*i) for i in range(min(50,assets))],
-                      first_body_after_netconsts=body_at
+                      netconst_assets=source_netconst_count,
+                      original_rawfile_assets_walked=rawfiles,
+                      comworld_asset_index=current_asset,
+                      original_comworld_offset=body_at
                   ),indent=2),flush=True)
-                  assert u64(x,directory+source_netconst_count*16)==20,"ComWorld does not directly follow the source NetConstStrings prefix"
                   com_at=body_at
                   nlights=u32(x,com_at+12)
                   assert nlights<=4096,"ComWorld original light count outside safe guard"
