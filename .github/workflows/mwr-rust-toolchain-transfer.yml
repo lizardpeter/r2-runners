@@ -1,0 +1,33 @@
+name: Rust 1.99.1 R2 toolchain transfer for offline local importer builds
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mwr-rust-toolchain-transfer.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package-public-compiler:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Fetch exact Rust 1.99.1 toolchain from user's R2, verify 210515736 bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-all-errors \
+            --connect-timeout 25 --max-time 1200 \
+            --output "$RUNNER_TEMP/rust-1.99.1-x86_64-unknown-linux-gnu.tar" \
+            "https://r2.houseofkublai.com/rust/rust-1.99.1-x86_64-unknown-linux-gnu.tar"
+          test "$(stat -c%s "$RUNNER_TEMP/rust-1.99.1-x86_64-unknown-linux-gnu.tar")" = 210515736
+          file "$RUNNER_TEMP/rust-1.99.1-x86_64-unknown-linux-gnu.tar"
+          sha256sum "$RUNNER_TEMP/rust-1.99.1-x86_64-unknown-linux-gnu.tar"
+      - name: Transfer only the publicly distributable Rust compiler archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: mwr-rust-compiler-1.99.1
+          path: ${{ runner.temp }}/rust-1.99.1-x86_64-unknown-linux-gnu.tar
+          retention-days: 2
+          compression-level: 0
+          if-no-files-found: error
