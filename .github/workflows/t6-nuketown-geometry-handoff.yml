@@ -1,0 +1,61 @@
+name: T6 Nuketown original geometry source handoff
+
+on:
+  push:
+    branches: [work/t6-nuketown-geometry-handoff-20261028]
+    paths: [".github/workflows/t6-nuketown-geometry-handoff.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-map:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Transfer and SHA-verify original Nuketown FastFile
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/r2_download.py \
+            --base-url https://r2.houseofkublai.com \
+            --key bo2/zone/all/mp_nuketown_2020.ff \
+            --output-dir "$RUNNER_TEMP/t6"
+          echo "6c026322a713c461a03de9815bf6eef0e959fb2ab5d82299b029b775fa1ab1e0  $RUNNER_TEMP/t6/artifact/bo2/zone/all/mp_nuketown_2020.ff" | sha256sum -c -
+      - uses: actions/checkout@v4
+        with:
+          repository: lizardpeter/bo2-t6-assets
+          path: oracle
+          persist-credentials: false
+      - name: Independently expand and audit original GfxWorld
+        shell: bash
+        run: |
+          set -euo pipefail
+          gcc -O2 oracle/tools/t6_fastfile_expand_pc_v1.c -lcrypto -lz -o "$RUNNER_TEMP/t6_expand"
+          "$RUNNER_TEMP/t6_expand" \
+            "$RUNNER_TEMP/t6/artifact/bo2/zone/all/mp_nuketown_2020.ff" \
+            "$RUNNER_TEMP/t6/expanded.bin" \
+            mp_nuketown_2020
+          echo "7e791fb90a085f3bff9e0df895e5a232fa91cc43bcd0027225fe811f7891d505  $RUNNER_TEMP/t6/expanded.bin" | sha256sum -c -
+          mkdir -p output
+          python3 oracle/tools/t6_nuketown_original_gfxworld_integrity_v1.py \
+            "$RUNNER_TEMP/t6/expanded.bin" \
+            --report output/t6_nuketown_geometry_integrity.json
+      - name: Publish original-byte geometry report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-nuketown-original-geometry-integrity-v1
+          path: output/t6_nuketown_geometry_integrity.json
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Publish original bytes for offline investigation
+        uses: actions/upload-artifact@v4
+        with:
+          name: t6-nuketown-2020-original-map-verified
+          path: ${{ runner.temp }}/t6/artifact/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
