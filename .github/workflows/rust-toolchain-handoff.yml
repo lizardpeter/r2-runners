@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   deliver:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - name: Retrieve persistent Rust toolchain from public R2
@@ -29,7 +29,8 @@ jobs:
           stat -c 'Downloaded %s bytes from persistent R2 toolchain' "$RUNNER_TEMP/rust-toolchain/"*.tar
           test "$(stat -c%s "$RUNNER_TEMP/rust-toolchain/"*.tar)" = "210515736"
           tar -tf "$RUNNER_TEMP/rust-toolchain/"*.tar > "$RUNNER_TEMP/rust-toolchain/file-list.txt"
-          grep -E '/(bin/(cargo|rustc)|install.sh)
+          grep -E '/(bin/(cargo|rustc)|install\.sh)' "$RUNNER_TEMP/rust-toolchain/file-list.txt" | head -20
+
       - name: Expose original toolchain archive for container handoff
         uses: actions/upload-artifact@v4
         with:
@@ -37,13 +38,4 @@ jobs:
           path: ${{ runner.temp }}/rust-toolchain/*.tar
           compression-level: 0
           retention-days: 3
-          if-no-files-found: error
- "$RUNNER_TEMP/rust-toolchain/file-list.txt" | head -20
-      - name: Expose original toolchain archive for container handoff
-        uses: actions/upload-artifact@v4
-        with:
-          name: rust-linux-x86-64-complete-toolchain
-          path: ${{ runner.temp }}/rust-toolchain/*.tar
-          compression-level: 0
-          retention-days: 2
           if-no-files-found: error
