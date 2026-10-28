@@ -1,0 +1,68 @@
+name: H1 encrypted temporary original source relay to private offline build
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/mwr-encrypted-source-relay.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  encrypt-real-h1-fastfile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Download and verify the exact original H1 map into ephemeral runner scratch
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-all-errors --connect-timeout 25 --max-time 1200 \
+            --output "$RUNNER_TEMP/mp_crash_snow.ff" \
+            "https://r2.houseofkublai.com/h1/h1_full_files/zone/mp_crash_snow.ff"
+          test "$(stat -c%s "$RUNNER_TEMP/mp_crash_snow.ff")" = 343800140
+          echo '8c88dd68e52610f6256cf8bad6743b09d346ef1d81e39852ff388b1ab82590a0  '${RUNNER_TEMP}'/mp_crash_snow.ff' | sha256sum -c -
+      - name: Encrypt retail FastFile using public-only ephemeral RSA certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/mwr-transfer-public.crt" <<'CERT'
+-----BEGIN CERTIFICATE-----
+MIIEMTCCApmgAwIBAgIUOuNJie3BJWzHPTt9LjjBJBxwmFkwDQYJKoZIhvcNAQEL
+BQAwKDEmMCQGA1UEAwwdRXBoZW1lcmFsIE1XUiBTb3VyY2UgVHJhbnNmZXIwHhcN
+MjYxMDI4MTY1NDI3WhcNMjYxMDMwMTY1NDI3WjAoMSYwJAYDVQQDDB1FcGhlbWVy
+YWwgTVdSIFNvdXJjZSBUcmFuc2ZlcjCCAaIwDQYJKoZIhvcNAQEBBQADggGPADCC
+AYoCggGBAMJ9mXZjafIquQnSl4dF2tqHIpcsAxUbpsc2mRxIfdH3QaZXOf8GMeo3
+mCtlzU2e2OddBInXxvoixviSWpgQiVK9coykRxu4fh3WXzv7W+R4A5eBjlW6pUQj
+kfZKKyjCw14gH2glOEd1s1+T0E+5uLcoRMbJ+yVPCr7pzV8fILdDqAG9zrqqgLyg
+ZMCJ0DgoX7chMSkUClIr4+qwwi5XGOpFVi0N2Ydga19CuafHJSP59/jtVKL9hP/i
+gl1KhhKRCwJxmLeBV7Dh1lcMRAVvZPG1SK2Kye/yHQf24FAD5RioNRQqYnU9noOo
+lmNot5bnmLITe05ZdZDieCEVb50nzBjx0nhamVenrTMpm5H7G+Sb/0V1Psyub39m
+MUIVc/8Du1wOYtrYf/JWY8zwLXFYzsGma7QbtXQTScjQpZuxddiE26uV03uKMX/+
+Cn4Xz5zfIy+wT0tZO6Zm/A4nQ7E6SxiR0TKVQ5JIxBNWdRJg/fhQ3VElkD3bmcvp
+EgLTkuKBpwIDAQABo1MwUTAdBgNVHQ4EFgQUGMvGWEuQ1QE1+gKhWnA/dYKqctAw
+HwYDVR0jBBgwFoAUGMvGWEuQ1QE1+gKhWnA/dYKqctAwDwYDVR0TAQH/BAUwAwEB
+/zANBgkqhkiG9w0BAQsFAAOCAYEAZzEy1040rFFms3XOKb4JtodnAND5oQzysS/y
+18/cAmqE7UsU6CiCvzYaHvrogOeOTkSGm2qQekBWyG/BWRfistiPFRy3XdnFA5MM
+TuQQ8b6SVJrjW9VI6ZVSm6ewUoJ/Dt3tc6pF2bjjETzjG/6gC8Gg1P915jS4ojZI
+JrA1wCBv8VSpRkiQPJZb/owdE+Gt56FrIK5BHM7bTMjjw42PdDOP4kqAGIjOhmaK
+3shZ7YPvG3UsZwwsf5kDtkogr2ZXXVSYH0byyoMTTuQSEsAHxMn8SxoomFo4B6dx
+vJ9oGn0QEVWQzpCGDPWKSCnZ9hUrqL3LW0HNWoI9QF94jVcayxFBor9RLXfBTthX
+/Kyx4tU6cSsdVn7lKeMmpMMmdhZhccY+1IeXiuE1AB8KNNPtuvDCvYvkhlFJkKn3
+hPfthwmhNySPRRCTn0i9pwJx/N8Co7/E0m0kRu7RCA9gPoHAO9rXYHw9WuoLl2dz
+fY/sbxjvfmP/eaOvlQKfDRSh1gP6
+-----END CERTIFICATE-----
+CERT
+          openssl cms -encrypt -binary -stream -aes-256-gcm -outform DER \
+            -in "$RUNNER_TEMP/mp_crash_snow.ff" \
+            -out "$RUNNER_TEMP/mp_crash_snow.ff.cms" "$RUNNER_TEMP/mwr-transfer-public.crt"
+          test -s "$RUNNER_TEMP/mp_crash_snow.ff.cms"
+          rm "$RUNNER_TEMP/mp_crash_snow.ff"
+          echo 'Only AES-256-GCM/RSA-3072 ciphertext is published; private decryption key lives only in the assistant local container.'
+      - name: Transfer encrypted-only H1 source blob
+        uses: actions/upload-artifact@v4
+        with:
+          name: h1-original-mp-crash-snow-encrypted-only
+          path: ${{ runner.temp }}/mp_crash_snow.ff.cms
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
