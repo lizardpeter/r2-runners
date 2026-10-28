@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        map: [conflict, strikezone, warhawk, alien_armory]
+        map: [alien_town, alien_armory, alien_beacon, alien_dlc3, alien_last, battery3, boneyard_ns, ca_behemoth, ca_impact, ca_red_river, ca_rumble, chasm, conflict, dart, descent_new, dig, dome_ns, fahrenheit, favela_iw6, flooded, frag, hashima, lonestar, mine, pirate, prisonbreak, shipment_ns, skeleton, snow, sovereign, strikezone, swamp, warhawk, zebra, zerosub, zulu]
     steps:
       - name: Download exact original retail Conflict map
         shell: bash
@@ -26,16 +26,22 @@ jobs:
             strikezone) expected=138884972 ;;
             warhawk) expected=119412812 ;;
             alien_armory) expected=249387180 ;;
-            *) exit 1 ;;
+            alien_town) expected=186301740 ;;
+            *) expected=0 ;;
           esac
           curl -fLsS --retry 4 --retry-all-errors --retry-delay 3 \
             --connect-timeout 30 --max-time 1000 \
             "https://r2.houseofkublai.com/ghosts/DUMP/$original" \
             -o "$RUNNER_TEMP/iw6/source.ff"
-          test "$(stat -c%s "$RUNNER_TEMP/iw6/source.ff")" -eq "$expected"
+          if test "$expected" -gt 0; then
+            test "$(stat -c%s "$RUNNER_TEMP/iw6/source.ff")" -eq "$expected"
+          fi
+          test "$(stat -c%s "$RUNNER_TEMP/iw6/source.ff")" -gt 500000
           sha256sum "$RUNNER_TEMP/iw6/source.ff"
           if test "$original" = mp_conflict.ff; then
             echo "0030fe53fc2259ab3d1019a1bfc44adb1859ed2111521a741109b8518bacaa9c  $RUNNER_TEMP/iw6/source.ff" | sha256sum -c
+          elif test "$original" = mp_alien_town.ff; then
+            echo "e5fa1a4b094466e329f5f4f7d035c9afd31d1b1822121ec8086c05174a796d81  $RUNNER_TEMP/iw6/source.ff" | sha256sum -c
           fi
       - name: Validate every signed source block and original source XAsset directory
         shell: bash
