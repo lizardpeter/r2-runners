@@ -100,6 +100,75 @@ jobs:
                       ptr=u64(x,directory+i*16+8)
                       types[kind]+=1
                       if i<40:first.append(dict(index=i,kind=kind,pointer=hex(ptr)))
+                  # Walk the REAL first 22 XAsset #52 NetConstStrings
+                  # and the following original #22 ComWorld body in exact
+                  # loader order, not by scanning for strings or lights.
+                  # Their original handles consume XFile bytes in VIRTUAL;
+                  # alignment consumes logical positions only.
+                  body_at=directory+16*assets
+                  authored_strings=0
+                  source_netconst=[]
+                  for i in range(22):
+                      assert u64(x,directory+i*16)==52, f"original asset #{i} is not NetConstStrings"
+                      h=body_at
+                      count=u32(x,h+16)
+                      refs=u64(x,h+24)
+                      assert count<1_000_000,"original net string count exceeds guard"
+                      body_at+=32
+                      name=None
+                      if inline(u64(x,h)):
+                          end=x.find(b"\0",body_at,body_at+65536)
+                          assert end>=body_at,"net string name missing"
+                          name=x[body_at:end].decode("utf8","replace")
+                          body_at=end+1
+                      if inline(refs):
+                          assert body_at+count*8<=len(x),"net strings array beyond original source"
+                          originals=[u64(x,body_at+8*j) for j in range(count)]
+                          body_at+=count*8
+                          for ref in originals:
+                              if inline(ref):
+                                  end=x.find(b"\0",body_at,body_at+65536)
+                                  assert end>=body_at,"nested original NetConstString unterminated"
+                                  body_at=end+1
+                                  authored_strings+=1
+                      else:
+                          assert count==0,"original net string handles require new packed-alias owner"
+                      source_netconst.append(dict(asset=i,name=name,count=count))
+                  assert u64(x,directory+22*16)==20,"original ComWorld is not XAsset #22"
+                  com_at=body_at
+                  nlights=u32(x,com_at+12)
+                  assert nlights<=4096,"ComWorld original light count outside safe guard"
+                  com_name_ptr=u64(x,com_at)
+                  com_lights_ptr=u64(x,com_at+16)
+                  body_at+=40
+                  if inline(com_name_ptr):
+                      end=x.find(b"\0",body_at,body_at+4096)
+                      assert end>=body_at,"ComWorld authored name missing"
+                      com_name=x[body_at:end].decode("utf8","replace")
+                      body_at=end+1
+                  else:
+                      com_name=None
+                  lights=[]
+                  if inline(com_lights_ptr):
+                      lights_start=body_at
+                      body_at+=nlights*120
+                      assert body_at<=len(x),"ComWorld source primary light table overflows XFile"
+                      for j in range(nlights):
+                          at=lights_start+j*120
+                          original_name_ref=u64(x,at+112)
+                          original_name=None
+                          if inline(original_name_ref):
+                              end=x.find(b"\0",body_at,body_at+4096)
+                              assert end>=body_at,"ComPrimaryLight original name missing"
+                              original_name=x[body_at:end].decode("utf8","replace")
+                              body_at=end+1
+                          lights.append(dict(type=x[at],name=original_name))
+                  else:
+                      assert nlights==0,"original ComWorld lights have unresolved source handle"
+                  brushes=u32(x,com_at+24)
+                  if inline(u64(x,com_at+32)):
+                      body_at+=brushes*10
+                  original_light_types=dict(sorted(collections.Counter(v["type"] for v in lights).items()))
                   summary=dict(
                       source="original SHA256-authenticated mp_conflict.ff",
                       signed_physical_blocks=blocks,streamed_rows=rows,
@@ -110,7 +179,15 @@ jobs:
                       original_first_body_offset=directory+16*assets,
                       source_types=dict(sorted(types.items())),
                       first_original_assets=first,
-                      limitation="Source XAsset prelude/directory ONLY; no full body or Vulkan validation"
+                      original_netconst_strings_walked=source_netconst,
+                      original_inline_netconst_strings=authored_strings,
+                      original_comworld_offset=com_at,
+                      original_comworld_source_name=com_name,
+                      original_comworld_primary_lights=nlights,
+                      original_comworld_light_types=original_light_types,
+                      original_comworld_first_lights=lights[:8],
+                      original_next_asset_body_offset=body_at,
+                      limitation="Actual XAsset 0..22 body walk only; not a complete 1707-XAsset map or Vulkan frame"
                   )
                   print(json.dumps(summary,indent=2))
                   (root/"original_xasset_directory.json").write_text(json.dumps(summary,indent=2))
