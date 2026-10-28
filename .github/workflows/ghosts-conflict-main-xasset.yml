@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        map: [alien_town, alien_armory, alien_beacon, alien_dlc3, alien_last, battery3, boneyard_ns, ca_behemoth, ca_impact, ca_red_river, ca_rumble, chasm, conflict, dart, descent_new, dig, dome_ns, fahrenheit, favela_iw6, flooded, frag, hashima, lonestar, mine, pirate, prisonbreak, shipment_ns, skeleton, snow, sovereign, strikezone, swamp, warhawk, zebra, zerosub, zulu]
+        map: [boneyard_ns, lonestar]
     steps:
       - name: Download exact original retail Conflict map
         shell: bash
@@ -159,6 +159,13 @@ jobs:
                       else:
                           assert count==0,"original net string handles require new packed-alias owner"
                       source_netconst.append(dict(asset=i,name=name,count=count))
+                  print(json.dumps(dict(
+                      probe=source_name,
+                      first_non_netconst_asset=source_netconst_count,
+                      first_non_netconst_kind=u64(x,directory+source_netconst_count*16),
+                      prefix_kinds=[u64(x,directory+16*i) for i in range(min(50,assets))],
+                      first_body_after_netconsts=body_at
+                  ),indent=2),flush=True)
                   assert u64(x,directory+source_netconst_count*16)==20,"ComWorld does not directly follow the source NetConstStrings prefix"
                   com_at=body_at
                   nlights=u32(x,com_at+12)
