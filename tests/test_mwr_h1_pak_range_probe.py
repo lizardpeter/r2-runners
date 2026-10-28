@@ -1,6 +1,6 @@
 import unittest,struct,sys,pathlib
-sys.path.insert(0,str(pathlib.Path(__file__).resolve().parent))
-from h1_pak_range_probe import source_rows
+sys.path.insert(0,str(pathlib.Path(__file__).resolve().parents[1]/"scripts"))
+from mwr_h1_pak_range_probe import source_rows
 class TestH1PakRangeProbe(unittest.TestCase):
     def test_64bit_original_pak_offsets_and_archive_ids(self):
         packed=struct.pack('<6I',11<<16,0,1,1,64,1)
