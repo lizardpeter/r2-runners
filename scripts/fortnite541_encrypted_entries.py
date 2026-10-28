@@ -94,7 +94,7 @@ def run(out:Path):
                             logical=decoded[:unpacked]
                             row["decrypted_logical_bytes"]=len(logical)
                             row["decrypted_plaintext_sha256"]=hashlib.sha256(logical).hexdigest()
-                            row["decrypted_nul_bytes"]=logical.count(b"\\x00")
+                            row["decrypted_nul_bytes"]=logical.count(bytes((0,)))
                             row["decrypted_utf8_valid"]=False
                             try:
                                 logical.decode("utf8")
