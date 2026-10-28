@@ -1,4 +1,4 @@
-name: Ghosts IW6 authenticated Conflict main XAsset layout
+name: Ghosts IW6 authentic multiplayer and Extinction main XAsset layouts
 on:
   push:
     branches: [main]
@@ -9,19 +9,34 @@ permissions:
 jobs:
   original-conflict:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        map: [conflict, strikezone, warhawk, alien_armory]
     steps:
       - name: Download exact original retail Conflict map
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/iw6"
+          original="mp_${{ matrix.map }}.ff"
+          case "${{ matrix.map }}" in
+            conflict) expected=93133772 ;;
+            strikezone) expected=138884972 ;;
+            warhawk) expected=119412812 ;;
+            alien_armory) expected=249387180 ;;
+            *) exit 1 ;;
+          esac
           curl -fLsS --retry 4 --retry-all-errors --retry-delay 3 \
             --connect-timeout 30 --max-time 1000 \
-            https://r2.houseofkublai.com/ghosts/DUMP/mp_conflict.ff \
-            -o "$RUNNER_TEMP/iw6/mp_conflict.ff"
-          test "$(stat -c%s "$RUNNER_TEMP/iw6/mp_conflict.ff")" -eq 93133772
-          echo "0030fe53fc2259ab3d1019a1bfc44adb1859ed2111521a741109b8518bacaa9c  $RUNNER_TEMP/iw6/mp_conflict.ff" | sha256sum -c
+            "https://r2.houseofkublai.com/ghosts/DUMP/$original" \
+            -o "$RUNNER_TEMP/iw6/source.ff"
+          test "$(stat -c%s "$RUNNER_TEMP/iw6/source.ff")" -eq "$expected"
+          sha256sum "$RUNNER_TEMP/iw6/source.ff"
+          if test "$original" = mp_conflict.ff; then
+            echo "0030fe53fc2259ab3d1019a1bfc44adb1859ed2111521a741109b8518bacaa9c  $RUNNER_TEMP/iw6/source.ff" | sha256sum -c
+          fi
       - name: Validate every signed source block and original source XAsset directory
         shell: bash
         run: |
@@ -29,12 +44,14 @@ jobs:
           python3 - <<'PY'
           import collections,hashlib,json,mmap,os,pathlib,struct,tempfile,zlib
           root=pathlib.Path(os.environ["RUNNER_TEMP"])/"iw6"
-          src=(root/"mp_conflict.ff").read_bytes()
+          src=(root/"source.ff").read_bytes()
+          source_name="mp_${{ matrix.map }}.ff"
           u32=lambda b,i:struct.unpack_from("<I",b,i)[0]
           u64=lambda b,i:struct.unpack_from("<Q",b,i)[0]
           inline=lambda p:(p&0xfffffff0_00000000)==0xfdfdfdf0_00000000 and (p&0xffffffff) in (0xfffffffe,0xffffffff)
-          assert src[:8]==b"IWff0100" and len(src)==93133772
-          rows=u32(src,24);assert rows==5756
+          assert src[:8]==b"IWff0100" and len(src)>100_000
+          rows=u32(src,24)
+          assert rows%4==0 and rows<=1_000_000,"original stream table source count invalid"
           offset=44+24*rows
           assert len(src[offset:offset+8192])==8192
           offset+=8192
@@ -108,8 +125,10 @@ jobs:
                   body_at=directory+16*assets
                   authored_strings=0
                   source_netconst=[]
-                  for i in range(22):
-                      assert u64(x,directory+i*16)==52, f"original asset #{i} is not NetConstStrings"
+                  source_netconst_count=0
+                  for i in range(assets):
+                      if u64(x,directory+i*16)!=52:break
+                      source_netconst_count+=1
                       h=body_at
                       count=u32(x,h+16)
                       refs=u64(x,h+24)
@@ -134,7 +153,7 @@ jobs:
                       else:
                           assert count==0,"original net string handles require new packed-alias owner"
                       source_netconst.append(dict(asset=i,name=name,count=count))
-                  assert u64(x,directory+22*16)==20,"original ComWorld is not XAsset #22"
+                  assert u64(x,directory+source_netconst_count*16)==20,"ComWorld does not directly follow the source NetConstStrings prefix"
                   com_at=body_at
                   nlights=u32(x,com_at+12)
                   assert nlights<=4096,"ComWorld original light count outside safe guard"
@@ -179,7 +198,7 @@ jobs:
                       body_at+=brushes*10
                   original_light_types=dict(sorted(collections.Counter(v["type"] for v in lights).items()))
                   summary=dict(
-                      source="original SHA256-authenticated mp_conflict.ff",
+                      source="original signed+hashed "+source_name,
                       signed_physical_blocks=blocks,streamed_rows=rows,
                       decoded_bytes=length,decoded_sha256=hasher.hexdigest(),
                       script_strings=strings,first_script_strings=string_samples,
@@ -189,6 +208,7 @@ jobs:
                       source_types=dict(sorted(types.items())),
                       first_original_assets=first,
                       original_netconst_strings_walked=source_netconst,
+                      original_netconst_asset_count=source_netconst_count,
                       original_inline_netconst_strings=authored_strings,
                       original_comworld_offset=com_at,
                       original_comworld_source_name=com_name,
@@ -204,7 +224,7 @@ jobs:
                                name=entry["name"]) for entry in lights
                       ],
                       original_next_asset_body_offset=body_at,
-                      limitation="Actual XAsset 0..22 body walk only; not a complete 1707-XAsset map or Vulkan frame"
+                      limitation="Source prefix NetConstStrings + ComWorld walk only; not full XAsset closure or Vulkan frame"
                   )
                   print(json.dumps(summary,indent=2))
                   (root/"original_xasset_directory.json").write_text(json.dumps(summary,indent=2))
@@ -213,7 +233,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ghosts-conflict-original-xasset-directory
+          name: ghosts-${{ matrix.map }}-original-xasset-prefix
           path: ${{ runner.temp }}/iw6/original_xasset_directory.json
           retention-days: 3
           if-no-files-found: warn
