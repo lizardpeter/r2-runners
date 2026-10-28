@@ -51,7 +51,7 @@ jobs:
           hPfthwmhNySPRRCTn0i9pwJx/N8Co7/E0m0kRu7RCA9gPoHAO9rXYHw9WuoLl2dz
           fY/sbxjvfmP/eaOvlQKfDRSh1gP6
           -----END CERTIFICATE-----
-CERT
+          CERT
           openssl cms -encrypt -binary -stream -aes-256-gcm -outform DER \
             -in "$RUNNER_TEMP/mp_crash_snow.ff" \
             -out "$RUNNER_TEMP/mp_crash_snow.ff.cms" "$RUNNER_TEMP/mwr-transfer-public.crt"
