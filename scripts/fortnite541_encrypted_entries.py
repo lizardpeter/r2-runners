@@ -90,6 +90,20 @@ def run(out:Path):
                                                   "decrypted_stored_extent",
                                                   "decrypted_aes_aligned"))
                         row["status"]="sha1_domain_"+matches[0] if matches else "original_source_sha1_unmatched"
+                        if row["payload_stored_source_sha1_verified"]:
+                            logical=decoded[:unpacked]
+                            row["decrypted_logical_bytes"]=len(logical)
+                            row["decrypted_plaintext_sha256"]=hashlib.sha256(logical).hexdigest()
+                            row["decrypted_nul_bytes"]=logical.count(b"\\x00")
+                            row["decrypted_utf8_valid"]=False
+                            try:
+                                logical.decode("utf8")
+                                row["decrypted_utf8_valid"]=True
+                            except UnicodeDecodeError:
+                                pass
+                            row["decrypted_has_ini_section"]=any(
+                                line.lstrip().startswith(b"[") and b"]" in line
+                                for line in logical.splitlines())
         rows.append(row)
     ok=sum(bool(r.get("source_sha1_matching_domains")) for r in rows)
     result={"source":"actual main 5.41 original R2 retail PAK","index_proof":proof,
@@ -102,6 +116,8 @@ def run(out:Path):
             "verified_encrypted_payload_bytes":sum(
                 r["indexed_bytes"] for r in rows if r.get("source_sha1_matching_domains")),
             "unknown_encrypted_payloads":len(rows)-ok,
+            "decrypted_utf8_valid_files":sum(bool(r.get("decrypted_utf8_valid")) for r in rows),
+            "decrypted_ini_files_with_sections":sum(bool(r.get("decrypted_has_ini_section")) for r in rows),
             "complete_original_encrypted_payload_authentication":ok==len(rows),
             "retail_shader_semantics":None,"entries":rows}
     out.parent.mkdir(parents=True,exist_ok=True)
