@@ -24,7 +24,6 @@ const asJson = (data, status = 200) => new Response(JSON.stringify(data), {
 // Only trust the pinned public code branch as a source of provenance metadata.
 // Reports contain SHA-256 and byte-range metadata, never original game binaries.
 const PROOF_BASES = [
- "https://raw.githubusercontent.com/lizardpeter/r2-runners/feature/source-coverage-observatory-v1/observatory/reports/t6/",
  "https://raw.githubusercontent.com/lizardpeter/r2-runners/main/observatory/reports/t6/"
 ];
 async function getProof(name) {
@@ -137,6 +136,10 @@ function renderNestedProof(p,item,kind){
   const list=el("div","scrollproof"),tab=el("table"),body=el("tbody");
   for(const [fmtCode,n] of Object.entries(p.audio_format_code_counts)){const row=el("tr");row.append(el("td","mono","Code "+fmtCode),el("td","mono",fmt(n)+" indexed clips"));body.append(row)}
   tab.append(body);list.append(tab);box.append(list);
+  const pcm=Number(p.audio_format_code_counts["0"]||0),flac=Number(p.audio_format_code_counts["8"]||0);
+  box.append(el("p","foot",fmt(pcm)+" original PCM-coded clips have a native Rust sample-decoding path; "+
+    fmt(flac)+" original FLAC-coded clips are passed through as encoded bytes by the current Rust-test importer. "+
+    "This R2 header/index survey did not execute per-clip audio decoding or playback; detailed native audit results must be validated independently."));
  }
  if(p.entries_sample?.length){
   box.append(el("h3","","Original WAD nested filenames (sample)"));
