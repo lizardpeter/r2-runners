@@ -1,0 +1,34 @@
+name: Bedrock Studio MinGW x64 local linker handoff
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bedrock-studio-mingw-handoff.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  provide-mingw:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Package real GNU Windows cross-linker and libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -qq -y --no-install-recommends gcc-mingw-w64-x86-64-posix binutils-mingw-w64-x86-64
+          x86_64-w64-mingw32-gcc-posix --version | head -1
+          mkdir -p "$RUNNER_TEMP/bedrock-mingw"
+          cd /
+          files=$(find usr/bin -maxdepth 1 -name 'x86_64-w64-mingw32-*' -print)
+          tar -czf "$RUNNER_TEMP/bedrock-mingw/mingw-x64-complete.tar.gz" $files usr/lib/gcc/x86_64-w64-mingw32 usr/x86_64-w64-mingw32
+          sha256sum "$RUNNER_TEMP/bedrock-mingw/mingw-x64-complete.tar.gz"
+      - name: Publish toolchain for build in external Linux environment
+        uses: actions/upload-artifact@v4
+        with:
+          name: bedrock-studio-mingw-x64-complete
+          path: ${{ runner.temp }}/bedrock-mingw/*.tar.gz
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error
