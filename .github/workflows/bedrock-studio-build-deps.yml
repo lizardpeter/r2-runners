@@ -52,8 +52,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          out="$RUNNER_TEMP/bedrock-studio-assets/rust-std-1.99.1-x86_64-pc-windows-gnu.tar.xz"
-          url="https://static.rust-lang.org/dist/2026-10-13/rust-std-1.99.1-x86_64-pc-windows-gnu.tar.xz"
+          date="2026-10-13"
+          channel="$RUNNER_TEMP/bedrock-studio-assets/channel-rust-nightly.toml"
+          curl --fail --show-error --location --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 25 --max-time 60 -o "$channel" "https://static.rust-lang.org/dist/$date/channel-rust-nightly.toml"
+          grep -A8 '^\[pkg.rustc\]' "$channel" | grep -F '58cf8f9c35b355199727627d07ae34a4e2846d67'
+          out="$RUNNER_TEMP/bedrock-studio-assets/rust-std-nightly-x86_64-pc-windows-gnu.tar.xz"
+          url="https://static.rust-lang.org/dist/$date/rust-std-nightly-x86_64-pc-windows-gnu.tar.xz"
           curl --fail --show-error --location --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 25 --max-time 900 -o "$out" "$url"
           curl --fail --show-error --location --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 25 --max-time 60 -o "$out.sha256" "$url.sha256"
           (cd "$(dirname "$out")" && sha256sum -c "$(basename "$out").sha256")
