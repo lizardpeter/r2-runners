@@ -1,0 +1,76 @@
+name: Bedrock Studio local Windows cross-build dependencies
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bedrock-studio-build-deps.yml"
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Prepare exact Bedrock Studio dependency manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/bedrock-studio-deps"
+          mkdir -p "$work/src" "$work/.cargo" "$RUNNER_TEMP/bedrock-studio-assets"
+          cat > "$work/Cargo.toml" <<'TOML'
+          [package]
+          name = "minecraft-bedrock-save-editor"
+          version = "0.1.0"
+          edition = "2021"
+          [dependencies]
+          anyhow = "1"
+          bedrock-leveldb = "0.3.1"
+          bedrock-world = { version = "0.3.5", default-features = false }
+          clap = { version = "4", features = ["derive"] }
+          indexmap = "2"
+          serde = { version = "1", features = ["derive"] }
+          serde_json = "1"
+          tiny_http = "0.12"
+          urlencoding = "2"
+          walkdir = "2"
+          rand = "0.8"
+          [target.'cfg(windows)'.dependencies]
+          rfd = "0.15"
+          TOML
+          printf '%s\n' 'fn main() {}' > "$work/src/main.rs"
+          cd "$work"
+          cargo generate-lockfile
+          cargo vendor --locked --versioned-dirs vendor > .cargo/config.toml
+          test -s Cargo.lock
+          test -s .cargo/config.toml
+          for crate in anyhow bedrock-leveldb bedrock-world clap indexmap serde serde_json tiny_http urlencoding walkdir rand rfd; do
+            test -n "$(find vendor -maxdepth 1 -type d -name "$crate-*" -print -quit)"
+          done
+          tar -czf "$RUNNER_TEMP/bedrock-studio-assets/cargo-vendor.tar.gz" Cargo.lock vendor .cargo
+          sha256sum "$RUNNER_TEMP/bedrock-studio-assets/cargo-vendor.tar.gz"
+      - name: Download matching Rust 1.99.1 Windows GNU standard library
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/bedrock-studio-assets/rust-std-1.99.1-x86_64-pc-windows-gnu.tar.xz"
+          url="https://static.rust-lang.org/dist/2026-10-13/rust-std-1.99.1-x86_64-pc-windows-gnu.tar.xz"
+          curl --fail --show-error --location --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 25 --max-time 900 -o "$out" "$url"
+          curl --fail --show-error --location --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 25 --max-time 60 -o "$out.sha256" "$url.sha256"
+          (cd "$(dirname "$out")" && sha256sum -c "$(basename "$out").sha256")
+      - name: Download Zig cross-linker
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz"
+          out="$RUNNER_TEMP/bedrock-studio-assets/zig-linux-x86_64-0.13.0.tar.xz"
+          curl --fail --show-error --location --retry 5 --retry-all-errors --retry-delay 2 --connect-timeout 25 --max-time 900 -o "$out" "$url"
+          tar -tJf "$out" | head -5
+          sha256sum "$out"
+      - name: Publish dependencies only for local build in ChatGPT environment
+        uses: actions/upload-artifact@v4
+        with:
+          name: bedrock-studio-windows-cross-build-deps
+          path: ${{ runner.temp }}/bedrock-studio-assets/*
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
