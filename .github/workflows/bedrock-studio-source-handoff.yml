@@ -1,0 +1,30 @@
+name: Bedrock Studio encrypted private-source handoff
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bedrock-studio-source-handoff.yml"
+      - "handoff/bedrock-studio-source-20261030-*.enc"
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage encrypted private source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bedrock-studio"
+          cp handoff/bedrock-studio-source-20261030-*.enc "$RUNNER_TEMP/bedrock-studio/"
+          sha256sum "$RUNNER_TEMP/bedrock-studio/"*.enc
+      - name: Upload encrypted source for local decryption
+        uses: actions/upload-artifact@v4
+        with:
+          name: bedrock-studio-encrypted-source-20261030
+          path: ${{ runner.temp }}/bedrock-studio/*.enc
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
