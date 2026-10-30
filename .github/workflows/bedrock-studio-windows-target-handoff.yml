@@ -1,0 +1,41 @@
+name: Bedrock Studio Windows GNU target and self-contained linker handoff
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bedrock-studio-windows-target-handoff.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Install exact Rust 1.99.1 Windows GNU target
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.99.1 --profile minimal --target x86_64-pc-windows-gnu
+          rustup run 1.99.1 rustc -Vv
+          rustup_root=$(rustup toolchain list --verbose | awk '/1.99.1-x86_64-unknown-linux-gnu/ {print $2; exit}')
+          test -d "$rustup_root/lib/rustlib/x86_64-pc-windows-gnu/lib"
+          mkdir -p "$RUNNER_TEMP/bedrock-windows-target"
+          tar -czf "$RUNNER_TEMP/bedrock-windows-target/windows-gnu-std-rust-1.99.1.tar.gz" -C "$rustup_root" lib/rustlib/x86_64-pc-windows-gnu
+      - name: Download standalone Zig GNU Windows cross-linker
+        shell: bash
+        run: |
+          set -euo pipefail
+          url='https://ziglang.org/download/0.13.0/zig-linux-x86_64-0.13.0.tar.xz'
+          file="$RUNNER_TEMP/bedrock-windows-target/zig-linux-x86_64-0.13.0.tar.xz"
+          curl --fail --show-error --location --retry 3 --retry-delay 2 --connect-timeout 25 --max-time 500 -o "$file" "$url"
+          tar -tJf "$file" | grep -m1 '/zig$' || true
+          sha256sum "$file"
+      - name: Publish Windows GNU crossbuild dependencies
+        uses: actions/upload-artifact@v4
+        with:
+          name: bedrock-studio-windows-gnu-target-and-zig
+          path: ${{ runner.temp }}/bedrock-windows-target/*
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
