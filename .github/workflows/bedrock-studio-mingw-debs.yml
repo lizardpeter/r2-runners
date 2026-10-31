@@ -1,0 +1,35 @@
+name: Portable MinGW-w64 GCC toolchain handoff for local Bedrock Studio cross-link
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bedrock-studio-mingw-debs.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  deliver-packages:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Fetch unmodified Ubuntu MinGW compiler and runtime DEB packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          mkdir -p "$RUNNER_TEMP/mingw-debs"
+          cd "$RUNNER_TEMP/mingw-debs"
+          for pkg in binutils-mingw-w64-x86-64 gcc-mingw-w64-base gcc-mingw-w64-x86-64-posix gcc-mingw-w64-x86-64-posix-runtime mingw-w64-common mingw-w64-x86-64-dev; do
+            apt-get download "$pkg"
+          done
+          find . -maxdepth 1 -name '*.deb' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+          ls -lh *.deb
+          sha256sum -c SHA256SUMS
+      - name: Upload exact packaged MinGW compiler and libraries for local linking
+        uses: actions/upload-artifact@v4
+        with:
+          name: bedrock-studio-mingw-gcc-runtime-debs
+          path: ${{ runner.temp }}/mingw-debs/*
+          compression-level: 0
+          retention-days: 3
+          if-no-files-found: error
