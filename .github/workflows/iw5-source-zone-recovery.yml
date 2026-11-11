@@ -1,0 +1,33 @@
+name: IW5 recover original multiplayer FF
+on:
+  push:
+    branches: ["work/iw5-stream-source-20261021"]
+    paths:
+      - ".github/workflows/iw5-source-zone-recovery.yml"
+      - "scripts/iw5_extract_zone.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recover-original-map:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install bounded ZIP streaming support
+        run: |
+          python3 -m venv "$RUNNER_TEMP/iw5-env"
+          "$RUNNER_TEMP/iw5-env/bin/pip" -q install stream-unzip
+      - name: Recover full original multiplayer FastFile binary (not just metadata)
+        run: |
+          "$RUNNER_TEMP/iw5-env/bin/python" scripts/iw5_extract_zone.py \
+            --out "$RUNNER_TEMP/iw5-original-map" --max-files 1
+      - name: Preserve exact recovered source FF bytes and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iw5-original-multiplayer-fastfile
+          path: ${{ runner.temp }}/iw5-original-map/
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: warn

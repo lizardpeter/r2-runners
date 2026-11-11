@@ -1,0 +1,70 @@
+name: IW5 authenticated XAsset and localization proof
+on:
+  push:
+    branches: ["work/iw5-stream-source-20261021"]
+    paths:
+      - "scripts/iw5_asset_proof.py"
+      - "scripts/iw5_shader_proof.py"
+      - "scripts/iw5_complete_material_proof.py"
+      - "scripts/iw5_material_image_link.py"
+      - "scripts/iw5_retail_pixel_math_proof.py"
+      - ".github/workflows/iw5-xasset-proof.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  retail-xasset-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Recover prior source-original FF artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: iw5-original-ff-source
+          run-id: 39636056509
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/original-iw5
+      - name: Recover original IWI from independent R2 nested-IWD run
+        uses: actions/download-artifact@v4
+        with:
+          name: iw5-retail-fof-image
+          run-id: 39676265562
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/original-iw5-image
+      - name: Verify actual original IW5 XAsset tables and localization
+        run: |
+          python3 scripts/iw5_asset_proof.py \
+            --samples "$RUNNER_TEMP/original-iw5/source_samples" \
+            --out "$RUNNER_TEMP/iw5-proof"
+      - name: Verify 1,021 actual retail shader programs and CTAB bindings
+        run: |
+          python3 scripts/iw5_shader_proof.py \
+            --samples "$RUNNER_TEMP/original-iw5/source_samples" \
+            --out "$RUNNER_TEMP/iw5-proof"
+      - name: Verify complete authentic IW5 material shader and texture records
+        run: |
+          python3 scripts/iw5_complete_material_proof.py \
+            --samples "$RUNNER_TEMP/original-iw5/source_samples" \
+            --out "$RUNNER_TEMP/iw5-proof"
+      - name: Prove real IWD BC2 pixels match original FastFile shader material
+        run: |
+          python3 scripts/iw5_material_image_link.py \
+            --proofs "$RUNNER_TEMP/iw5-proof" \
+            --iwd "$RUNNER_TEMP/original-iw5-image" \
+            --out "$RUNNER_TEMP/iw5-proof"
+      - name: Validate original D3D9 TEXLD MUL against actual BC2 image texels
+        run: |
+          python3 scripts/iw5_retail_pixel_math_proof.py \
+            --samples "$RUNNER_TEMP/original-iw5/source_samples" \
+            --iwd "$RUNNER_TEMP/original-iw5-image" \
+            --out "$RUNNER_TEMP/iw5-proof"
+      - name: Upload analysis results (no source bytes)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iw5-verified-xasset-report
+          path: ${{ runner.temp }}/iw5-proof/*.json
+          retention-days: 7
+          if-no-files-found: warn

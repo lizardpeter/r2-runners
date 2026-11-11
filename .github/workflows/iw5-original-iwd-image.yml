@@ -1,0 +1,31 @@
+name: IW5 original nested IWD image extraction
+on:
+  push:
+    branches: ["work/iw5-stream-source-20261021"]
+    paths:
+      - ".github/workflows/iw5-original-iwd-image.yml"
+      - "scripts/iw5_iwd_original_image.py"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  original-iwd-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install streaming ZIP decoder
+        run: |
+          python3 -m venv "$RUNNER_TEMP/iw5-env"
+          "$RUNNER_TEMP/iw5-env/bin/pip" -q install stream-unzip
+      - name: Search original R2 nested IWDs for actual linked material image
+        run: |
+          "$RUNNER_TEMP/iw5-env/bin/python" scripts/iw5_iwd_original_image.py --output "$RUNNER_TEMP/iw5-iwd"
+      - name: Save original IWI bytes and source provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iw5-retail-fof-image
+          path: ${{ runner.temp }}/iw5-iwd/
+          retention-days: 3
+          if-no-files-found: warn
