@@ -19,6 +19,13 @@ jobs:
       - name: Checkout R2 runner tools
         uses: actions/checkout@v4
 
+      - name: Resolve R2 custom domain through Cloudflare edge
+        shell: bash
+        run: |
+          echo "104.18.54.45 r2.houseofkublai.com" | sudo tee -a /etc/hosts
+          echo "104.18.55.45 r2.houseofkublai.com" | sudo tee -a /etc/hosts
+          getent hosts r2.houseofkublai.com
+
       - name: Retrieve exact Metro V2 source objects from R2
         shell: bash
         run: |
