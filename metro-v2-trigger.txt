@@ -1,1 +1,1 @@
-Final retry: source handoff workflow now pins the R2 custom domain to Cloudflare edge.
+Retrieve Metro V2 17559 sources from the corrected https://r2.houseofkublai.com origin.
