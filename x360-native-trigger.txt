@@ -1,1 +1,1 @@
-Retrieve and hash-check original Xbox 360 font candidates for Metro 17559.
+Retry original font candidates after fixing the download command.
