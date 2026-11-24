@@ -1,0 +1,32 @@
+name: Debian 13 public Vulkan software-driver handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/debian-vulkan-software-driver-handoff.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Fetch official Debian binary packages only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/vulkan-debs"
+          docker run --rm -v "$RUNNER_TEMP/vulkan-debs:/out" debian:13-slim bash -ec '
+            apt-get update
+            cd /out
+            apt-get download mesa-vulkan-drivers libllvm19 libdrm2 libdrm-amdgpu1 libdrm-intel1 libxcb-dri3-0 libxcb-present0 libxcb-randr0 libxcb-shm0 libxcb-sync1 libxcb-xfixes0 libxcb1 libwayland-client0 libwayland-server0 libx11-xcb1 libxshmfence1 libzstd1 libelf1t64 libexpat1 libstdc++6 libgcc-s1 libffi8 libxml2 libedit2 libz3-4 zlib1g libvulkan1
+            sha256sum *.deb > SHA256SUMS
+          '
+          du -sh "$RUNNER_TEMP/vulkan-debs"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: debian-13-public-vulkan-driver
+          path: ${{ runner.temp }}/vulkan-debs/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
