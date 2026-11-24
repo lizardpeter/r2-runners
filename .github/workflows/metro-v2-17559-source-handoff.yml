@@ -1,0 +1,134 @@
+name: Metro V2 17559 exact-source handoff
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - metro-v2-17559-handoff-20261124
+    paths:
+      - "metro-v2-trigger.txt"
+
+permissions:
+  contents: read
+
+jobs:
+  retrieve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout R2 runner tools
+        uses: actions/checkout@v4
+
+      - name: Retrieve exact Metro V2 source objects from R2
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          from urllib.parse import quote
+
+          sys.path.insert(0, "scripts")
+          from r2_download import download, validate_key
+
+          base = "https://r2.houseofkublai"
+          output = Path("handoff")
+          output.mkdir(parents=True, exist_ok=True)
+
+          sources = [
+              {
+                  "key": "x360/Xbox360-Metro-V2-17559/J-Runner-with-Extras.zip",
+                  "bytes": 233430403,
+                  "sha256": "E8B01B60827F3012F4C3D7A5E6DC7F09DCE3BD028EAE67AC34CA8E1EFE81941B",
+              },
+              {
+                  "key": "x360/Xbox360-Metro-V2-17559/SystemUpdate_17559_USB.zip",
+                  "bytes": 115992188,
+                  "sha256": "38885A3AB6B9854FB4FA31D5DDF21A4FDDFD4CFB25E219060CFB0C2FB31F208F",
+              },
+              {
+                  "key": "x360/Xbox360-Metro-V2-17559/xeBuild_1.21.zip",
+                  "bytes": 1296437,
+                  "sha256": "51B588FD44219A59F8B305FA8D824770FEBAB5A0A30BAE8D1ACED38379471E9E",
+              },
+              {
+                  "key": "x360/Xbox360-Metro-V2-17559/dashboard-archive/dash.xex",
+                  "bytes": 5971968,
+                  "sha256": "3AD8F38D070EAF63CADAC0697E3E8802C565CBFD0825A485347C5D718014F927",
+              },
+              {
+                  "key": "x360/Xbox360-Metro-V2-17559/dashboard-archive/dashbigger.xex",
+                  "bytes": 15880192,
+                  "sha256": "FC4AD90638A8FFF7759734DEE364A48964E164D567699CA7E7ACA2DC06EBC8C2",
+              },
+              {
+                  "key": "x360/Xbox360-Metro-V2-17559/dashboard-archive/shrdres.xzp",
+                  "bytes": 223911,
+                  "sha256": "179C5BE167402297C6E137C08FEFE3146F6F497964DC2BDA94812596FC9AEFE0",
+              },
+              {
+                  "key": "x360/Xbox360-Metro-V2-17559/SystemUpdate_17559_USB/$SystemUpdate/su20076000_00000000",
+                  "bytes": 11862016,
+                  "sha256": "8119312192AD3AC41345336C6302A97BC471AF2AB6689F04FFE92E9E07BC7C45",
+              }
+          ]
+
+          results = []
+          errors = []
+          for item in sources:
+              key = validate_key(item["key"])
+              url = base + "/" + quote(key, safe="/")
+              dest = output / key
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              try:
+                  count, digest, content_type = download(url, dest)
+                  row = {
+                      "key": key,
+                      "artifact_path": dest.as_posix(),
+                      "bytes": count,
+                      "sha256": digest.upper(),
+                      "content_type": content_type,
+                      "expected_bytes": item["bytes"],
+                      "expected_sha256": item["sha256"],
+                      "size_ok": count == item["bytes"],
+                      "sha256_ok": item["sha256"] is None or digest.upper() == item["sha256"],
+                  }
+                  results.append(row)
+                  print(json.dumps(row))
+                  if not row["size_ok"] or not row["sha256_ok"]:
+                      errors.append({"key": key, "error": "size or SHA-256 mismatch"})
+              except Exception as exc:
+                  errors.append({"key": key, "error": repr(exc)})
+                  print(f"FAILED {key}: {exc}", file=sys.stderr)
+
+          report = {
+              "scope": "Xbox 360 Metro V2 retail dashboard 2.0.17559.0",
+              "source": "Cloudflare R2 public origin",
+              "complete": not errors and len(results) == len(sources),
+              "objects_requested": len(sources),
+              "objects_downloaded": len(results),
+              "results": results,
+              "errors": errors,
+          }
+          (output / "verification.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+          (output / "README.txt").write_text(
+              "Metro V2 17559 exact-source handoff\n"
+              "===================================\n"
+              "All downloaded objects retain their original R2 key-relative paths.\n"
+              "verification.json records byte counts, SHA-256 hashes, and expected values.\n"
+              "The ZIP archives are original source packages; no binaries are rewritten.\n"
+              "The PIRS update is also included as a separate object for direct extraction.\n",
+              encoding="utf-8",
+          )
+          if errors:
+              raise SystemExit(f"{len(errors)} R2 source downloads or validations failed")
+          PY
+
+      - name: Upload exact original source files and verification
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: metro-v2-17559-exact-source
+          path: handoff/
+          if-no-files-found: error
+          retention-days: 90
