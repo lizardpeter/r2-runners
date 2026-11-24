@@ -1,1 +1,1 @@
-Fetch original font candidates and compare them against the 17559 retail hashes.
+Retrieve and hash-check original Xbox 360 font candidates for Metro 17559.
