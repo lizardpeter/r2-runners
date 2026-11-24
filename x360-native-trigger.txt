@@ -1,1 +1,1 @@
-Retry original font candidates after fixing the download command.
+Run the corrected font-candidate retrieval step only once.
