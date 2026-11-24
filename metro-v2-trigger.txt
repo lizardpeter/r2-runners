@@ -1,1 +1,1 @@
-Retry Metro V2 17559 source retrieval using Cloudflare edge IP fallback.
+Retry source handoff with the DNS workaround included in this branch.
