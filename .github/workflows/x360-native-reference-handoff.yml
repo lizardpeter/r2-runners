@@ -96,6 +96,37 @@ jobs:
           print(json.dumps(rows,indent=2))
           PY
 
+      - name: Retrieve original Xbox 360 font candidates for 17559 hash comparison
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p handoff/x360-native-reference/font-candidates
+          cd handoff/x360-native-reference/font-candidates
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 --output xenonclatin.xtt https://raw.githubusercontent.com/dps-910/Original-Fonts-Xbox-360/main/xenonclatin.xtt
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 --output xenonclatin.xttp1 https://raw.githubusercontent.com/dps-910/Original-Fonts-Xbox-360/main/xenonclatin.xttp1
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 --output xenonjklatin.xtt https://raw.githubusercontent.com/dps-910/Original-Fonts-Xbox-360/main/xenonjklatin.xtt
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 --output xenonjklatin.xttp1 https://raw.githubusercontent.com/dps-910/Original-Fonts-Xbox-360/main/xenonjklatin.xttp1
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          expected={
+              "xenonjklatin.xtt":"9F20409BBE22CA92D483C24AA0930AC8EC761712C16D00C477F145071E707425",
+              "xenonclatin.xtt":"977BBE13D5545D300E57DACF9DFF492476452F50880EF3868D3AA308D041187D",
+          }
+          rows=[]
+          for p in sorted(Path(".").iterdir()):
+              if not p.is_file(): continue
+              h=hashlib.sha256()
+              with p.open("rb") as f:
+                  for c in iter(lambda:f.read(4*1024*1024),b""): h.update(c)
+              digest=h.hexdigest().upper()
+              rows.append({"file":p.name,"bytes":p.stat().st_size,"sha256":digest,
+                           "expected_17559_sha256":expected.get(p.name),
+                           "matches_17559":expected.get(p.name)==digest if p.name in expected else None})
+          Path("font-candidates.json").write_text(json.dumps(rows,indent=2)+"\\n")
+          print(json.dumps(rows,indent=2))
+          PY
+
       - name: Upload reference source and runtime package
         uses: actions/upload-artifact@v4
         with:
