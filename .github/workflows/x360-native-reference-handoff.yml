@@ -72,8 +72,7 @@ jobs:
           mkdir -p handoff/x360-native-reference/font-candidates
           cd handoff/x360-native-reference/font-candidates
           for file in xenonclatin.xtt xenonclatin.xttp1 xenonjklatin.xtt xenonjklatin.xttp1; do
-            curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 \\
-              --output "$file" "https://raw.githubusercontent.com/dps-910/Original-Fonts-Xbox-360/main/$file"
+            curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 30 --max-time 600 --output "$file" "https://raw.githubusercontent.com/dps-910/Original-Fonts-Xbox-360/main/$file"
           done
           python3 - <<'PY'
           import hashlib, json
@@ -92,7 +91,7 @@ jobs:
               rows.append({"file":p.name,"bytes":p.stat().st_size,"sha256":digest,
                            "expected_17559_sha256":expected.get(p.name),
                            "matches_17559":expected.get(p.name)==digest if p.name in expected else None})
-          Path("font-candidates.json").write_text(json.dumps(rows,indent=2)+"\\n")
+          Path("font-candidates.json").write_text(json.dumps(rows,indent=2)+"\n")
           print(json.dumps(rows,indent=2))
           PY
 
