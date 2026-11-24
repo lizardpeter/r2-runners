@@ -1,0 +1,90 @@
+name: Rust Tour photoreal asset and glTF dependency handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rust-tour-photoreal-assets.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  assets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Download CC0 city architecture models and license records
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/rust-tour-assets"/{city-hall,art-deco-skyscraper}
+          cd "$RUNNER_TEMP/rust-tour-assets"
+          curl -fL --retry 3 --max-time 180 -A 'RustTourAssetPipeline/1.0' \
+            https://grab3d.com/dl/city-hall/city-hall.glb -o city-hall/model.glb
+          curl -fL --retry 3 --max-time 180 -A 'RustTourAssetPipeline/1.0' \
+            https://grab3d.com/dl/city-hall/LICENSE.txt -o city-hall/LICENSE.txt
+          curl -fL --retry 3 --max-time 180 -A 'RustTourAssetPipeline/1.0' \
+            https://grab3d.com/dl/city-hall/manifest.json -o city-hall/manifest.json
+          curl -fL --retry 3 --max-time 180 -A 'RustTourAssetPipeline/1.0' \
+            https://grab3d.com/dl/art-deco-skyscraper/art-deco-skyscraper.glb -o art-deco-skyscraper/model.glb
+          curl -fL --retry 3 --max-time 180 -A 'RustTourAssetPipeline/1.0' \
+            https://grab3d.com/dl/art-deco-skyscraper/LICENSE.txt -o art-deco-skyscraper/LICENSE.txt
+          curl -fL --retry 3 --max-time 180 -A 'RustTourAssetPipeline/1.0' \
+            https://grab3d.com/dl/art-deco-skyscraper/manifest.json -o art-deco-skyscraper/manifest.json
+          cat > SOURCES.md <<'EOF'
+          # Rust Tour city architecture assets
+
+          Both models are published by Grab3D under CC0 1.0 according to their
+          model pages. Original license and manifest records are preserved beside
+          each downloaded GLB.
+
+          - City Hall: https://grab3d.com/models/buildings/city-hall/
+          - Art Deco Skyscraper: https://grab3d.com/models/buildings/art-deco-skyscraper/
+
+          These are imported geometry assets, not screenshots or menu artwork.
+          EOF
+          find . -type f -printf '%p %s bytes\n'
+          sha256sum city-hall/model.glb art-deco-skyscraper/model.glb > SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-tour-city-architecture-cc0
+          path: ${{ runner.temp }}/rust-tour-assets/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+
+  gltf-dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Vendor public glTF and image decoding dependencies only
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install 1.100.0 --profile minimal
+          mkdir -p "$RUNNER_TEMP/rust-tour-gltf/src"
+          cd "$RUNNER_TEMP/rust-tour-gltf"
+          cat > Cargo.toml <<'TOML'
+          [package]
+          name = "rust-tour-gltf-dependency-handoff"
+          version = "0.0.0"
+          edition = "2024"
+          rust-version = "1.100"
+          [dependencies]
+          gltf = { version = "1.4.1", default-features = false, features = ["import", "utils", "names", "KHR_materials_unlit", "KHR_texture_transform"] }
+          image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+          serde = { version = "1", features = ["derive"] }
+          serde_json = "1"
+          glam = "0.30"
+          bytemuck = { version = "1", features = ["derive"] }
+          TOML
+          printf 'fn main() {}\n' > src/main.rs
+          cargo +1.100.0 generate-lockfile
+          cargo +1.100.0 vendor --locked --versioned-dirs vendor > vendor-config.toml
+          tar -czf "$RUNNER_TEMP/rust-tour-gltf-vendor.tar.gz" Cargo.lock vendor vendor-config.toml
+          sha256sum "$RUNNER_TEMP/rust-tour-gltf-vendor.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-tour-gltf-offline-dependencies
+          path: ${{ runner.temp }}/rust-tour-gltf-vendor.tar.gz
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
