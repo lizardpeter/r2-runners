@@ -1,1 +1,1 @@
-Download x360-native v1.34.6 and its exact ReXGlue SDK source for local reference analysis.
+Fetch original font candidates and compare them against the 17559 retail hashes.
