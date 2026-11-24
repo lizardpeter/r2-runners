@@ -19,6 +19,13 @@ jobs:
       - name: Checkout R2 runner tools
         uses: actions/checkout@v4
 
+      - name: Resolve R2 custom domain through Cloudflare edge
+        shell: bash
+        run: |
+          echo "104.18.54.45 r2.houseofkublai.com" | sudo tee -a /etc/hosts
+          echo "104.18.55.45 r2.houseofkublai.com" | sudo tee -a /etc/hosts
+          getent hosts r2.houseofkublai.com
+
       - name: Retrieve exact Metro V2 source objects from R2
         shell: bash
         run: |
@@ -70,12 +77,7 @@ jobs:
                   "key": "x360/Xbox360-Metro-V2-17559/SystemUpdate_17559_USB/$SystemUpdate/su20076000_00000000",
                   "bytes": 11862016,
                   "sha256": "8119312192AD3AC41345336C6302A97BC471AF2AB6689F04FFE92E9E07BC7C45",
-              },
-              {
-                  "key": "x360/Xbox360-Metro-V2-17559/manifest-20261124-144935.csv",
-                  "bytes": 1314,
-                  "sha256": None,
-              },
+              }
           ]
 
           results = []
@@ -133,7 +135,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: metro-v2-17559-exact-source-\${{ github.run_id }}
+          name: metro-v2-17559-exact-source
           path: handoff/
           if-no-files-found: error
           retention-days: 90
