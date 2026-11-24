@@ -1,0 +1,57 @@
+name: Public Rust graphics dependencies and Slang handoff
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rust-graphics-deps-handoff.yml']
+permissions:
+  contents: read
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Vendor public dependencies (no application source)
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/deps/src"
+          cd "$RUNNER_TEMP/deps"
+          cat > Cargo.toml <<'TOML'
+          [package]
+          name = "public-graphics-deps"
+          version = "0.1.0"
+          edition = "2024"
+          [dependencies]
+          wgpu = "=24.0.5"
+          winit = "=0.30.12"
+          image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+          pollster = "0.4"
+          bytemuck = { version = "1", features = ["derive"] }
+          TOML
+          printf 'fn main() {}\n' > src/main.rs
+          cargo generate-lockfile
+          cargo vendor --locked --versioned-dirs vendor > cargo-vendor-config.toml
+          tar -czf "$RUNNER_TEMP/public-graphics-deps.tar.gz" Cargo.lock vendor cargo-vendor-config.toml
+      - name: Download public Slang release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/slang"
+          gh release view --repo shader-slang/slang --json tagName,assets > "$RUNNER_TEMP/slang/release.json"
+          name=$(jq -r '.assets[].name | select(test("^slang-.*-linux-x86_64\\.tar\\.gz$"))' "$RUNNER_TEMP/slang/release.json" | head -1)
+          test -n "$name"
+          gh release download --repo shader-slang/slang --pattern "$name" --dir "$RUNNER_TEMP/slang"
+          sha256sum "$RUNNER_TEMP/slang/"*.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-graphics-deps
+          path: ${{ runner.temp }}/public-graphics-deps.tar.gz
+          compression-level: 0
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-slang-compiler
+          path: ${{ runner.temp }}/slang
+          compression-level: 0
+          retention-days: 7
