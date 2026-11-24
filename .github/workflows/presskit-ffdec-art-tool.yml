@@ -1,0 +1,25 @@
+name: Public offline SWF artwork rasterizer handoff
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/presskit-ffdec-art-tool.yml']
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download pinned public artwork tool
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ffdec"
+          gh release download version26.5.0 --repo jindrapetrik/jpexs-decompiler --pattern ffdec_26.5.0.zip --dir "$RUNNER_TEMP/ffdec"
+          sha256sum "$RUNNER_TEMP/ffdec/"*.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-ffdec-art-tool
+          path: ${{ runner.temp }}/ffdec
+          retention-days: 3
+          compression-level: 0
