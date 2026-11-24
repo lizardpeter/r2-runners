@@ -1,1 +1,1 @@
-Trigger exact-source retrieval of Metro V2 17559 originals from houseofkublai R2.
+Retry Metro V2 17559 source retrieval using Cloudflare edge IP fallback.
