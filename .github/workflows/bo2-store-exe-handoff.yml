@@ -1,0 +1,60 @@
+name: BO2 Store exact executable encrypted handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/bo2-store-exe-handoff.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install cryptography
+      - name: Fetch exact Store files and encrypt for local research handoff
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, os, pathlib, urllib.request
+          from cryptography.hazmat.primitives import serialization, hashes
+          from cryptography.hazmat.primitives.asymmetric import padding
+          from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+          key = serialization.load_pem_public_key(b"""-----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2WqdOXpplA7hiffLVSI9
+          H61uM8DS4hM+l1s/8HtGO+Yh9NNcuYbXRm5b4xYN9egEFSx4luFrW2NOcmjkPPJZ
+          q5LZtYvezpE/CR2/sIpRRPi/PmNOLHL9N8PC/1e+Qm/zM6ThNLxh4AEiSPshQLHi
+          GJibZUtSrcLsY14UmQk2TX6jWTa5VqI1ENnH6ZyM4GiRCH3n/Hs4FQWL7svIQJp8
+          xBN/4kNJuGfoRcHlZEuEaecN6wiWP4j3TfH5Bi4Je4DvJFVGCfZWw/sodBjIzaoy
+          /QmRAKkRQ5yAxHx2cwZX9Ob+vAtyFlAU8bL+6oScgI4OHD0UtihU0xHiIimdDU4F
+          VQIDAQAB
+          -----END PUBLIC KEY-----""")
+          pins = {
+              "t6mp.exe": "cf80b8058bce7e00e4c61ff3d673308c1fcd8061f18fe66710803538eab4bc01",
+              "t6zm.exe": "7152ebe1c892ea8b1ea7a73811cb82bcdc22088816f5c731a6637d5461bb7416",
+          }
+          out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "bo2-handoff"
+          out.mkdir()
+          aes = AESGCM.generate_key(bit_length=256)
+          (out / "key.enc").write_bytes(key.encrypt(aes, padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None)))
+          for name, expected in pins.items():
+              req=urllib.request.Request("https://r2.houseofkublai.com/bo2/DUMP/"+name, headers={"User-Agent":"bo2-store-research/1"})
+              with urllib.request.urlopen(req, timeout=90) as response:
+                  data=response.read(64*1024*1024+1)
+              assert len(data)<=64*1024*1024
+              actual=hashlib.sha256(data).hexdigest()
+              assert actual==expected,(name,actual,expected)
+              nonce=os.urandom(12)
+              (out / (name+".enc")).write_bytes(nonce+AESGCM(aes).encrypt(nonce,data,name.encode()))
+              print(name,len(data),actual)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bo2-store-encrypted-executables
+          path: ${{ runner.temp }}/bo2-handoff/
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
