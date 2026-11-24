@@ -1,1 +1,1 @@
-Retry source handoff with the DNS workaround included in this branch.
+Final retry: source handoff workflow now pins the R2 custom domain to Cloudflare edge.
