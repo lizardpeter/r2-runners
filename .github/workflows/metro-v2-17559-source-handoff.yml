@@ -38,7 +38,7 @@ jobs:
           sys.path.insert(0, "scripts")
           from r2_download import download, validate_key
 
-          base = "https://r2.houseofkublai"
+          base = "https://r2.houseofkublai.com"
           output = Path("handoff")
           output.mkdir(parents=True, exist_ok=True)
 
