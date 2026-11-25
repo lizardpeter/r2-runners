@@ -1,4 +1,4 @@
-name: Rust Tour scanned scenery source asset handoff
+name: Rust Tour building facade source handoff
 on:
   push:
     branches: [main]
@@ -50,7 +50,7 @@ jobs:
               for rel,info in item.get('include',{}).items():
                   out.append(download(info['url'],asset+'/'+rel))
               return out
-          tasks=[(name,lambda n=name:poly(n,['leaves_alpha'],'1k')) for name in ['tree_small_02','island_tree_01']]
+          tasks=[(name,lambda n=name:model(n)) for name in ['modular_urban_apartments_facade','modular_factory_facade']]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
               for fut in concurrent.futures.as_completed(jobs):
@@ -64,7 +64,7 @@ jobs:
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-foliage-opacity-source
+          name: rust-tour-building-facade-source
           path: ${{ runner.temp }}/tour-source/
           compression-level: 0
           retention-days: 7
