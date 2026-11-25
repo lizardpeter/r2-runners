@@ -1,4 +1,4 @@
-name: Rust Tour BC7 encoder source handoff
+name: Rust Tour meshoptimizer source handoff
 on:
   push:
     branches: [main]
@@ -50,21 +50,21 @@ jobs:
               for rel,info in item.get('include',{}).items():
                   out.append(download(info['url'],asset+'/'+rel))
               return out
-          tasks=[('bc7',lambda:[download('https://raw.githubusercontent.com/richgel999/bc7enc_rdo/b9438627eef73a1157e84201b6fa6eb2ffd6d9f0/'+f,'bc7/'+f) for f in ['bc7enc.cpp','bc7enc.h','bc7decomp.cpp','bc7decomp.h','LICENSE']])]
+          tasks=[('meshopt',lambda:[download('https://raw.githubusercontent.com/zeux/meshoptimizer/8547fc321b782a2235dfc14c65a346a640544cd8/'+f,'meshopt/'+f) for f in ['src/meshoptimizer.h','src/simplifier.cpp','src/allocator.cpp','LICENSE.md']])]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
               for fut in concurrent.futures.as_completed(jobs):
                   try: sources+=fut.result()
                   except Exception as e: print(jobs[fut],repr(e))
           (root/'source_manifest.json').write_text(json.dumps(sources,indent=2))
-          (root/'LICENSES.md').write_text('bc7enc_rdo source, see bc7/LICENSE and pinned source URLs in manifest.\n')
+          (root/'LICENSES.md').write_text('meshoptimizer MIT license, see meshopt/LICENSE.md and pinned source URLs.\n')
           if not sources: raise RuntimeError('all transfers failed')
           PY
           find . -type f ! -name 'SHA256SUMS.tmp' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.tmp
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-bc7-tool-source
+          name: rust-tour-meshoptimizer-source
           path: ${{ runner.temp }}/tour-source/
           compression-level: 0
           retention-days: 7
