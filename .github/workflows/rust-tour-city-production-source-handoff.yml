@@ -35,7 +35,7 @@ jobs:
               (root/asset/'source.json').write_text(json.dumps(meta,indent=2))
               for kind in kinds:
                   variants=meta.get(kind,{}).get(resolution,{})
-                  item=next((variants[k] for k in ('hdr','jpg','png','exr') if k in variants),None)
+                  item=next((variants[k] for k in ('png','hdr','jpg','exr') if k in variants),None)
                   if item:
                       url=item['url']
                       out.append(download(url,asset+'/'+url.rsplit('/',1)[-1]))
@@ -50,7 +50,7 @@ jobs:
               for rel,info in item.get('include',{}).items():
                   out.append(download(info['url'],asset+'/'+rel))
               return out
-          tasks=[(name,lambda n=name:model(n)) for name in ['tree_small_02','island_tree_01','street_lamp_01','painted_wooden_bench','metal_trash_can']]
+          tasks=[(name,lambda n=name:poly(n,['leaves_alpha'],'1k')) for name in ['tree_small_02','island_tree_01']]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
               for fut in concurrent.futures.as_completed(jobs):
@@ -64,7 +64,7 @@ jobs:
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-scanned-scenery-source
+          name: rust-tour-foliage-opacity-source
           path: ${{ runner.temp }}/tour-source/
           compression-level: 0
           retention-days: 7
