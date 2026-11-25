@@ -1,0 +1,49 @@
+name: IW5 public Cargo dependency handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/iw5-public-cargo-vendor.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer-public-crates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Fetch only public registry dependencies (no private source or compilation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          work="$RUNNER_TEMP/iw5-public-deps"
+          mkdir -p "$work/src" "$work/.cargo"
+          cd "$work"
+          cat > Cargo.toml <<'TOML'
+          [package]
+          name = "iw5-public-dependencies-only"
+          version = "0.0.0"
+          edition = "2024"
+          rust-version = "1.100"
+          [dependencies]
+          flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+          sha2 = "0.10"
+          zip = { version = "2.4", default-features = false, features = ["deflate"] }
+          serde = { version = "1", features = ["derive", "rc"] }
+          bytemuck = { version = "1", features = ["min_const_generics", "extern_crate_alloc"] }
+          half = "2"
+          TOML
+          printf 'fn main() {}\n' > src/main.rs
+          cargo generate-lockfile
+          cargo vendor --locked --versioned-dirs vendor > .cargo/config.toml
+          for crate in flate2 sha2 zip serde serde_derive bytemuck half; do
+            test -n "$(find vendor -mindepth 1 -maxdepth 1 -type d -name "$crate-*" -print -quit)"
+          done
+          tar -czf "$RUNNER_TEMP/iw5-public-deps.tar.gz" Cargo.lock vendor .cargo/config.toml
+          sha256sum "$RUNNER_TEMP/iw5-public-deps.tar.gz"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iw5-public-cargo-vendor
+          path: ${{ runner.temp }}/iw5-public-deps.tar.gz
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
