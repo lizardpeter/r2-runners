@@ -1,4 +1,4 @@
-name: Rust Tour licensed city source asset handoff
+name: Rust Tour scanned scenery source asset handoff
 on:
   push:
     branches: [main]
@@ -40,27 +40,31 @@ jobs:
                       url=item['url']
                       out.append(download(url,asset+'/'+url.rsplit('/',1)[-1]))
               return out
-          tasks=[
-              ('walker',lambda:[download('https://grab3d.com/dl/man-rigged/man-rigged.glb','casual-man/model.glb'),download('https://grab3d.com/dl/man/LICENSE.txt','casual-man/LICENSE.txt'),download('https://grab3d.com/dl/man/manifest.json','casual-man/manifest.json')]),
-              ('cesium-test',lambda:[download('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb','cesium-test/model.glb'),download('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/README.md','cesium-test/README.md')]),
-              ('street',lambda:poly('wide_street_01',['hdri'],'2k')),
-              ('pavement',lambda:poly('pavement_01',['Diffuse','nor_gl','Rough','AO'],'2k')),
-              ('asphalt',lambda:poly('worn_asphalt',['Diffuse','nor_gl','Rough','AO'],'2k')),
-          ]
+          def model(asset):
+              meta=json.loads(get('https://api.polyhaven.com/files/'+asset))
+              folder=root/asset
+              folder.mkdir(exist_ok=True)
+              (folder/'source.json').write_text(json.dumps(meta,indent=2))
+              item=meta['gltf']['1k']['gltf']
+              out=[download(item['url'],asset+'/model.gltf')]
+              for rel,info in item.get('include',{}).items():
+                  out.append(download(info['url'],asset+'/'+rel))
+              return out
+          tasks=[(name,lambda n=name:model(n)) for name in ['tree_small_02','island_tree_01','street_lamp_01','painted_wooden_bench','metal_trash_can']]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
               for fut in concurrent.futures.as_completed(jobs):
                   try: sources+=fut.result()
                   except Exception as e: print(jobs[fut],repr(e))
           (root/'source_manifest.json').write_text(json.dumps(sources,indent=2))
-          (root/'LICENSES.md').write_text('Poly Haven: CC0 1.0 (https://polyhaven.com/license). Casual Man: CC0 1.0 AI-assisted (https://grab3d.com/models/characters/man/). Cesium Man: CC BY 4.0, Cesium 2017, see README; test fixture only, not production art.\n')
+          (root/'LICENSES.md').write_text('Poly Haven: CC0 1.0 (https://polyhaven.com/license).\n')
           if not sources: raise RuntimeError('all transfers failed')
           PY
           find . -type f ! -name 'SHA256SUMS.tmp' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.tmp
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-licensed-city-source
+          name: rust-tour-scanned-scenery-source
           path: ${{ runner.temp }}/tour-source/
           compression-level: 0
           retention-days: 7
