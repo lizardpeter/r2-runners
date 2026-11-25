@@ -1,4 +1,4 @@
-name: Rust Tour meshoptimizer source handoff
+name: Rust Tour modern buildings and vehicle source handoff
 on:
   push:
     branches: [main]
@@ -50,21 +50,21 @@ jobs:
               for rel,info in item.get('include',{}).items():
                   out.append(download(info['url'],asset+'/'+rel))
               return out
-          tasks=[('meshopt',lambda:[download('https://raw.githubusercontent.com/zeux/meshoptimizer/8547fc321b782a2235dfc14c65a346a640544cd8/'+f,'meshopt/'+f) for f in ['src/meshoptimizer.h','src/simplifier.cpp','src/allocator.cpp','LICENSE.md']])]
+          tasks=[(name,lambda n=name:[download('https://grab3d.com/dl/'+n+'/'+n+'.glb',n+'/model.glb'),download('https://grab3d.com/dl/'+n+'/LICENSE.txt',n+'/LICENSE.txt'),download('https://grab3d.com/dl/'+n+'/manifest.json',n+'/manifest.json')]) for name in ['skyscraper','high-rise-apartment','compact-car','1990s-compact-car']]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
               for fut in concurrent.futures.as_completed(jobs):
                   try: sources+=fut.result()
                   except Exception as e: print(jobs[fut],repr(e))
           (root/'source_manifest.json').write_text(json.dumps(sources,indent=2))
-          (root/'LICENSES.md').write_text('meshoptimizer MIT license, see meshopt/LICENSE.md and pinned source URLs.\n')
+          (root/'LICENSES.md').write_text('Grab3D CC0 assets, see each source license and manifest; generated source art, not photogrammetry.\n')
           if not sources: raise RuntimeError('all transfers failed')
           PY
           find . -type f ! -name 'SHA256SUMS.tmp' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.tmp
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-meshoptimizer-source
+          name: rust-tour-modern-city-source
           path: ${{ runner.temp }}/tour-source/
           compression-level: 0
           retention-days: 7
