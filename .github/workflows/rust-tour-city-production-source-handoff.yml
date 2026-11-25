@@ -35,17 +35,17 @@ jobs:
               (root/asset/'source.json').write_text(json.dumps(meta,indent=2))
               for kind in kinds:
                   variants=meta.get(kind,{}).get(resolution,{})
-                  item=next((variants[k] for k in ('hdr','exr','jpg','png') if k in variants),None)
+                  item=next((variants[k] for k in ('hdr','jpg','png','exr') if k in variants),None)
                   if item:
                       url=item['url']
                       out.append(download(url,asset+'/'+url.rsplit('/',1)[-1]))
               return out
           tasks=[
-              ('walker',lambda:[download('https://tevy.dev/models/casual-walker/v1/lod0.glb','casual-walker/model.glb'),download('https://tevy.dev/models/casual-walker/v1/lod1.glb','casual-walker/lod1.glb')]),
+              ('walker',lambda:[download('https://grab3d.com/dl/man-rigged/man-rigged.glb','casual-man/model.glb'),download('https://grab3d.com/dl/man/LICENSE.txt','casual-man/LICENSE.txt'),download('https://grab3d.com/dl/man/manifest.json','casual-man/manifest.json')]),
               ('cesium-test',lambda:[download('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb','cesium-test/model.glb'),download('https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/README.md','cesium-test/README.md')]),
               ('street',lambda:poly('wide_street_01',['hdri'],'2k')),
-              ('pavement',lambda:poly('pavement_01',['diff','nor_gl','rough','ao'],'2k')),
-              ('asphalt',lambda:poly('worn_asphalt',['diff','nor_gl','rough','ao'],'2k')),
+              ('pavement',lambda:poly('pavement_01',['Diffuse','nor_gl','Rough','AO'],'2k')),
+              ('asphalt',lambda:poly('worn_asphalt',['Diffuse','nor_gl','Rough','AO'],'2k')),
           ]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
@@ -53,10 +53,10 @@ jobs:
                   try: sources+=fut.result()
                   except Exception as e: print(jobs[fut],repr(e))
           (root/'source_manifest.json').write_text(json.dumps(sources,indent=2))
-          (root/'LICENSES.md').write_text('Poly Haven: CC0 1.0 (https://polyhaven.com/license). Casual Walker: CC0 1.0 (https://tevy.dev/models/casual-walker). Cesium Man: CC BY 4.0, Cesium 2017, see README; test fixture only, not production art.\n')
+          (root/'LICENSES.md').write_text('Poly Haven: CC0 1.0 (https://polyhaven.com/license). Casual Man: CC0 1.0 AI-assisted (https://grab3d.com/models/characters/man/). Cesium Man: CC BY 4.0, Cesium 2017, see README; test fixture only, not production art.\n')
           if not sources: raise RuntimeError('all transfers failed')
           PY
-          find . -type f -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.tmp
+          find . -type f ! -name 'SHA256SUMS.tmp' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.tmp
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
