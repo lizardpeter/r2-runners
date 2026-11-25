@@ -1,4 +1,4 @@
-name: Rust Tour photographed ground surface handoff
+name: Rust Tour BC7 encoder source handoff
 on:
   push:
     branches: [main]
@@ -50,21 +50,21 @@ jobs:
               for rel,info in item.get('include',{}).items():
                   out.append(download(info['url'],asset+'/'+rel))
               return out
-          tasks=[(name,lambda n=name:poly(n,['Diffuse','nor_gl','Rough','AO'],'2k')) for name in ['grass_ground','asphalt_02','gravel_floor_04']]
+          tasks=[('bc7',lambda:[download('https://raw.githubusercontent.com/richgel999/bc7enc_rdo/b9438627eef73a1157e84201b6fa6eb2ffd6d9f0/'+f,'bc7/'+f) for f in ['bc7enc.cpp','bc7enc.h','bc7decomp.cpp','bc7decomp.h','LICENSE']])]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
               for fut in concurrent.futures.as_completed(jobs):
                   try: sources+=fut.result()
                   except Exception as e: print(jobs[fut],repr(e))
           (root/'source_manifest.json').write_text(json.dumps(sources,indent=2))
-          (root/'LICENSES.md').write_text('Poly Haven: CC0 1.0 (https://polyhaven.com/license).\n')
+          (root/'LICENSES.md').write_text('bc7enc_rdo source, see bc7/LICENSE and pinned source URLs in manifest.\n')
           if not sources: raise RuntimeError('all transfers failed')
           PY
           find . -type f ! -name 'SHA256SUMS.tmp' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS.tmp
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-ground-surface-source
+          name: rust-tour-bc7-tool-source
           path: ${{ runner.temp }}/tour-source/
           compression-level: 0
           retention-days: 7
