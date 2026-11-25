@@ -1,4 +1,4 @@
-name: Rust Tour building facade source handoff
+name: Rust Tour photographed ground surface handoff
 on:
   push:
     branches: [main]
@@ -35,7 +35,7 @@ jobs:
               (root/asset/'source.json').write_text(json.dumps(meta,indent=2))
               for kind in kinds:
                   variants=meta.get(kind,{}).get(resolution,{})
-                  item=next((variants[k] for k in ('png','hdr','jpg','exr') if k in variants),None)
+                  item=next((variants[k] for k in ('jpg','png','hdr','exr') if k in variants),None)
                   if item:
                       url=item['url']
                       out.append(download(url,asset+'/'+url.rsplit('/',1)[-1]))
@@ -50,7 +50,7 @@ jobs:
               for rel,info in item.get('include',{}).items():
                   out.append(download(info['url'],asset+'/'+rel))
               return out
-          tasks=[(name,lambda n=name:model(n)) for name in ['modular_urban_apartments_facade','modular_factory_facade']]
+          tasks=[(name,lambda n=name:poly(n,['Diffuse','nor_gl','Rough','AO'],'2k')) for name in ['grass_ground','asphalt_02','gravel_floor_04']]
           with concurrent.futures.ThreadPoolExecutor(max_workers=5) as ex:
               jobs={ex.submit(fn):name for name,fn in tasks}
               for fut in concurrent.futures.as_completed(jobs):
@@ -64,7 +64,7 @@ jobs:
           mv SHA256SUMS.tmp SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-building-facade-source
+          name: rust-tour-ground-surface-source
           path: ${{ runner.temp }}/tour-source/
           compression-level: 0
           retention-days: 7
