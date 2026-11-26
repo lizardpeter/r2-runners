@@ -1,0 +1,35 @@
+name: IW5 fresh local map input handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/iw5-fresh-local-map-handoff.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Encrypt original source inputs for local recipient
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          mkdir -p transfer DUMP/zone/english
+          printf '%s' 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqLiYFCOTVqDklAdB7ZfBDDovvvz3X26LHhoo0j8oiCrxzEOJrOern+pf0OEkMNmdHZ2DC3dkZbYsLzHmMARlTlSdqIub2v48b/AknYZb8XQyjo0KT4/3SCDKsSaP48dO5ZErb0gmtxbIPO1SeCelJgAYdJAQkp9hcJ6kaLdm7G8iesCisJDPTjNfgltPiisnl7qvXYmg3+/QBpLrUDpJO19hmJCu22bh4Pj+B71Q+0pxX5NR4I5tSuW6lILQaTyq7HTJoOWe9cmk+Kkms8GzKTJlMCg0UGDAnZ5W8pvr6G0KTUX3Udf+RQAY/mBmWZ0I0RZFP3jqKrXRTOIhAp5ADwIDAQAB' | base64 -d > pub.der
+          openssl pkey -pubin -inform DER -in pub.der -out pub.pem
+          openssl rand -hex 32 > pass
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -pkeyopt rsa_padding_mode:oaep -in pass -out transfer/pass.rsa
+          for p in iw5mp_ship.exe zone/english/mp_dome.ff zone/english/common_mp.ff; do
+            curl -fsSL --retry 4 --retry-all-errors "https://r2.houseofkublai.com/mw3/DUMP/$p" -o "DUMP/$p"
+            sha256sum "DUMP/$p" >> transfer/sha256.txt
+          done
+          tar -cf - DUMP | openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -pass file:pass -out transfer/inputs.tar.enc
+          rm -rf DUMP pass
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iw5-fresh-local-map-inputs
+          path: ${{ runner.temp }}/transfer/
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
