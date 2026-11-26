@@ -1,0 +1,30 @@
+name: Rust Tour compatible Blender 5.3 handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rust-tour-blender53-handoff.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download official Blender 5.3 Linux archive and verify publisher checksum
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          mkdir blender53
+          cd blender53
+          base=https://download.blender.org/release/Blender5.3
+          curl -fsSL --retry 4 --retry-all-errors "$base/blender-5.3.0-linux-x64.tar.xz" -o blender-5.3.0-linux-x64.tar.xz
+          curl -fsSL --retry 4 --retry-all-errors "$base/blender-5.3.0.sha256" -o publisher.sha256
+          grep 'blender-5.3.0-linux-x64.tar.xz$' publisher.sha256 | sha256sum -c -
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-tour-blender53-linux
+          path: ${{ runner.temp }}/blender53/
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
