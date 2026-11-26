@@ -24,13 +24,13 @@ jobs:
           from cryptography.hazmat.primitives.asymmetric import padding
           from cryptography.hazmat.primitives.ciphers.aead import AESGCM
           key = serialization.load_pem_public_key(b"""-----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuxKlw1WhJCfEDKLk/Nky
-          wMCDFAaoyP12yoPhX52Qv2JRX1ZohEhx56teWfhlfz6Jy8Ruvqw2iJoZXm0HMlsM
-          1MjQ+GX0D7QN04OQM3Mh80/FQEvnYj7CbrSOZiM/cOq+UouUadmzJcAVUr9DEq2d
-          iXy6y4H1OMusAsW2UNT0M6R3muOpqmKY1i+pG3bRvg8cFhBdUbGRQzomn8iuTz0C
-          D7JcekfHqTI3RjbvFnBOjPZNdBhrRqSO/xseIB7CuePfI7BLj4x8wMkJmdxvQdRE
-          z91QEum6sZvLHj72Ai+5bfAxGW9WeQrVUoh4MBvUVL6uA5FF95oCRAZD60WTeqe8
-          RQIDAQAB
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0dimOrBYiuVJYL5/5Ut2
+          UGBcWFXntqgRGZKlnRIIZXxNX0LYZow4Tj1/M+CgcqpiDLty9oxURcQW1PeqQpG8
+          w2TOAxmZiZQOCTR4b/q0Pi1btpWabOPtloDSCD9qnDxGfvJ4zez87XYU4Z/gvDWL
+          hxN05a+I70v25mlkVlE24ioKmodLu8VHYVBW47lGoQL0klpqf5IIhNWQdJqz5NaT
+          LDjrOwgezUq1WOOFN91kAasNReWnyqmXF01HmsyeFnwKHFFP4WRGaU4lkAY35g8S
+          YbzqqUfy11gfrb4vG7+L+66P31mN53RZABsDsgad3pc/bngxwpo9n47h1gFqCNDC
+          jQIDAQAB
           -----END PUBLIC KEY-----""")
           pins = {
               "t6mp.exe": "cf80b8058bce7e00e4c61ff3d673308c1fcd8061f18fe66710803538eab4bc01",
