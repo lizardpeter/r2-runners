@@ -17,10 +17,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/relay"
           curl -fsSL --retry 4 --retry-all-errors https://r2.houseofkublai.com/rust-tour-local-c06db0e/source-tools.enc -o "$RUNNER_TEMP/relay/source-tools.enc"
           test "$(stat -c%s "$RUNNER_TEMP/relay/source-tools.enc")" = "170386"
+          curl -fsSL --retry 4 --retry-all-errors https://r2.houseofkublai.com/rust-tour-local-c06db0e/render-subset.enc -o "$RUNNER_TEMP/relay/render-subset.enc"
+          test "$(stat -c%s "$RUNNER_TEMP/relay/render-subset.enc")" = "267146"
       - uses: actions/upload-artifact@v4
         with:
-          name: rust-tour-encrypted-source-tools-c06db0e
-          path: ${{ runner.temp }}/relay/source-tools.enc
+          name: rust-tour-encrypted-render-subset-c06db0e
+          path: ${{ runner.temp }}/relay/
           compression-level: 0
           retention-days: 1
           if-no-files-found: error
