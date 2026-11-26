@@ -18,7 +18,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir artifact
-          printf '%s' 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0Ayfd/viQYK60wRM6VURQe7XluM5LP/mw0005/zJa8uY9+Pro/jQbc1ag0W6XCZGQju5hH5CFun1oZS6RgS4F3cFgwrOzsdHlkkDZUbYJVzsZDJj1jpSoiZayKCY1zwjLdy1v4r2gibI+8i0O8nnIMt82ieGvlHi9QkVyWpM8eoC1CQbyqI3/1fIeionwPTIPsFSF7yM8C6Iek8C+xjUySvAQrkrnEcKB1lkyuZYqXQnp40fZmS28tQHODHYHV+TppVa5n0Yu1y1QdyHkgC7DV06HWdDhjbwwafIoA2jdgL5hu1JoiQWIlPfTFfXjhWdrGNnDNQ9eupJrvvKeZVywwIDAQAB' | base64 -d > transfer.der
+          printf '%s' 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvWT8o/+zW/+SA1N57VXA2EmIB2ss5OxS756F+5VwS3EHgT+iP/XQBuiecO/dWclNfWjSNtYpXFPm7lhhZlObiN55+mnGlamQAGIQn28xOUppZE6y0dz4vlEYpSL7sN94WjxgYsSpsV7F2Fw/0sd7SjSqb3lIK1/9dJkUmJCWZiNz/caLpRIDPxMzyQyfP5FxA7jlWy8UT09AwXuvsOPsEtHOInE75SrX4GqE6RxpVWblc/KGEeMlS/GvT8Jnaep4FL9XfUK5/3/wFZLLeApwpn7ecxl34iW/yQWgiRo1aGTPAGM0KP6gnuMiUFLarDtw906ZYxpBRrWZmgg8f8cysQIDAQAB' | base64 -d > transfer.der
           openssl pkey -pubin -inform DER -in transfer.der -out transfer.pub
           openssl rand -hex 32 > transfer.pass
           openssl pkeyutl -encrypt -pubin -inkey transfer.pub -pkeyopt rsa_padding_mode:oaep -in transfer.pass -out artifact/transfer.pass.rsa
@@ -31,23 +31,3 @@ jobs:
           path: artifact/
           compression-level: 0
           retention-days: 1
-  tools:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - name: Get Rust and Blender
-        run: |
-          set -euo pipefail
-          mkdir "$RUNNER_TEMP/tools"
-          cd "$RUNNER_TEMP/tools"
-          curl -fsSL --retry 4 --retry-all-errors https://r2.houseofkublai.com/rust/rust-1.100.0-x86_64-unknown-linux-gnu.tar -o rust.tar
-          echo '15970bececb805c04914354f8a83adb6  rust.tar' | md5sum -c -
-          curl -fsSL --retry 4 --retry-all-errors https://download.blender.org/release/Blender4.5/blender-4.5.3-linux-x64.tar.xz -o blender.tar.xz
-          sha256sum blender.tar.xz > blender.sha256
-      - uses: actions/upload-artifact@v4
-        with:
-          name: iw5-local-export-tools
-          path: ${{ runner.temp }}/tools/
-          compression-level: 0
-          retention-days: 1
-          if-no-files-found: error
