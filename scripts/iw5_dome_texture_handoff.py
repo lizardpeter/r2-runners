@@ -5,7 +5,7 @@ BITS=gzip.decompress(base64.b64decode(os.environ["SELECTION"]))
 assert len(BITS)==2048
 def selected(n):
     h=hashlib.sha256(n.lower().encode()).digest()
-    return h.hex() in {"59876bd27f507efc70ab97d88995dbb9cd7ea77bab45ccb805fb9d47feb44232","3dffdd7de99f04e32d24b203896dabe77b992332311a9c21c1e2d7e161236aae"}
+    return n == "floodlight_beam"
 class Remote(io.RawIOBase):
     def __init__(self,url):
         self.s=requests.Session()
@@ -58,7 +58,7 @@ def one(name):
                     rows.append({"archive":name,"archive_bytes":remote.size,"member":x.filename,"size":len(data),"crc32":x.CRC,"sha256":hashlib.sha256(data).hexdigest()})
     print(name,len(rows),sum(x["size"] for x in rows),flush=True)
     return rows
-names=[f"iw_{i:02}.iwd" for i in range(20)]+[f"localized_english_iw{i:02}.iwd" for i in range(4)]
+names=["iw_01.iwd"]
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
     rows=[r for group in pool.map(one,names) for r in group]
 (out/"provenance.json").write_text(json.dumps(rows,indent=2))
