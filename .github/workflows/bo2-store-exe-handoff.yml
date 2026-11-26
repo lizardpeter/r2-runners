@@ -24,17 +24,18 @@ jobs:
           from cryptography.hazmat.primitives.asymmetric import padding
           from cryptography.hazmat.primitives.ciphers.aead import AESGCM
           key = serialization.load_pem_public_key(b"""-----BEGIN PUBLIC KEY-----
-          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2WqdOXpplA7hiffLVSI9
-          H61uM8DS4hM+l1s/8HtGO+Yh9NNcuYbXRm5b4xYN9egEFSx4luFrW2NOcmjkPPJZ
-          q5LZtYvezpE/CR2/sIpRRPi/PmNOLHL9N8PC/1e+Qm/zM6ThNLxh4AEiSPshQLHi
-          GJibZUtSrcLsY14UmQk2TX6jWTa5VqI1ENnH6ZyM4GiRCH3n/Hs4FQWL7svIQJp8
-          xBN/4kNJuGfoRcHlZEuEaecN6wiWP4j3TfH5Bi4Je4DvJFVGCfZWw/sodBjIzaoy
-          /QmRAKkRQ5yAxHx2cwZX9Ob+vAtyFlAU8bL+6oScgI4OHD0UtihU0xHiIimdDU4F
-          VQIDAQAB
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuxKlw1WhJCfEDKLk/Nky
+          wMCDFAaoyP12yoPhX52Qv2JRX1ZohEhx56teWfhlfz6Jy8Ruvqw2iJoZXm0HMlsM
+          1MjQ+GX0D7QN04OQM3Mh80/FQEvnYj7CbrSOZiM/cOq+UouUadmzJcAVUr9DEq2d
+          iXy6y4H1OMusAsW2UNT0M6R3muOpqmKY1i+pG3bRvg8cFhBdUbGRQzomn8iuTz0C
+          D7JcekfHqTI3RjbvFnBOjPZNdBhrRqSO/xseIB7CuePfI7BLj4x8wMkJmdxvQdRE
+          z91QEum6sZvLHj72Ai+5bfAxGW9WeQrVUoh4MBvUVL6uA5FF95oCRAZD60WTeqe8
+          RQIDAQAB
           -----END PUBLIC KEY-----""")
           pins = {
               "t6mp.exe": "cf80b8058bce7e00e4c61ff3d673308c1fcd8061f18fe66710803538eab4bc01",
               "t6zm.exe": "7152ebe1c892ea8b1ea7a73811cb82bcdc22088816f5c731a6637d5461bb7416",
+              "t6sp.exe": "0404f79cb36394b14cfc3321b7aa126a08518531564fa042fc14b82debe45c89",
           }
           out = pathlib.Path(os.environ["RUNNER_TEMP"]) / "bo2-handoff"
           out.mkdir()
