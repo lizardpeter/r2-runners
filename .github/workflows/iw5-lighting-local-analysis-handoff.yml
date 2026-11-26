@@ -1,0 +1,40 @@
+name: IW5 encrypted local analysis input handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/iw5-lighting-local-analysis-handoff.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Transfer verified original executable and map fixtures
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          mkdir transfer
+          printf '%s' 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1agzWktOZTCwBUDX8ThbilzUIKO/tOGeaio2qm4y+92NrAZULHGobgjPCflIypq2jsHfa3rUymnQ7IBKdk8QRIo8T/BgD1McGdZBGcAZg5B6b5UNL71Vj8uZRFVE9VQNuwSzhvHwVmWBUdSTxQvosx3c4EAaMRcj60r/mHKGREVMN8YzDXqdXaesmXGjg0yJjTDfM97s/OvfZ6Dj2UbWBSPAj5MXTptsCrOTyy4pW+/yP8uWgaTTphSmPaspgfveE6R8vySasVTCXg0/JF85hcVsSlwZh8crHBV0caA65s4Ythu5MW+5dP/AlbIb03evnfZPtEXwGQQfOM6CYXQ8OwIDAQAB' | base64 -d > pub.der
+          openssl pkey -pubin -inform DER -in pub.der -out pub.pem
+          openssl rand -hex 32 > pass
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -pkeyopt rsa_padding_mode:oaep -in pass -out transfer/pass.rsa
+          for p in iw5mp_ship.exe zone/english/mp_dome.ff zone/english/mp_alpha.ff zone/english/mp_hardhat.ff; do
+            f="${p##*/}"
+            curl -fsSL --retry 3 --retry-all-errors --max-time 240 "https://r2.houseofkublai.com/mw3/DUMP/$p" -o "$f"
+            if [[ "$f" == iw5mp_ship.exe ]]; then
+              echo '62ed2611dc422b9c0667d5ed390a79ee3d0e79fb88ee6a7ffa6bf638aa352a95  iw5mp_ship.exe' | sha256sum -c -
+            fi
+            sha256sum "$f" >> transfer/sha256.txt
+            openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -pass file:pass -in "$f" -out "transfer/$f.enc"
+            rm "$f"
+          done
+          rm pass
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iw5-local-analysis-inputs-encrypted
+          path: ${{ runner.temp }}/transfer/
+          compression-level: 0
+          retention-days: 1
