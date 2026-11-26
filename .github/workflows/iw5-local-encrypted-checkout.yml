@@ -1,0 +1,28 @@
+name: IW5 encrypted importer checkout local relay
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/iw5-local-encrypted-checkout.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Relay encrypted checkout only
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/source"
+          cd "$RUNNER_TEMP/source"
+          for i in {0..20}; do
+            curl -fsSL --retry 4 --retry-all-errors "https://r2.houseofkublai.com/iw5-local-handoff-c09d935/part-$i.enc" -o "part-$i.enc"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iw5-local-encrypted-checkout
+          path: ${{ runner.temp }}/source/
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
