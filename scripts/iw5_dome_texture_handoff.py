@@ -5,7 +5,7 @@ BITS=gzip.decompress(base64.b64decode(os.environ["SELECTION"]))
 assert len(BITS)==2048
 def selected(n):
     h=hashlib.sha256(n.lower().encode()).digest()
-    return all(BITS[k//8]&(1<<(k%8)) for k in [int.from_bytes(h[i*4:i*4+4],"little")%16384 for i in range(6)])
+    return h.hex() in {"59876bd27f507efc70ab97d88995dbb9cd7ea77bab45ccb805fb9d47feb44232","3dffdd7de99f04e32d24b203896dabe77b992332311a9c21c1e2d7e161236aae"}
 class Remote(io.RawIOBase):
     def __init__(self,url):
         self.s=requests.Session()

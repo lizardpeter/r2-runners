@@ -27,7 +27,7 @@ jobs:
           openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -pass file:transfer.pass -in textures.tar -out artifact/textures.tar.enc
       - uses: actions/upload-artifact@v4
         with:
-          name: iw5-dome-textures-encrypted
+          name: iw5-dome-shared-textures-encrypted
           path: artifact/
           compression-level: 0
           retention-days: 1
