@@ -1,0 +1,63 @@
+name: IW5 encrypted local Dome handoff
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/iw5-dome-local-handoff.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Transfer encrypted source parts and source map for local-only compilation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/iw5-handoff" "$RUNNER_TEMP/original"
+          cd "$RUNNER_TEMP"
+          cat > transfer.crt <<'PEM'
+          -----BEGIN CERTIFICATE-----
+          MIIELzCCApegAwIBAgIUZ4hgkFg3q/+/4DSPIMyjv5quXfswDQYJKoZIhvcNAQEL
+          BQAwJzElMCMGA1UEAwwcdGVtcG9yYXJ5IElXNSBsb2NhbCB0cmFuc2ZlcjAeFw0y
+          NjExMjYwNjAwNThaFw0yNjExMjgwNjAwNThaMCcxJTAjBgNVBAMMHHRlbXBvcmFy
+          eSBJVzUgbG9jYWwgdHJhbnNmZXIwggGiMA0GCSqGSIb3DQEBAQUAA4IBjwAwggGK
+          AoIBgQDmcJ/JfLbIItE7f5HKhqsqmQqonHENHuh3+X8x83QV1CFU2/UR7Dol78O6
+          nbTFxbmkTXLAOay9gwxUvhf4n0UTUVAKiGw9MjQxUNymv8bZo9+8vbgJ5wDu+oU4
+          EgN5iC4jUSmvmVKV7MDoaQzayUgkla6fdaCM0DpWiO5jxTAy75W7XdZ5jhGWVQM9
+          qr8sChEzzt0yoFP5bHnHlpXAwngkJknmcz0iBYp8gFGHTN5DuugmZqnukyexB3rL
+          3hrFSl7Cv8dKAevmDliFBE6pNNm+nCjbrUPyH6aYm+f231ICS0Hq1hFZyi3T5f/l
+          s01bupSb5Tz989M7pkfZFLKjj6VBv7tuvfclFA5YGDV47/limMbwuwUAKFxFzYe8
+          nIibO+QTP0G176IdU13Wcn2r0URaYZhg0vnHHfWINeOVf7q0qgSGlYAinK0jSc4Y
+          AoF+Q3MGQ2WTiWjv07PFd/DeO1yE65aB0As8qR4G5r7e/ZuiTmxt29HmO+oa2Wpd
+          PFv6ZQsCAwEAAaNTMFEwHQYDVR0OBBYEFDuDOQJk064Sw8SlN8ikF6X2HyXMMB8G
+          A1UdIwQYMBaAFDuDOQJk064Sw8SlN8ikF6X2HyXMMA8GA1UdEwEB/wQFMAMBAf8w
+          DQYJKoZIhvcNAQELBQADggGBANdSZBkLJtfNJV4lyav+PtdJ7FSus3BwCG5KSKQr
+          F/3JUk/XvVb6agiAhIDF4K+4skTCf+UgOJzqmq0gVG5j0LEG2nnt0AuutcwGOyMf
+          ixfxnCrBNmu6OXI63svas0B5QS+V2BQsG8M4RXVNlosPmUisNGWVetB8GgcpQRz0
+          f4LomTnGRqmUy1ol0nf4tjpxS3Tr/GEKCo0Fh9LCIYhn/UmfDxn9kEFTtSkb7Yxl
+          wBmNsruVapJcVs0EPIyu9oiYO4xVqBROsqFzGLiYDMikLfOiOi7kQIhf3ushbG
+          D78bSbdih17X+R0c9W/shiYwZOWV30lX6/6u/QU6eRUWySWPxto39i1GBLnA18W5
+          YdWTKh3uE6vyibL2DBIE13qxGR80pgYA0x3ZA+DrbtGAdMqr67BhNGdkL0zoZbhc
+          CpYMzgH7o1CuGmUUGCDTyFAhsH+gzyD7jBDtKCacyqa3KfpqQp5nVEd1jb/PeVvL
+          0uHM0Y7aNces6nN171ZsYBsvoA==
+          -----END CERTIFICATE-----
+          PEM
+          for i in $(seq 0 11); do
+            curl -fsSL --retry 4 --retry-all-errors --max-time 60 "https://r2.houseofkublai.com/iw5-handoff-538d7fc0a6d436f4/part-$i.bin" -o "iw5-handoff/part-$i.bin"
+          done
+          for f in mp_dome.ff common_mp.ff patch_mp.ff; do
+            curl -fsSL --retry 4 --retry-all-errors --max-time 300 "https://r2.houseofkublai.com/mw3/DUMP/zone/english/$f" -o "original/$f"
+            openssl cms -encrypt -binary -aes256 -outform DER -in "original/$f" -out "iw5-handoff/$f.cms" transfer.crt
+          done
+          test "$(stat -c%s original/mp_dome.ff)" = 60719125
+          sha256sum original/*.ff > iw5-handoff/original-sha256.txt
+          rm -rf original
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iw5-encrypted-local-dome-handoff
+          path: ${{ runner.temp }}/iw5-handoff/
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
