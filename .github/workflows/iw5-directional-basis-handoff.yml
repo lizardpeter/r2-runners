@@ -1,0 +1,31 @@
+name: IW5 directional basis encrypted source handoff
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/iw5-directional-basis-handoff.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          mkdir handoff
+          curl -fsSL --retry 3 'https://r2.houseofkublai.com/mw3/DUMP/iw5mp_ship.exe' -o iw5mp_ship.exe
+          echo '62ed2611dc422b9c0667d5ed390a79ee3d0e79fb88ee6a7ffa6bf638aa352a95  iw5mp_ship.exe' | sha256sum -c -
+          printf '%s' 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAw4q4yaCxPLqW0ZDqThUrjIljw089e25HM/OfgFSLeb/MuoD6kUoDvsvQxe6GtfsUWS/VrL/42QN+Ii3I71PQV6zC7PhaXePqGTLdKM523gYTwTz+b1qI+hB10P2BrWbMgtcx5zT//x2LDitH9L6fX+dVHXvpCOP/OBVkzH5YiN2KBZf7FSD2nPtvALVXTzDEsCOFW9DHlnC21vdgs4ehgOReTDyqkITzpyggkFBHknxCjnh0PZwrHJQCTRcXQtpECJJPk8kejjmn2gmJxwlwTStGCiZdD39XreVBwgzusYnoCjP20SzlST2Dytr6eq4tIxBlW0l8jgRvVSFh9hAmhwIDAQAB' | base64 -d > pub.der
+          openssl pkey -pubin -inform DER -in pub.der -out pub.pem
+          openssl rand -hex 32 > pass
+          openssl pkeyutl -encrypt -pubin -inkey pub.pem -pkeyopt rsa_padding_mode:oaep -in pass -out handoff/pass.rsa
+          openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -pass file:pass -in iw5mp_ship.exe -out handoff/iw5mp_ship.exe.enc
+          rm pass iw5mp_ship.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iw5-directional-basis-encrypted
+          path: ${{ runner.temp }}/handoff/
+          retention-days: 1
+          compression-level: 0
