@@ -1,0 +1,35 @@
+name: IW5 original map corpus encrypted handoff
+on:
+  push:
+    paths: [".github/workflows/iw5-map-corpus-handoff.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Transfer source corpus for local native testing
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/transfer"
+          cd "$RUNNER_TEMP"
+          printf '%s' 'MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAp0dnkp/ayM3Tavw9BQhiTtMsUa8V6qC6yogD5ZcuVdHEfrpE5hZNehgk6M8fMPl0eCSWipI+47LVYYMyMKNH1vXopGqbrsLGPOj7xRX3TqAgLMwgg14ndZP5bsu2W39lEIRadj3MbkR6y5ceoWONKwYWc6Zc6FGWkCZgnUeUlF+alX+n0+wfeJwfhDhIY2MNNSm/oa27EhVv06p3gT8OKNsdehZ7TihtW8zwOukIIg5Kl7mpn2OswkPX9A8rKDinhtSQpoa6bwfrzbB1hpEn7BWByxdlRHs+Gct8Sbc0PJmqLsHycW6zPPsxBvhWXNpe3brmK9wCF5XjVVeR7/3PX4MKx5UwC1k46qP/sBjqcR+uhYHgNnPI4mLpTqdpyea1LGk3CxC2/aVB6lK2IRfDuLFGyI0ZZG/AsmFh5OFcwhOLbUgT4pO7q9nR9y6rw8pYF8E3QalRHmiGXz+aWWq3XWAK689eoENeeUlLVLRZ54BAp6D44owjfLsQBzl+DEpZAgMBAAE=' | base64 -d > transfer.der
+          openssl pkey -pubin -inform DER -in transfer.der -out transfer.pub
+          openssl rand -hex 32 > transfer.pass
+          openssl pkeyutl -encrypt -pubin -inkey transfer.pub -pkeyopt rsa_padding_mode:oaep -in transfer.pass -out transfer/pass.rsa
+          for p in zone/english/mp_alpha.ff zone/english/mp_hardhat.ff zone/english/mp_dome.ff zone/english/common_mp.ff main/localized_english_iw00.iwd; do
+            f="${p##*/}"
+            curl -fsSL --retry 3 --retry-all-errors --max-time 240 "https://r2.houseofkublai.com/mw3/DUMP/$p" -o "$f"
+            sha256sum "$f" >> transfer/sha256.txt
+            openssl enc -aes-256-cbc -pbkdf2 -iter 100000 -salt -pass file:transfer.pass -in "$f" -out "transfer/$f.enc"
+            rm "$f"
+          done
+          rm transfer.pass
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iw5-map-corpus-encrypted
+          path: ${{ runner.temp }}/transfer/
+          compression-level: 0
+          retention-days: 1
