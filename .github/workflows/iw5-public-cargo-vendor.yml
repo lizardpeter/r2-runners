@@ -31,18 +31,20 @@ jobs:
           serde = { version = "1", features = ["derive", "rc"] }
           bytemuck = { version = "1", features = ["min_const_generics", "extern_crate_alloc"] }
           half = "2"
+          png = "0.18"
+          serde_json = "1"
           TOML
           printf 'fn main() {}\n' > src/main.rs
           cargo generate-lockfile
           cargo vendor --locked --versioned-dirs vendor > .cargo/config.toml
-          for crate in flate2 sha2 zip serde serde_derive bytemuck half; do
+          for crate in flate2 sha2 zip serde serde_derive bytemuck half png serde_json; do
             test -n "$(find vendor -mindepth 1 -maxdepth 1 -type d -name "$crate-*" -print -quit)"
           done
           tar -czf "$RUNNER_TEMP/iw5-public-deps.tar.gz" Cargo.lock vendor .cargo/config.toml
           sha256sum "$RUNNER_TEMP/iw5-public-deps.tar.gz"
       - uses: actions/upload-artifact@v4
         with:
-          name: iw5-public-cargo-vendor
+          name: iw5-public-cargo-vendor-current
           path: ${{ runner.temp }}/iw5-public-deps.tar.gz
           compression-level: 0
           retention-days: 7
