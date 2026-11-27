@@ -1,4 +1,4 @@
-name: D1 research historical investment root reward availability census
+name: D1 research historical schema alignment and wrapper presentation references
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -14,19 +14,19 @@ jobs:
       matrix:
         include:
           - group: "root-patch-0"
-            rows: '[["012c","ps4_investment_globals_012c",0,"",1,-1,1]]'
+            rows: '[["012c","ps4_investment_globals_012c",0,"",1,-1,0],["012c","ps4_investment_globals_012c",0,"",1,-1,1]]'
           - group: "root-patch-1"
-            rows: '[["012c","ps4_investment_globals_012c",1,"",1,-1,1]]'
+            rows: '[["012c","ps4_investment_globals_012c",1,"",1,-1,0],["012c","ps4_investment_globals_012c",1,"",1,-1,1]]'
           - group: "root-patch-2"
-            rows: '[["012c","ps4_investment_globals_012c",2,"",1,-1,1]]'
+            rows: '[["012c","ps4_investment_globals_012c",2,"",1,-1,0],["012c","ps4_investment_globals_012c",2,"",1,-1,1]]'
           - group: "root-patch-3"
-            rows: '[["012c","ps4_investment_globals_012c",3,"",1,-1,1]]'
+            rows: '[["012c","ps4_investment_globals_012c",3,"",1,-1,0],["012c","ps4_investment_globals_012c",3,"",1,-1,1]]'
           - group: "root-patch-4"
-            rows: '[["012c","ps4_investment_globals_012c",4,"",1,-1,1]]'
+            rows: '[["012c","ps4_investment_globals_012c",4,"",1,-1,0],["012c","ps4_investment_globals_012c",4,"",1,-1,1]]'
           - group: "root-patch-5"
-            rows: '[["012c","ps4_investment_globals_012c",5,"",1,-1,1]]'
+            rows: '[["012c","ps4_investment_globals_012c",5,"",1,-1,0],["012c","ps4_investment_globals_012c",5,"",1,-1,1]]'
           - group: "root-patch-6"
-            rows: '[["012c","ps4_investment_globals_012c",6,"9fd411e9ed0965260e04c9661fff8dc995d426667079e1cbc3bec8ca665d9f82",1,-1,1]]'
+            rows: '[["012c","ps4_investment_globals_012c",6,"9fd411e9ed0965260e04c9661fff8dc995d426667079e1cbc3bec8ca665d9f82",1,-1,0],["012c","ps4_investment_globals_012c",6,"9fd411e9ed0965260e04c9661fff8dc995d426667079e1cbc3bec8ca665d9f82",1,-1,1]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -179,11 +179,12 @@ jobs:
           print('INCIDENT_PAYLOAD',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',entry_b=f'{typ:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),header=data[:128].hex())),flush=True)
           if i==0:
               print('INVESTMENT_WRAPPER',json.dumps(dict(size=len(data),root=f'{U(data,0x10):08x}',hash=f'{U(data,8):08x}',first_words=[f'{U(data,k):08x}' for k in range(0,64,4)])),flush=True)
-              assert U(data,0x10)==0x80a58001
+              print('WRAPPER_REFS',json.dumps(dict(patch=patch,size=len(data),sha256=hashlib.sha256(data).hexdigest(),root=f'{U(data,0x10):08x}',presentation=f'{U(data,0x1d0):08x}' if len(data)>=0x1d4 else None,words={f'{k:x}':f'{U(data,k):08x}' for k in range(0,len(data)-3,4) if 0x80800000<=U(data,k)<0x81000000})),flush=True)
           if i==1:
               result=dict(patch=patch,package_sha256=hashlib.sha256(b).hexdigest(),root_class=f'{ref:08x}',root_size=len(data),root_sha256=hashlib.sha256(data).hexdigest(),entry_count=ec,block_count=bc,owners=[H(b,bo+k*32+8) for k,o,n in sp])
-              if ref==0x80801750 and len(data)==1448:
-                  result['refs']={f'{k:x}':f'{U(data,k):08x}' for k in range(0x18,0x5a8,0x10)}
+              if ref==0x80801750:
+                  result['hex']=data.hex()
+                  result['refs']={f'{k:x}':f'{U(data,k):08x}' for k in range(0x18,len(data)-3,0x10)}
               print('HISTORICAL_ROOT',json.dumps(result,separators=(',',':')),flush=True)
               pathlib.Path('root-audit.json').write_text(json.dumps(result))
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
