@@ -1,4 +1,4 @@
-name: D1 authored blueprint binding and facet census
+name: D1 authored reference names and exact owner tuple join
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -379,6 +379,74 @@ jobs:
               except Exception as ex:bundle_errors.append([f'{tag:08x}',str(ex)])
           print('BLUEPRINT_BINDING_AUDIT',json.dumps(dict(root=f'{root:08x}',bundles=len(root_s6),parsed=len(bundle_rows),distinct_group_keys=len(set(x['key'] for x in bundle_rows)),reference_rows=sum(x['reference_rows'] for x in bundle_rows),facet_rows=sum(x['facet_count'] for x in bundle_rows),kind_counts=dict(sorted(kinds.items())),machine_hash_candidates=dict(machine_candidates),errors=bundle_errors,rows=bundle_rows),sort_keys=True),flush=True)
           assert not bundle_errors,bundle_errors[:12]
+          # Compare exact reference catalogs for variant bundles and typed owner candidates.
+          def fnv(raw,variant):
+              h=0x811c9dc5
+              for b in raw:
+                  h=(((h^b)*0x1000193)&0xffffffff) if variant=='1a' else (((h*0x1000193)&0xffffffff)^b)
+              return h
+          catalog={}; group_catalog=collections.defaultdict(list); name_stats=collections.Counter(); name_matches=collections.Counter(); name_examples=[]
+          for tag in sorted(root_s6):
+              sd=load(tag,0x8080076e); key=U(sd,0xc); rows=arr(sd,0x18,0x10); names=[]; hashes=collections.defaultdict(set)
+              for idx,o in enumerate(rows):
+                  rel=L(sd,o+8); kind=sd[o]; name=None
+                  if not rel:name_stats['null_pointer']+=1
+                  else:
+                      at=o+8+rel
+                      if not 0<=at<len(sd):name_stats['out_of_bounds']+=1
+                      else:
+                          end=sd.find(b'\x00',at,min(len(sd),at+512))
+                          if end<0:name_stats['unterminated']+=1
+                          else:
+                              raw=sd[at:end]
+                              if raw and all(32<=x<127 for x in raw):
+                                  name=raw.decode('ascii');name_stats['ascii']+=1
+                                  for v in ('1','1a'):
+                                      for case,val in [('exact',raw),('lower',raw.lower())]:
+                                          hv=fnv(val,v)
+                                          hashes[hv].add(idx)
+                                          if hv in machines:name_matches[v+'_'+case]+=1
+                                  if len(name_examples)<12:name_examples.append([f'{tag:08x}',f'{key:08x}',idx,kind,name])
+                              else:name_stats['empty_or_non_ascii']+=1
+                  names.append((kind,name))
+              sig=hashlib.sha256(json.dumps(names,separators=(',',':')).encode()).hexdigest()
+              group_catalog[key].append((tag,sig,len(rows),struct.unpack_from('<h',sd,0x10)[0]))
+              catalog[tag]=(key,rows,sd,names,hashes)
+          variants=[]; variant_different=[]
+          for key,ls in sorted(group_catalog.items()):
+              if len(ls)>1:
+                  row=dict(key=f'{key:08x}',variants=len(ls),distinct_signatures=len(set(x[1] for x in ls)),counts=sorted(set((x[2],x[3]) for x in ls)),tags=[f'{x[0]:08x}' for x in ls])
+                  variants.append(row)
+                  if row['distinct_signatures']>1:variant_different.append(row)
+          owner_tests=collections.Counter(); owner_examples=[]; hash_join=collections.Counter(); hash_examples=[]
+          seen=set()
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              for st in arr(sd,0x30,0x28):
+                  for q in arr(sd,st+0x18,4):
+                      w=U(sd,q)
+                      if w in (0,0xffffffff) or (tag,w) in seen:continue
+                      seen.add((tag,w))
+                      c,p,d912=parse_wrapper(w)
+                      if d912 is None:continue
+                      f=load(w,0x808003f6); er=U(f,0xc); d=load(er,0x80800861)
+                      a,_=rp(d,0x10); b,_=rp(d,0x18)
+                      machine=d912_records[d912][6]
+                      if machine in hashes:
+                          hash_join['candidate']+=1
+                          if len(hash_examples)<20:hash_examples.append([f'{tag:08x}',f'{w:08x}',f'{d912:08x}',f'{machine:08x}',[[i,names[i]] for i in sorted(hashes[machine])]])
+                      else:hash_join['none']+=1
+                      for label,base in [('discriminant',a),('parent',b)]:
+                          for off in (0x1c,0x40):
+                              k=label+f'_{off:02x}'
+                              if base is None or base+off+8>len(d):owner_tests[k+'_bounds']+=1;continue
+                              g=U(d,base+off);kind=d[base+off+4];idx=struct.unpack_from('<h',d,base+off+6)[0]
+                              owner_tests[k+'_tested']+=1
+                              if g==key:
+                                  owner_tests[k+'_group_match']+=1
+                                  if 0<=idx<len(rows) and names[idx][0]==kind:
+                                      owner_tests[k+'_typed_match']+=1
+                                      if len(owner_examples)<24:owner_examples.append([k,f'{tag:08x}',f'{w:08x}',f'{er:08x}',f'{d912:08x}',f'{g:08x}',kind,idx,names[idx][1]])
+          print('AUTHORED_REFERENCE_JOIN',json.dumps(dict(root=f'{root:08x}',name_stats=dict(name_stats),name_hash_matches=dict(name_matches),same_bundle_machine_join=dict(hash_join),hash_examples=hash_examples,variant_groups=len(variants),different_variant_catalogs=variant_different,variants=variants,owner_tuple_tests=dict(owner_tests),owner_examples=owner_examples,name_examples=name_examples),sort_keys=True),flush=True)
           print('SCENARIO_JOIN',json.dumps(dict(root=f'{root:08x}',size=len(scenario),locations=len(locs),phases=len(phases),bubbles=len(bubbles),scenario_rows=scenario_rows,joins=joins)),flush=True)
           print('REF10_CLOSURE',json.dumps(dict(family=f'{family:04x}',nulls=nulls,other=other,occurrences=sum(refs.values()),unique=len(refs),resolved=resolved,errors=ref_errors,unique_word0c=len(d912_word0c),word0c_null=sum(v for k,v in d912_word0c.items() if k in (0,0xffffffff))),sort_keys=True),flush=True)
 
