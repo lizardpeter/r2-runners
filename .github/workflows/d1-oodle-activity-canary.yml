@@ -1,4 +1,4 @@
-name: D1 full scripted entity decompression census
+name: D1 inspect decompressed Lua signature candidates
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,26 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "01"
-            rows: '[["03f5","ps4_venus_activities_activity_03f5",5,"9167edb065154d2afc39ed15190dae8ac0213a6b525db2e6436d532c023bd396",581,37],["07d4","ps4_cosmo_plaguelands_activit_07d4",3,"0361e089b8301d4951124b40e80b467fa7ead21031728ac7f66f1ea07819fc09",242,14],["0244","ps4_city_tower_ambient_activi_0244",5,"1537bc62b74f19065c7e1416e3a7eb2b49429f6458024f716ecb255e871f93bf",49,6],["04ca","ps4_reef_activities_activityo_04ca",4,"110843c874fd79c38752d9ac6c4482aa0b6ec5d40057e877c9be8f306d57abce",152,3],["065b","ps4_marathon_titan_activities_065b",4,"38da94e9d8e0584e7eb60f8642851bb486827219224cab9368f6721b4ef2173e",19,1]]'
-          - group: "02"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",463,31],["053f","ps4_hiveship_ambient_activity_053f",4,"d397779f363786364e3e3a61e250e0c24ac03c0b0b109ec0b74bf46985d8a97e",417,15],["07d5","ps4_cosmo_plaguelands_activit_07d5",3,"f7671ae60c471d05c34f8ea94ca0d1b8ef8731b36276fcd35509ae5136683715",142,8],["0268","ps4_cosmo_ambient_activityonl_0268",5,"4479b7565e52e4d6ff723c500dac0f8d2afc4531972d5c88e273a410c3804ec6",74,4],["0809","ps4_observatory_iron_activiti_0809",3,"3b132b3dd4aa1d99394ab0477833bbd0b5da99b1f43887f3eb92a2760a4197dd",19,2],["067a","ps4_hiveship_activities_activ_067a",4,"b9a687a08da461ea8a10d637ad3d048adfaf2d02bee03d6c4cab54e5244e2daa",42,1]]'
-          - group: "03"
-            rows: '[["0285","ps4_mars_activities_activityo_0285",5,"6acd380360780efef94d64bf69d459466e6d0e5625b06dd651ff2e03ca949729",771,30],["0265","ps4_cosmo_ambient_activityonl_0265",5,"f7c9dfa3cd3c6ffb49ae94fd8af6240783c020731d1464185dbc0ffe235fbf74",295,15],["0447","ps4_moon_hive_raid1_activitie_0447",4,"012525f124c7a2c671f0f6f32ef4207bf07ae4a6496b4ae5897fe9b787395bf1",200,9],["03fd","ps4_venus_ambient_activityonl_03fd",5,"6a484699c51894ae8fd186e5a604295806fff696200874fe3cc382725bbb0656",86,4],["081d","ps4_fenrir_research_activitie_081d",3,"c8548555253b72a43fb140f4f18d91182fdee223fc79c270da845affde6c5ff6",47,2],["06f9","ps4_marathon_warlock_activiti_06f9",4,"4a10289b167381e389971f0778bda852d4eaf4d8535e060987b1879f58a2b950",53,1]]'
-          - group: "04"
-            rows: '[["03f3","ps4_venus_activities_activity_03f3",6,"9ef75ca71d152210a290f888b78e8561af8da2ede857519a0c8d79cb0cccb3eb",326,29],["053e","ps4_hiveship_activities_activ_053e",4,"670400eac2033d78b4d632330cc6e8ccdbd1f1691b1c088a1adb89fb6fbcb2f2",291,16],["07d2","ps4_cosmo_plaguelands_activit_07d2",3,"59e0025c206a36cd612fc6edf5134eba268aee79cec7fd6161c77bf1445af8a4",331,9],["0286","ps4_mars_activities_activityo_0286",5,"35079c75f21885714469719cd8cfb584a33e498496614a1ac46b826fea594cd2",11,3],["0542","ps4_hiveship_ambient_activity_0542",4,"51e2c4b52d393a1d81b534255b157d8ef5b0f98d8fafe31197de81f523f849ab",93,3],["0797","ps4_pvp_tomb_activities_activ_0797",3,"27d5f37cbd83fedbeea7a956db2e59090e835bcfe0336c7510e0839fb1bdfdf0",1,1]]'
-          - group: "05"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",5,"2ac1b8471c355d4a79ba18671934428f31916715d5947ca603dc57d9081e8590",345,28],["07de","ps4_cosmo_plaguelands_ambient_07de",3,"5f8ea30a40d754c2e23fe1cfae0a0eefd6e8d04486ba9dc63aa481dfb3262a7e",482,17],["028d","ps4_mars_ambient_activityonly_028d",5,"c4381ae64593a66006ee34d544b7b98a0a06fe89b5c53fe600ca8c35b2df0d83",203,8],["07e1","ps4_cosmo_plaguelands_ambient_07e1",3,"2b052bceaff03321ea92f4cbcc240599a64e7badd615e907ebd9553e9573f00d",133,5],["082f","ps4_fenrir_fireworks_activiti_082f",3,"0da4a9b116536ffb31245fb8d03760694e125d0c6329aabe42f0fd58f7cdd4b9",73,2],["0843","ps4_pvp_srl_mercury01_activit_0843",1,"3f84dcf1e4e7f8d124a28d3853fb5df080ed48a86f59a19c8f2e378fe2f5d2fe",24,1]]'
-          - group: "06"
-            rows: '[["0284","ps4_mars_activities_activityo_0284",5,"24a30e4980038c06d72bb81d037a85c34918d75a15be59738d468a0982803cbb",457,25],["025c","ps4_cosmo_activities_activity_025c",5,"c6424371d5e675263a949184f48a936328294ee51b9f15d17c78744b9ad79e05",336,17],["02af","ps4_moon_ambient_activityonly_02af",5,"67cc91cb88b60c739d3158553960d11ff59d8d5090863774186c5b5c1c29ee21",229,9],["02ac","ps4_moon_activities_activityo_02ac",5,"0d460d2947b9190bf8c043b6e157aa79d44d9268aaa6afe3f9a9ca2b8ac969e6",154,6],["044b","ps4_moon_hive_raid1_activitie_044b",4,"0998dc5aefe35eea2f5b1c6637103acd6e20dbc13fec544e26eb8cbfff3eab43",49,2],["08b2","ps4_pvp_srl_mars01_activities_08b2",3,"732a07298c6bb4200c5774f49ed5c6537ad9115be581edd7d95ee300334878a2",26,2]]'
-          - group: "07"
-            rows: '[["0538","ps4_hiveship_activities_activ_0538",4,"453763222619df768d6f304ecc1464f2ba582a75eb78d6da9439c0d21e91ce2e",302,23],["053b","ps4_hiveship_activities_activ_053b",4,"82fd87417244d42c0bd8c519fa4594e9ae1fd102375125b6bc2dc1c6a49cce6d",368,18],["053d","ps4_hiveship_activities_activ_053d",4,"a81268ae79622465a9f41aeb14597dec4469bd5c2e14210747c9f5eafcbbe6b9",201,11],["02a6","ps4_moon_activities_activityo_02a6",5,"f344538a2d68d7787494aa725467d3c5f7443209b29ac38517e8fa27c1c52493",124,5],["04ce","ps4_reef_activities_activityo_04ce",4,"dded056f354c2df1476cee935da0fd18189e80278eb085f5b785334ab5f06f12",141,2],["0896","ps4_pvp_srl_venus01_activitie_0896",3,"70a2308a3ce4435a6c8d88ac494f2c8755055c5a17dcb96ebce5460829b3d1ff",22,2]]'
-          - group: "08"
-            rows: '[["03f6","ps4_venus_activities_activity_03f6",5,"a716343340f5c24a2efbdaf4ffe8193d26645c989f552d0ced4b7304dacb68ab",369,22],["03fa","ps4_venus_ambient_activityonl_03fa",5,"7f0c3353dea7f79bcc745086e6e7134f3a89317c111e88efadb67d07dd5c8460",226,18],["0289","ps4_mars_ambient_activityonly_0289",5,"cf0fb09c358af1982a6ad59e9fc71315428b609396b824d773c35de7165f0e6b",182,11],["07cf","ps4_cosmo_plaguelands_activit_07cf",3,"3864d97aece9e1b2576f3fde09da82fd5b0c398fb981d172ed476ca260e227a1",114,6],["04cf","ps4_reef_activities_activityo_04cf",4,"5be9e3a9439206c9fa3512c0f7fbe0df0650307686ac50e4bdb631e6b5a89cd2",239,2],["02e2","ps4_pvp_cabal_camp_activities_02e2",5,"4dd69a09795d409f5867370b996e16107037de5f03887be60fd90723164468fa",1,1],["0854","ps4_pvp_srl_cosmo01_activitie_0854",1,"b8a5202f9d7df32acaec69a71e9ff013b19e9bea1f3bd6e6555c4b82f7193ee5",19,1]]'
-          - group: "09"
-            rows: '[["02ab","ps4_moon_activities_activityo_02ab",5,"8bdd14086cdfb8e08fe59b48541625218e3efa732ccd9d3dce4c4dec404bc21c",621,20],["03f0","ps4_venus_activities_activity_03f0",5,"e25f2019f10f05dc1c550c89a4b23e98d703642cbc6a9af4e4cb2bf18aea03c3",366,19],["023d","ps4_city_tower_activities_act_023d",5,"de0a2e4052602d26184d9f739678a0805b8cb8272f3758204700e1687cb55695",85,11],["02ad","ps4_moon_activities_activityo_02ad",5,"8595fa84089fc6cb8a4faf28c2ec4d2961d3d609291c2eb61d461f5148c4a0b5",186,7],["06dd","ps4_marathon_hunter_activitie_06dd",4,"cfe9224f7f58f46b8bd9455e0016ad455c5e6fb8ec68c691312c4bebe51eb72e",36,2],["0333","ps4_pvp_factory_activities_ac_0333",6,"28399e5706d6a9f509d9ac239ea63f0403553129530c38e744626c7f809097ca",1,1]]'
-          - group: "10"
-            rows: '[["0280","ps4_mars_activities_activityo_0280",5,"665b688337d272fa2926681092fe7df40b2ceb404643b3f813c8675cad5e658b",373,19],["02aa","ps4_moon_activities_activityo_02aa",5,"8e6530fea66858b61e0b1cc794b172ae0f2c7a80c55df22a553f14d72d09d591",382,19],["0262","ps4_cosmo_activities_activity_0262",5,"1310a07cc31f2615ad999976feb66b6b132c6329b56aa63a1e1decd61dbd7b62",420,12],["0553","ps4_impactsite_activities_act_0553",4,"c4e907612b03569c7ba10014fc3ecb25b407c1d712464c739268c14888d186c2",103,7],["0805","ps4_observatory_iron_activiti_0805",3,"47b34c760c4f1f7792e4046575a8323eb82a5a52a6055e06071dfc592520f088",65,2],["04d4","ps4_reef_ambient_activityonly_04d4",4,"685f194f9a36151d9af806e395e09b322c5928bd481a9cfc6f8a01cbcd5ae8f6",11,1]]'
+          - group: "lua-0260"
+            rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",463,31]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -176,6 +158,39 @@ jobs:
           assert len(needed)==int(os.environ['EXPECTED_BLOCKS'])
           lua_blocks=sum(v.count(b'\x1bLua') for v in cache.values())
           raw_bytes=sum(len(v) for v in cache.values())
+          for k,data in sorted(cache.items()):
+              pos=-1
+              while True:
+                  pos=data.find(b'\x1bLua',pos+1)
+                  if pos<0:break
+                  hdr=data[pos:pos+24]
+                  owners=[]
+                  for i in range(ec):
+                      cur=0
+                      for kk,oo,nn in spans(i):
+                          if kk==k and oo<=pos<oo+nn:
+                              p=eo+i*16
+                              owners.append(dict(tag=f'{0x80800000+(family<<13)+i:08x}',ref=f'{U(b,p):08x}',type_word=f'{U(b,p+4):08x}',entry_size=(Q(b,p+8)>>28)&0x3fffffff,entry_offset=cur+pos-oo))
+                          cur+=nn
+                  ver=hdr[4] if len(hdr)>4 else None
+                  fmt=hdr[5] if len(hdr)>5 else None
+                  valid51=len(hdr)>=12 and ver==0x51 and fmt==0 and hdr[6] in (0,1) and hdr[7] in (4,8) and hdr[8] in (4,8) and hdr[9]==4 and hdr[10] in (4,8) and hdr[11] in (0,1)
+                  valid52=len(hdr)>=18 and ver==0x52 and fmt==0 and hdr[12:18]==b'\x19\x93\r\n\x1a\n'
+                  valid53=len(hdr)>=12 and ver in (0x53,0x54) and fmt==0 and hdr[6:12]==b'\x19\x93\r\n\x1a\n'
+                  print('LUA_CANDIDATE',json.dumps(dict(block=k,offset=pos,header_hex=hdr.hex(),version=ver,format=fmt,standard_header_plausible=bool(valid51 or valid52 or valid53),owners=owners,block_sha256=hashlib.sha256(data).hexdigest())),flush=True)
+          r10_refs=collections.Counter()
+          for i,sp in targets:
+              if any(k not in cache for k,o,n in sp):continue
+              data=b''.join(cache[k][o:o+n] for k,o,n in sp)
+              v=U(data,0x10)
+              if v in (0,0xffffffff):r10_refs['null']+=1
+              elif 0x80800000<=v<0x82000000:
+                  famid=(v-0x80800000)>>13
+                  idx=v&8191
+                  if famid==family and idx<ec:r10_refs[f'local_ref_{U(b,eo+idx*16):08x}']+=1
+                  else:r10_refs[f'other_family_{famid:04x}']+=1
+              else:r10_refs['other']+=1
+          print('R10_REFS',json.dumps(dict(r10_refs),sort_keys=True),flush=True)
           def dyn(data,o,stride):
               assert o+16<=len(data)
               count=I(data,o);start=o+8+L(data,o+8)+16
