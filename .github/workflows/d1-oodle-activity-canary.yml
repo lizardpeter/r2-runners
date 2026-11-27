@@ -646,16 +646,19 @@ jobs:
                           lead=ref_at(b+0x1c)
                           assert lead is not None,('lead',hex(w),hex(key))
                           candidates=[]
-                          for off in range(8,first-15,8):
-                              at=b+off; count=Q(d,at); rel=L(d,at+8); start=at+8+rel+16
-                              if start!=b+first or not 0<count<=4096 or start+24*count>len(d):continue
-                              if Q(d,start-16)!=count:continue
-                              rr=[ref_at(start+24*i) for i in range(count)]
-                              if any(x is None for x in rr):continue
-                              candidates.append((off,count,U(d,start-8),rr))
-                          assert len(candidates)==1,('grouped_array_candidates',len(candidates),hex(w),hex(b))
-                          off,count,clsid,rr=candidates[0];assert rr[0]==lead
-                          layouts[f'{cs}:{off:x}:{first:x}:{clsid:08x}']+=1
+                          for off in range(0,first-7,4):
+                              at=b+off; count=I(d,at); rel=L(d,at+8); start=at+8+rel+16
+                              if not 0<count<=4096 or not b<=start<=b+first or start+24*count>len(d):continue
+                              member=b+first-start
+                              if member not in range(0,17,4):continue
+                              marker=U(d,start-8)
+                              if I(d,start-16)!=count or not 0x80800000<=marker<0x80810000:continue
+                              rr=[ref_at(start+member+24*i) for i in range(count)]
+                              if any(x is None for x in rr) or rr[0]!=lead:continue
+                              candidates.append((off,count,marker,rr,member))
+                          assert len(candidates)==1,('grouped_array_candidates',len(candidates),hex(w),hex(b),[f'{U(d,b+i):08x}' for i in range(0,first+24,4)])
+                          off,count,clsid,rr,member=candidates[0]
+                          layouts[f'{cs}:{off:x}:{first-member:x}:{member:x}:{clsid:08x}']+=1
                           exact_entries[cs]+=count
                           root_ids.update((gg,kk,ii) for gg,kk,ii,n in rr)
                           group_results.append(dict(blueprint=f'{tag:08x}',wrapper=f'{w:08x}',er=f'{er:08x}',role=cs,parent=f'{p:08x}',key=f'{key:08x}',descriptor_offset=off,array_offset=first,row_class=f'{clsid:08x}',count=count,refs=[[f'{gg:08x}',kk,ii,n] for gg,kk,ii,n in rr],raw_first_row_words=[f'{U(d,b+first+i):08x}' for i in range(0,24,4)]))
