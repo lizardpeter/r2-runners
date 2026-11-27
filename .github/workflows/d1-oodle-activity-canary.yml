@@ -1,4 +1,4 @@
-name: D1 original activity derived flag projections
+name: D1 exact calendar flag producers and original character gate globals
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,8 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "activity-flags"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,2,6771]]'
+          - group: "time-and-gate-globals"
+            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,591],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8116],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,543]]'
+          - group: "calendar-rotation"
+            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,1,6778]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -196,36 +198,15 @@ jobs:
                   n,p=span(data,0,8,16,16)
                   for j in range(n):
                       v=ptr(data,p+j*16+8);ident=dict(index=j,hash=f'{U(data,v):08x}')
-                      row=dict(**ident,checkpoints=[],direct=[],conditional=[],stage=[],gate=H(data,v+0xa0))
-                      z=ptr(data,v+0x50)
-                      if z is not None:
-                          c,b2=span(data,z,0,8,8)
-                          row['checkpoints']=[dict(hash=f'{U(data,b2+k*8):08x}',flag=H(data,b2+k*8+4),terminal=H(data,b2+k*8+6)) for k in range(c)]
-                      def ops(o,co,ro):
-                          n,p=span(data,o,co,ro,4)
-                          return [dict(flag=H(data,p+4*k),value=data[p+4*k+2]) for k in range(n)]
-                      row['direct']=ops(v,0x68,0x70)
-                      hits('activity_projection_direct',ident,[x['flag'] for x in row['direct']])
-                      c,b2=span(data,v,0x78,0x80,40)
-                      for k in range(c):
-                          w=b2+k*40
-                          q,p2=span(data,w,0,8,8)
-                          exp=[[data[p2+l*8],I(data,p2+l*8+4)] for l in range(q)]
-                          os2=ops(w,0x18,0x20)
-                          row['conditional'].append(dict(expression=exp,ops=os2))
-                          hits('activity_projection_conditional',dict(**ident,selector=k,expression=exp),[x['flag'] for x in os2])
                       z=ptr(data,v+0x18)
                       if z is not None:
-                          # stage container z+8 count, z+10 relative, native pre-row address z+10+rel
-                          c,b2=span(data,z,8,0x10,56)
+                          c,b2=span(data,z,0,8,56)
                           for k in range(c):
-                              w=b2+k*56
-                              os2=ops(w,0x28,0x30)
-                              row['stage'].append(dict(index=k,ops=os2))
-                              hits('activity_projection_stage',dict(**ident,stage=k),[x['flag'] for x in os2])
-                      result.append(row)
-                      if j==164 or any(x['flag'] in wanted for x in row['direct']):
-                          print('ACTIVITY_PROJECTION_EXAMPLE',json.dumps(row),flush=True)
+                              w=b2+k*56;nc,np=span(data,w,0x38,0x40,4) if w+0x48<=len(data) else (0,0)
+                              # row offsets follow original 28BC60 case2: count at +38 and rel +40; verify stride separately.
+                              hits('activity_stage_flag_candidate',dict(**ident,stage=k),[H(data,np+4*t) for t in range(nc)])
+                      if j==164:
+                          print('PROLOGUE_DEFINITION_WORDS',json.dumps(dict(index=j,hash=ident['hash'],words=[f'{U(data,v+4*k):08x}' for k in range(43)],relative18=None if z is None else z-v)),flush=True)
               elif i==8127:
                   n,p=span(data,0,8,16,64)
                   for j in range(n):
@@ -238,10 +219,30 @@ jobs:
                   pathlib.Path('collection-flags.json').write_text(json.dumps(rows))
               elif i==591:
                   n,p=span(data,0,8,16,16)
-                  # Original 28BC60 case12 uses i16 index at 0, value byte+2, i64 threshold+8.
                   rows=[dict(index=j,flag=H(data,p+j*16),value=data[p+j*16+2],threshold=Q(data,p+j*16+8)) for j in range(n)]
-                  hits('time_flag_candidate',identity,[x['flag'] for x in rows])
-                  print('TIME_FLAG_HEADER',json.dumps(dict(n=n,first=rows[:5])),flush=True)
+                  hits('time_flag',identity,[x['flag'] for x in rows])
+                  print('TIME_FLAGS',json.dumps(dict(n=n,sorted=all(x['threshold']<=y['threshold'] for x,y in zip(rows,rows[1:])),distinct_flags=len(set(x['flag'] for x in rows)),value_counts=dict(collections.Counter(x['value'] for x in rows)),min_time=min(x['threshold'] for x in rows),max_time=max(x['threshold'] for x in rows),targets=[x for x in rows if x['flag'] in wanted],first=rows[:5])),flush=True)
+                  pathlib.Path('scheduled-flags.json').write_text(json.dumps(rows))
+              elif i==6778:
+                  n,p=span(data,0,8,16,72);rows=[]
+                  for j in range(n):
+                      o=p+j*72;c,q=span(data,o,0x28,0x30,48)
+                      entries=[]
+                      for k in range(c):
+                          z=q+k*48
+                          entries.append(dict(flag=H(data,z),on=data[z+2],off=data[z+3],value_index=H(data,z+4),weight=struct.unpack_from('<f',data,z+0x28)[0]))
+                      hits('rotation_flag',dict(index=j,hash=f'{U(data,o):08x}'),[x['flag'] for x in entries])
+                      row=dict(index=j,hash=f'{U(data,o):08x}',duration=I(data,o+8),mode=data[o+0x18],period_value_index=H(data,o+0x1a),selection_count=I(data,o+0x38),entries=entries)
+                      rows.append(row)
+                  print('ROTATION_FLAGS',json.dumps(dict(n=n,entries=sum(len(x['entries']) for x in rows),max_entries=max(len(x['entries']) for x in rows),modes=dict(collections.Counter(x['mode'] for x in rows)),selection_counts=dict(collections.Counter(x['selection_count'] for x in rows)),sample=rows[:2],targets=[dict(index=x['index'],hash=x['hash'],entries=[z for z in x['entries'] if z['flag'] in wanted]) for x in rows if any(z['flag'] in wanted for z in x['entries'])])),flush=True)
+                  pathlib.Path('rotation-flags.json').write_text(json.dumps(rows))
+              elif i==8116:
+                  print('GLOBAL_GATE_FIELDS',json.dumps(dict(index_fields={f'{k:x}':H(data,8+k) for k in range(0x160,0x1c0,2)},target_hits=[dict(offset=f'{k-8:x}',value=H(data,k)) for k in range(8,len(data)-1,2) if H(data,k) in wanted])),flush=True)
+              elif i==543:
+                  n,p=span(data,0,8,16,20);rows=[dict(index=j,hash=f'{U(data,p+j*20):08x}',flag=H(data,p+j*20+4),words=[f'{U(data,p+j*20+k):08x}' for k in range(0,20,4)]) for j in range(n)]
+                  hits('global_event_flag_candidate',identity,[x['flag'] for x in rows])
+                  print('GLOBAL_EVENT_ROWS',json.dumps(dict(n=n,sample=rows[:5],targets=[x for x in rows if x['flag'] in wanted])),flush=True)
+                  pathlib.Path('global-event-rows.json').write_text(json.dumps(rows))
               elif i==579:
                   n,p=span(data,0,8,16,152)
                   for j in range(n):
@@ -256,7 +257,7 @@ jobs:
                   # Distinguish untyped aligned candidate hits from structurally proven producers.
                   words=[dict(offset=k,value=H(data,k)) for k in range(0,len(data)-1,2) if H(data,k) in wanted]
                   print('GLOBAL_RAW_GATE_CANDIDATES',json.dumps(dict(entry=i,tag=identity,header=data[:96].hex(),hits=words[:80],total=len(words))),flush=True)
-          print('GATE_PRODUCER_AUDIT',json.dumps(dict(family=f'{family:04x}',entry=int(os.environ['ENTRY']),totals=dict(totals),sources=sources,collection_item_count=len(result),checkpoint_count=sum(len(r.get('checkpoints',[])) for r in result),checkpoint_activities=sum(bool(r.get('checkpoints')) for r in result),projection_counts={k:sum(len(r.get(k,[])) for r in result) for k in ('direct','conditional','stage')})),flush=True)
+          print('GATE_PRODUCER_AUDIT',json.dumps(dict(family=f'{family:04x}',entry=int(os.environ['ENTRY']),totals=dict(totals),sources=sources,collection_item_count=len(result))),flush=True)
           pathlib.Path(f'gate-sources-{family:04x}-{os.environ["ENTRY"]}.json').write_text(json.dumps(dict(sources=sources,collection_refs=result)))
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
@@ -284,5 +285,7 @@ jobs:
           name: d1-gate-producer-${{ matrix.group }}
           path: |
             gate-sources-*.json
-            collection-flags.json
+            scheduled-flags.json
+            rotation-flags.json
+            global-event-rows.json
 
