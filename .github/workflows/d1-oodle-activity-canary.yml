@@ -1,4 +1,4 @@
-name: D1 gate producer and checkpoint closure
+name: D1 exact checkpoint and completion incident catalogue join
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,67 +13,21 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
-      - name: Retrieve derived original definition evidence
+      - name: Retrieve derived original incident catalogue
         run: |
-          set -euo pipefail
-          gh run download 45957952501 -R "$GITHUB_REPOSITORY" -n d1-investment-definition-unlock-objective-master -D master
-          gh run download 45959965002 -R "$GITHUB_REPOSITORY" -n d1-gate-producer-item-flags-0131 -D items
-          gh run download 45959965002 -R "$GITHUB_REPOSITORY" -n d1-gate-producer-item-flags-0132 -D items
-          gh run download 45959965002 -R "$GITHUB_REPOSITORY" -n d1-gate-producer-flag-producers -D globals
-          gh run download 45960037477 -R "$GITHUB_REPOSITORY" -n d1-gate-producer-activity-flags -D checkpoints
-          gh run download 45960178328 -R "$GITHUB_REPOSITORY" -n d1-gate-producer-activity-flags -D projection
-      - name: Resolve original flag namespace and collection producers
-        run: |
+          gh run download 45955815538 -R "$GITHUB_REPOSITORY" -n d1-incident-index-incident-join -D incident
           python - <<'PY'
-          import collections,json,pathlib
-          C=collections.Counter
-          def load(p):return json.loads(pathlib.Path(p).read_text())
-          flags=load('master/investment-8141.json');items=load('master/investment-8126.json');item_index={x['ref']:x['index'] for x in items}
-          coll=load('globals/collection-flags.json')
-          it=load('items/gate-sources-0131--1.json')['collection_refs']+load('items/gate-sources-0132--1.json')['collection_refs']
-          assert all(x['tag'] in item_index for x in it)
-          refs=C(j for x in it for j in x['collection_refs'])
-          bad=[j for j in refs if not 0<=j<len(coll)];assert not bad,bad[:10]
-          candidates=[x for x in coll if x['flag'] in (2585,5005)]
-          print('COLLECTION_GATE_JOIN',json.dumps(dict(collections=len(coll),refs=sum(refs.values()),distinct_referenced=len(refs),candidate=[dict(collection=x,item_count=refs[x['index']],items=[dict(index=item_index[y['tag']],hash=y['hash'],tag=y['tag']) for y in it if x['index'] in y['collection_refs']][:20]) for x in candidates],valid_non_sentinel=sum(x['flag']!=65535 for x in coll))),flush=True)
-          ck=load('checkpoints/gate-sources-0131-6771.json')['collection_refs']
-          proj=load('projection/gate-sources-0131-6771.json')['collection_refs']
-          assert len(proj)==653
-          def checkflag(ix):
-              assert 0<=ix<len(flags),ix
-              return flags[ix]
-          allcheck=[(r['index'],x) for r in ck for x in r['checkpoints']]
-          pflags=[checkflag(x['flag']) for _,x in allcheck]
-          terminal=[checkflag(x['terminal']) for _,x in allcheck if x['terminal']!=65535]
-          p=[x for x in proj if x['index']==164][0]
-          print('CHECKPOINT_CLOSURE',json.dumps(dict(rows=len(allcheck),activities=len(ck),unique_checkpoint_hashes=len(set(x['hash'] for _,x in allcheck)),primary_scopes=dict(C(x['scope'] for x in pflags)),terminal_scopes=dict(C(x['scope'] for x in terminal)),terminal_count=len(terminal),unique_primary=len(set(x['index'] for x in pflags)),prologue=[dict(**x,primary_definition=checkflag(x['flag']),terminal_definition=checkflag(x['terminal']) if x['terminal']!=65535 else None) for x in p['checkpoints']],prologue_gate=checkflag(p['gate']),prologue_direct=[dict(**x,definition=checkflag(x['flag'])) for x in p['direct']])),flush=True)
-          ops=[x for r in proj for x in r['direct']]+[x for r in proj for z in r['conditional'] for x in z['ops']]+[x for r in proj for z in r['stage'] for x in z['ops']]
-          assert all(0<=x['flag']<len(flags) for x in ops)
-          ex=[z['expression'] for r in proj for z in r['conditional']]
-          bad=[]
-          for k,e in enumerate(ex):
-              depth=0
-              for op,arg in e:
-                  if op in (1,10,11):depth+=1
-                  elif op in (2,21):
-                      if depth<1:bad.append((k,op))
-                  elif op in (3,4,5,6,7,8,9,12,13,14,15,16,17,18,19,20):
-                      if depth<2:bad.append((k,op))
-                      depth-=1
-                  else:bad.append((k,op))
-                  if op==1 and not 0<=arg<len(flags):bad.append((k,arg))
-              if e and depth!=1:bad.append((k,depth))
-          assert not bad,bad[:10]
-          print('PROJECTION_CLOSURE',json.dumps(dict(operations=len(ops),unique_flags=len(set(x['flag'] for x in ops)),scopes=dict(C(flags[x['flag']]['scope'] for x in ops)),values=dict(C(x['value'] for x in ops)),conditional_expressions=len(ex),nonempty=sum(bool(e) for e in ex),conditional_op_count=sum(map(len,ex)),conditional_opcode_counts=dict(C(op for e in ex for op,arg in e)),prologue_gate_consumers=[dict(index=r['index'],hash=r['hash']) for r in proj if r['gate']==130])),flush=True)
-          pathlib.Path('checkpoint-and-activity-projections.json').write_text(json.dumps(proj,indent=2))
+          import json, pathlib
+          p=pathlib.Path('incident/incident-index-0131.json')
+          a=json.loads(p.read_text())['rows']
+          wanted=['f41ef26b','aff7735c','5f39a8ca','d89fc868','790c2a95','d03d5d1f','74af5222','e74eed45']
+          found=[x for x in a if x['hash'] in wanted]
+          assert len(found)==len(wanted),(found,wanted)
+          print('CHECKPOINT_INCIDENT_INDEX',json.dumps(found),flush=True)
           PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: d1-checkpoint-and-activity-projections
-          path: checkpoint-and-activity-projections.json
       - name: Publish result
         if: always()
         run: |
           state=success
           if [ "${{ job.status }}" != success ]; then state=failure; fi
-          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-checkpoint-gate-closure" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Original gate and checkpoint closure"
+          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-checkpoint-incident-join" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Original checkpoint incident catalogue"
