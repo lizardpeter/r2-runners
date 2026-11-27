@@ -1,4 +1,4 @@
-name: D1 executable-confirmed three-byte triangles and eight-byte firing-area set members
+name: D1 focused geometry and squad tactical objective authored dependency closure
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -479,150 +479,6 @@ jobs:
                                   if len(other_samples)<40:other_samples.append([f'{tag:08x}',f'{w:08x}',role,f'{p:08x}',f'{g:08x}',kind,idx,names[idx][1]])
           print('STRICT_REFERENCE_CLOSURE',json.dumps(dict(root=f'{root:08x}',counts=dict(strict),errors=strict_errors,other_role_tested=dict(other_roles),other_role_typed_matches=dict(other_matches),other_role_kind=dict(role_kind),other_examples=other_samples),sort_keys=True),flush=True)
           for i in range(0,len(strict_rows),40):print('SQUAD_REFERENCE_CATALOG',json.dumps(dict(root=f'{root:08x}',offset=i,rows=strict_rows[i:i+40]),separators=(',',':')),flush=True)
-          # V14: loss-preserving objective and sequence template census.
-          focus={0x80802590:0x80802993,0x808026b9:0x808028da}
-          cls_stats={}; shape_hist=collections.Counter(); cb_hist=collections.Counter(); pointer_hist=collections.Counter(); external_hist=collections.Counter(); errors=[]; details=[]; other_edges=[]; seen=set()
-          group_names=collections.defaultdict(list)
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              if names not in group_names[key]:group_names[key].append(names)
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              for st in arr(sd,0x30,0x28):
-                  for q in arr(sd,st+0x18,4):
-                      w=U(sd,q)
-                      if w in (0,0xffffffff) or (tag,w) in seen:continue
-                      seen.add((tag,w))
-                      c,p,d912=parse_wrapper(w)
-                      if c not in focus:continue
-                      cs=f'{c:08x}'; stats=cls_stats.setdefault(cs,collections.Counter());stats['wrappers']+=1
-                      try:
-                          assert p==focus[c]
-                          er=U(load(w,0x808003f6),0xc); d=load(er,0x80800861)
-                          a,_=rp(d,0x10); b,_=rp(d,0x18)
-                          assert a is not None and b is not None and b+0x48<=len(d)
-                          g=U(d,b+0x40); k=d[b+0x44]; ix=struct.unpack_from('<h',d,b+0x46)[0]
-                          assert g==key and 0<=ix<len(names) and names[ix][0]==k
-                          name=names[ix][1]
-                          shape_hist[cs+f':{len(d)}:{a}:{b}']+=1
-                          # Callback rows and fixups as used by the original executable.
-                          callbacks=[]; fixups=[]; ncb=Q(d,0x30); nf=U(d,0x20)
-                          try:
-                              assert ncb<=4096 and nf<=4096
-                              cr=arr(d,0x30,16)
-                              assert ncb==len(cr)
-                              for o in cr:
-                                  t=o+L(d,o); typ=U(d,o+8); ini,fin=struct.unpack_from('<hh',d,o+12)
-                                  cb_hist[f'{cs}:{typ:08x}:{ini}:{fin}']+=1
-                                  callbacks.append([t, f'{typ:08x}',ini,fin, f'{U(d,t-4):08x}' if 4<=t<=len(d) else None])
-                              # fixup count is i32, pointer at +28, dynamic-array prologue.
-                              fstart=0x28+L(d,0x28)+16
-                              assert nf==0 or 0<=fstart<=fstart+8*nf<=len(d)
-                              fixups=[fstart+i*8+L(d,fstart+i*8) for i in range(nf)]
-                              stats['callback_layout_ok']+=1
-                          except (AssertionError,struct.error,IndexError):stats['callback_layout_unknown']+=1
-                          stats['callback_rows']+=len(callbacks);stats['fixup_rows']+=len(fixups)
-                          # Scan only aligned serialized positions for full exact typed tuples, excluding self.
-                          edges=[]
-                          for o in range(0,len(d)-7,4):
-                              gg=U(d,o)
-                              if gg not in group_names:continue
-                              kk=d[o+4]; ii=struct.unpack_from('<h',d,o+6)[0]
-                              opts={ns[ii][1] for ns in group_names[gg] if 0<=ii<len(ns) and ns[ii][0]==kk}
-                              if len(opts)!=1:continue
-                              nn=next(iter(opts))
-                              if (gg,kk,ii)==(g,k,ix):stats['self_tuple_hits']+=1;continue
-                              edges.append([o-a,o-b,f'{gg:08x}',kk,ii,nn])
-                              stats['other_tuple_hits']+=1
-                              if kk==1:stats['squad_tuple_hits']+=1
-                          # External hash candidates at parent+68, and bounded relative pointer candidates.
-                          ext=None
-                          if b+0x6c<=len(d):
-                              h=U(d,b+0x68)
-                              if 0x80800000<=h<0x82000000:
-                                  try:
-                                      tc,tt,td,tp=get_target(h);ext=[f'{h:08x}',f'{tc:08x}',len(td)]
-                                      external_hist[cs+':'+ext[1]]+=1
-                                      stats['external_resolved']+=1
-                                  except Exception as ex:ext=[f'{h:08x}',str(ex)];stats['external_unresolved']+=1
-                          arrays=[]
-                          for base,label in [(a,'discriminator'),(b,'parent')]:
-                              for off in range(8,min(0x120,len(d)-base-15),8):
-                                  n=Q(d,base+off); rel=L(d,base+off+8); start=base+off+8+rel+16
-                                  if 0<n<=4096 and 8<=start<=len(d) and start+4*n<=len(d):
-                                      mh=U(d,start-8); arrays.append([label,off,n,start,f'{mh:08x}'])
-                                      pointer_hist[f'{cs}:{label}:{off:x}:{mh:08x}']+=1
-                          details.append(dict(cls=cs,blueprint=f'{tag:08x}',wrapper=f'{w:08x}',er=f'{er:08x}',group=f'{g:08x}',kind=k,index=ix,name=name,size=len(d),disc=a,parent=b,template_size=Q(d,0x48),callbacks=callbacks,fixups=fixups,external=ext,edges=edges,arrays=arrays,sha256=hashlib.sha256(d).hexdigest()))
-                          stats['parsed']+=1
-                      except Exception as ex:errors.append([cs,f'{w:08x}',str(ex)])
-          print('ORCHESTRATION_CENSUS',json.dumps(dict(root=f'{root:08x}',classes={k:dict(v) for k,v in cls_stats.items()},shapes=dict(shape_hist),callback_hist=dict(cb_hist),pointer_hist=dict(pointer_hist),external_hist=dict(external_hist),errors=errors),sort_keys=True),flush=True)
-          for i in range(0,len(details),20):print('ORCHESTRATION_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=details[i:i+20]),separators=(',',':')),flush=True)
-          assert not errors and sum(v['parsed'] for v in cls_stats.values())==sum(v['wrappers'] for v in cls_stats.values()),errors[:10]
-          # V14 second pass: deduplicated objective and sequence subresource layout and reference census.
-          unique={x['er']:x for x in details}; substats=collections.Counter(); nested=collections.Counter(); target_roles=collections.Counter(); graph_edges=[]; sub_examples=[]; seen_obj=set(); unknown_roles=collections.Counter(); unknown_hits=collections.Counter(); unknown_examples=[]
-          for er,x in sorted(unique.items()):
-              d=load(int(er,16),0x80800861); a=x['disc']; b=x['parent']; cls=x['cls']; n=x['name']
-              # exact layout of template, callback and relocation rows
-              assert Q(d,0)==len(d)
-              assert a+Q(d,0x48)<=len(d)
-              assert len(x['callbacks'])==2 and len(x['fixups'])==4
-              assert x['callbacks'][0][:4]==[a,'80800404',1,2]
-              assert x['callbacks'][1][:4]==[a,cls,0,1]
-              assert all(a<=o<=a+Q(d,0x48)-16 for o in x['fixups'])
-              substats[cls+':unique_templates']+=1
-              substats[cls+':template_bytes']+=Q(d,0x48)
-              if cls=='80802590':
-                  rr=arr(d,b+0x68,0x10)
-                  # marker and raw row words, no semantic assumptions
-                  for o in rr:
-                      mh=U(d,o-8) if o==rr[0] else 0x808031d7
-                      assert mh==0x808031d7
-                      nested[f'objective_rows:{len(rr)}']+=1
-                      if len(sub_examples)<45:sub_examples.append([er,n,'objective_row',o-b,[f'{U(d,o+i):08x}' for i in (0,4,8,12)]])
-                  substats['objective_rows']+=len(rr)
-              else:
-                  for off,mc,st in [(0x70,0x808004b1,0x20),(0x88,0x808030c9,0x18)]:
-                      if b+off+16>len(d):continue
-                      count=Q(d,b+off); rel=L(d,b+off+8)
-                      start=b+off+8+rel+16
-                      if 0<count<=4096 and 8<=start<=len(d) and U(d,start-8)==mc:
-                          nested[f'sequence_{off:x}_arrays']+=1
-                          nested[f'sequence_{off:x}_rows']+=count
-                          if start+count*st<=len(d) and len(sub_examples)<45:
-                              sub_examples.append([er,n,f'array_{off:x}',start-b,count,[f'{U(d,start+i):08x}' for i in range(0,min(st,len(d)-start),4)]])
-                  ext=x['external']
-                  if ext and len(ext)==3 and ext[1]=='80800734':
-                      h=int(ext[0],16); t=load(h,0x80800734)
-                      target_roles[f'{len(t)}']+=1
-                      if h not in seen_obj:
-                          seen_obj.add(h)
-                          # report only type/size and structural descriptors, not original payloads
-                          for off in range(8,min(len(t)-15,0x180),8):
-                              count=Q(t,off); start=off+8+L(t,off+8)+16
-                              if 0<count<=4096 and 8<=start<=len(t) and start+4*count<=len(t):
-                                  marker=U(t,start-8)
-                                  if 0x80800000<=marker<0x80810000:nested[f'dialogue_target:{off:x}:{marker:08x}']+=1
-                  for e in x['edges']:
-                      graph_edges.append([er,n,*e])
-          # Find alternate owner tuple positions for the four exceptional discriminator types.
-          unknown={0x80800548,0x80800937,0x80800962,0x808008bc}
-          seen3=set()
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              for st in arr(sd,0x30,0x28):
-                  for q in arr(sd,st+0x18,4):
-                      w=U(sd,q)
-                      if w in (0,0xffffffff) or (tag,w) in seen3:continue
-                      seen3.add((tag,w)); c,p,_=parse_wrapper(w)
-                      if c not in unknown:continue
-                      er=U(load(w,0x808003f6),0xc); d=load(er,0x80800861); a,_=rp(d,0x10); b,_=rp(d,0x18); cs=f'{c:08x}'
-                      unknown_roles[cs]+=1; hits=[]
-                      for o in range(0,len(d)-7,4):
-                          if U(d,o)!=key:continue
-                          k=d[o+4]; i=struct.unpack_from('<h',d,o+6)[0]
-                          if 0<=i<len(names) and names[i][0]==k:
-                              hits.append([o-a if a is not None else None,o-b if b is not None else None,k,i,names[i][1]])
-                      if hits:
-                          unknown_hits[cs]+=1
-                          if len(unknown_examples)<35:unknown_examples.append([cs,f'{w:08x}',f'{p:08x}',f'{er:08x}',hits[:8]])
-          print('ORCHESTRATION_DEDUP',json.dumps(dict(root=f'{root:08x}',unique=len(unique),stats=dict(substats),nested=dict(nested),dialogue_target_occurrences=dict(target_roles),unique_dialogue_targets=len(seen_obj),other_edges=graph_edges,examples=sub_examples,unknown_roles=dict(unknown_roles),unknown_hits=dict(unknown_hits),unknown_examples=unknown_examples),sort_keys=True),flush=True)
           # V14 grouped-reference arrays: verify repeated count, class, stride and exact local reference identities.
           grouped={0x80800548:(0x80800633,41,0x88),0x80800937:(0x8080067a,58,0x88),0x80800962:(0x808007cf,45,0x70),0x808008bc:(0x808008b0,44,0x70)}
           group_kind_hist=collections.Counter(); group_payloads=collections.Counter(); group_payload_examples=[]; group_diagnostics=[]; containers=collections.Counter(); layouts=collections.Counter(); group_errors=[]; group_results=[]; seen4=set(); root_ids=set(); exact_entries=collections.Counter()
@@ -731,242 +587,14 @@ jobs:
                   if len(geo_examples)<40:geo_examples.append(dict(role=cs,er=er,offset=off,count=n,marker=f'{m:08x}',start=st-b,span_to_next_header=next_header-st,first_words=words,ref_kind_counts=dict(types),ref_values=vals[:32]))
               if not candidates:geo_errors.append([cs,er,'no secondary typed arrays'])
           print('GROUPED_GEOMETRY_CANDIDATES',json.dumps(dict(root=f'{root:08x}',stats=dict(geo_stats),arrays=dict(geo_shapes),fields=dict(geo_fields),examples=geo_examples,errors=geo_errors),sort_keys=True),flush=True)
-          # V15 exact secondary object-row identity; infer a stride only if all declared rows match.
           secondary={ '80800548':[(0x40,0x8080148c,41),(0x50,0x80801330,42)], '808008bc':[(0x40,0x808005da,44)], '80800937':[(0x40,0x8080082a,58)], '80800962':[(0x40,0x808013aa,45)] }
-          seenc=set(); secondary_stats=collections.Counter(); secondary_shapes=collections.Counter(); secondary_errors=[]; secondary_examples=[]; secondary_details=[]
-          for gr in group_results:
-              er=gr['er']; cs=gr['role']
-              if er in seenc:continue
-              seenc.add(er); d=load(int(er,16),0x80800861); a,_=rp(d,0x10); b,_=rp(d,0x18)
-              refstart=b+gr['array_offset']-8
-              for off,marker,kind in secondary[cs]:
-                  lab=f'{cs}:{marker:08x}'; secondary_stats[lab+':arrays']+=1
-                  at=b+off;n=I(d,at); st=at+8+L(d,at+8)+16
-                  srefs={(int(g,16),k,i):name for g,k,i,name in gr['refs'] if k==kind}
-                  assert n==len(srefs) and (not n or (I(d,st-16)==n and U(d,st-8)==marker))
-                  if not n:continue
-                  hits=[]
-                  for o in range(st,len(d)-7,4):
-                      key=(U(d,o),d[o+4],struct.unpack_from('<h',d,o+6)[0])
-                      if key in srefs:hits.append((o,key))
-                  byoff=dict(hits); candidate=[]
-                  # Most structured element definitions are aligned to 4 or 8 bytes.
-                  for member in range(0,min(128,len(d)-st-7),4):
-                      first=st+member
-                      if first not in byoff:continue
-                      for stride in range(max(8,member+8),1025,4):
-                          if first+(n-1)*stride+8>len(d):break
-                          rr=[byoff.get(first+i*stride) for i in range(n)]
-                          if None in rr or len(set(rr))!=n:continue
-                          if set(rr)!=set(srefs):continue
-                          # Require exact secondary names when first qword is a relative StringPointer.
-                          same=0
-                          for i,k in enumerate(rr):
-                              row=st+i*stride; rel=L(d,row); target=row+rel
-                              if not rel or not 0<=target<len(d):continue
-                              end=d.find(b'\x00',target,min(len(d),target+512))
-                              if end>=target and d[target:end]==srefs[k].encode('ascii'):same+=1
-                          candidate.append((member,stride,same,rr))
-                  # Singleton row cannot prove stride; classify only the exact first identity and name.
-                  if n==1:
-                      candidate=[x for x in candidate if x[0]==12 and x[2]==1][:1]
-                      if candidate:
-                          x=candidate[0];candidate=[(x[0],0,x[2],x[3])]
-                  else:
-                      exact=[x for x in candidate if x[2]==n]
-                      if exact:candidate=exact
-                  if len(candidate)!=1:
-                      secondary_errors.append([er,lab,n,[[o-st,k[2]] for o,k in hits[:16]],[(x[0],x[1],x[2]) for x in candidate[:20]]])
-                      continue
-                  member,stride,same,rr=candidate[0]
-                  secondary_shapes[f'{lab}:member{member:x}:stride{stride:x}']+=1
-                  secondary_stats[lab+':parsed_arrays']+=1;secondary_stats[lab+':rows']+=n;secondary_stats[lab+':exact_names']+=same
-                  rows=[]
-                  for i,k in enumerate(rr):
-                      o=st+i*stride
-                      if not stride and i:break
-                      name=srefs[k]; meta=[f'{U(d,o+j):08x}' for j in range(0,min(stride or 80,96,len(d)-o-3),4)]
-                      rows.append([f'{k[0]:08x}',k[1],k[2],name,meta])
-                  if len(secondary_examples)<25:secondary_examples.append([er,lab,n,member,stride,same,rows[:2]])
-                  secondary_details.append(dict(er=er,role=cs,marker=f'{marker:08x}',count=n,member=member,stride=stride,rows=[[f'{g:08x}',k,i,srefs[(g,k,i)]] for g,k,i in rr]))
-          print('SECONDARY_IDENTITY_LAYOUTS',json.dumps(dict(root=f'{root:08x}',stats=dict(secondary_stats),shapes=dict(secondary_shapes),errors=secondary_errors[:40],error_count=len(secondary_errors),examples=secondary_examples),sort_keys=True),flush=True)
-          for i in range(0,len(secondary_details),10):print('SECONDARY_IDENTITY_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=secondary_details[i:i+10]),separators=(',',':')),flush=True)
-          # V16 inspect known trigger object records and independent geometry/name metadata.
-          trigger_fields=collections.Counter(); trigger_assets=collections.Counter(); trigger_examples=[]; trigger_inline=collections.Counter(); trigger_errors=[]; trigger_count=0; other_samples=[]; other_shape_hist=collections.Counter(); trigger_seen=set()
-          for gr in group_results:
-              er=gr['er']; cs=gr['role']
-              if er in trigger_seen:continue
-              trigger_seen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
-              for off,marker,kind in secondary[cs]:
-                  at=b+off; n=I(d,at); st=at+8+L(d,at+8)+16
-                  if not n:continue
-                  if kind!=58:
-                      # Search exact names by relative pointers independently of tuple presence.
-                      nm={x[3] for x in gr['refs'] if x[1]==kind}; found=[]
-                      for oo in range(st,len(d)-7,4):
-                          rel=L(d,oo); t=oo+rel
-                          if not rel or not 0<=t<len(d):continue
-                          e=d.find(b'\x00',t,min(len(d),t+256))
-                          if e<t:continue
-                          name=d[t:e].decode('ascii','replace')
-                          if name in nm:found.append([oo-st,name])
-                      other_shape_hist[f'{marker:08x}:arrays']+=1
-                      other_shape_hist[f'{marker:08x}:name_hits']+=len(found)
-                      if len(other_samples)<30:other_samples.append([er,f'{marker:08x}',n,found[:32],[f'{U(d,st+j):08x}' for j in range(0,min(128,len(d)-st-3),4)]])
-                      continue
-                  refmap={(int(g,16),k,i):nm for g,k,i,nm in gr['refs']}
-                  for j in range(n):
-                      o=st+0x120*j
-                      try:
-                          assert o+0x120<=len(d)
-                          k=(U(d,o+0xc),d[o+0x10],struct.unpack_from('<h',d,o+0x12)[0])
-                          name=refmap[k]; t=o+L(d,o); e=d.index(b'\x00',t)
-                          assert d[t:e].decode('ascii')==name
-                          trigger_count+=1; h=U(d,o+0x20); trigger_assets[f'{h:08x}']+=1
-                          for joff in (0x28,0x30,0x34,0x38,0x3c,0xd0,0xd4,0xd8,0xdc,0xe0,0xe4,0xe8,0xec,0xf0,0xf4,0xf8,0xfc,0x100,0x104,0x108,0x10c,0x110,0x114,0x118,0x11c):
-                              trigger_fields[f'{joff:x}:{U(d,o+joff):08x}']+=1
-                          # Candidate embedded class/relative fields: collect only verified target class markers.
-                          for joff in range(0x20,0x120,8):
-                              rel=L(d,o+joff); t=o+joff+rel
-                              if rel and 4<=t<len(d):
-                                  c=U(d,t-4)
-                                  if 0x80800000<=c<0x80810000:trigger_inline[f'{joff:x}:{c:08x}']+=1
-                          if len(trigger_examples)<20 or ('start_encounter' in name and len(trigger_examples)<40):
-                              trigger_examples.append([er,name,f'{h:08x}',[f'{U(d,o+joff):08x}' for joff in range(0,0x120,4)]])
-                      except Exception as ex:trigger_errors.append([er,j,str(ex)])
-          print('TRIGGER_OBJECT_CENSUS',json.dumps(dict(root=f'{root:08x}',count=trigger_count,errors=trigger_errors,assets=dict(trigger_assets),fields=dict(trigger_fields),inline=dict(trigger_inline),examples=trigger_examples,other=dict(other_shape_hist),other_samples=other_samples),sort_keys=True),flush=True)
-          # V16 independent geometry identity based on the actual layouts, plus shape payload closure.
           import math
-          g16stats=collections.Counter(); g16errors=[]; g16samples=[]; g16details=[]; g16seen=set()
           def vec4(d,o):return struct.unpack_from('<ffff',d,o)
-          def fnv1(s):
-              h=0x811c9dc5
-              for x in s.encode('ascii'):h=((h*0x01000193)&0xffffffff)^x
-              return h
-          def fnv1a(s):
-              h=0x811c9dc5
-              for x in s.encode('ascii'):h=((h^x)*0x01000193)&0xffffffff
-              return h
-          for gr in group_results:
-              er=gr['er']; cs=gr['role']
-              if er in g16seen:continue
-              g16seen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
-              for off,mc,kind in secondary[cs]:
-                  at=b+off;n=I(d,at); st=at+8+L(d,at+8)+16
-                  byidx={i:name for g,k,i,name in gr['refs'] if k==kind}
-                  stride={41:0x80,42:0x20,44:0x30,45:0x50,58:0x120}[kind]
-                  lab=f'{kind}'; g16stats[lab+':arrays']+=1
-                  found=set()
-                  for j in range(n):
-                      o=st+j*stride
-                      try:
-                          assert o+stride<=len(d)
-                          ix=I(d,o+0x12) if False else (struct.unpack_from('<h',d,o+0x12)[0] if kind==58 else I(d,o+(4 if kind in (44,45) else 8)))
-                          assert ix in byidx and ix not in found,('index',ix)
-                          name=byidx[ix]
-                          if kind in (41,42,58):
-                              t=o+L(d,o);e=d.index(b'\x00',t);assert d[t:e].decode('ascii')==name,('name',ix)
-                              g16stats[lab+':name_exact']+=1
-                          else:
-                              hv=U(d,o)
-                              if hv==fnv1(name):g16stats[lab+':fnv1']+=1
-                              elif hv==fnv1a(name):g16stats[lab+':fnv1a']+=1
-                              else:g16stats[lab+':hash_other']+=1
-                          found.add(ix);g16stats[lab+':rows']+=1
-                          data=dict(er=er,kind=kind,index=ix,name=name)
-                          if kind==44:
-                              q=vec4(d,o+0x10);p=vec4(d,o+0x20)
-                              assert all(math.isfinite(v) for v in (*q,*p))
-                              g16stats[lab+':finite_pose']+=1
-                              if abs(sum(v*v for v in q)-1)<0.002:g16stats[lab+':unit_rotation']+=1
-                              data.update(q=q,p=p)
-                          if kind in (41,58):
-                              aoff=0x10 if kind==41 else 0xb0
-                              lo=vec4(d,o+aoff);hi=vec4(d,o+aoff+0x10)
-                              assert all(math.isfinite(v) for v in (*lo,*hi))
-                              if all(lo[i]<=hi[i] for i in range(3)):g16stats[lab+':ordered_bounds']+=1
-                              if lo[3]==hi[3]==1:g16stats[lab+':bounds_w_one']+=1
-                              polys=[]
-                              for doff in (aoff+0x20,aoff+0x30):
-                                  cnt=I(d,o+doff);p=o+doff+8+L(d,o+doff+8)+16
-                                  assert 0<=cnt<=65536 and (not cnt or 16<=p<=len(d)),('polygon_header',doff,cnt,p)
-                                  if cnt:
-                                      assert I(d,p-16)==cnt
-                                      m=U(d,p-8);g16stats[f'{lab}:array{doff:x}:{m:08x}']+=1
-                                      assert p+cnt*16<=len(d)
-                                      vs=[vec4(d,p+16*u) for u in range(cnt)]
-                                      assert all(math.isfinite(v) for vv in vs for v in vv)
-                                      g16stats[f'{lab}:array{doff:x}:rows']+=cnt
-                                      if all(lo[i]-0.02<=vv[i]<=hi[i]+0.02 for vv in vs for i in range(3)):g16stats[f'{lab}:array{doff:x}:within_bounds']+=1
-                                      if all(abs(sum(vv[i]*vv[i] for i in range(3))-1)<0.002 for vv in vs):g16stats[f'{lab}:array{doff:x}:unit_xyz']+=1
-                                      polys.append(dict(off=doff,marker=f'{m:08x}',count=cnt,first=vs[:2]))
-                              data.update(lo=lo,hi=hi,arrays=polys)
-                          if kind==42:
-                              cnt=I(d,o+0x10);p=o+0x18+L(d,o+0x18)+16
-                              if 0<cnt<=4096 and 16<=p<=len(d) and I(d,p-16)==cnt:
-                                  m=U(d,p-8);g16stats[f'{lab}:member_marker:{m:08x}']+=1
-                                  if p+cnt*4<=len(d):
-                                      vals=[I(d,p+4*u) for u in range(cnt)]
-                                      allfa={i for g,k,i,name in gr['refs'] if k==41}
-                                      if all(v in allfa for v in vals):g16stats[lab+':member_i32_local_indices']+=1
-                                      data.update(member_count=cnt,member_marker=f'{m:08x}',first_member_words=[f'{U(d,p+4*u):08x}' for u in range(min(cnt*4,(len(d)-p)//4,16))])
-                          if len(g16samples)<35 or (kind==58 and ('start_encounter' in name or 'tv_flashlight' in name) and len(g16samples)<60):g16samples.append(data)
-                          g16details.append([er,kind,ix,name])
-                      except Exception as ex:g16errors.append([er,kind,j,str(ex)])
-                  if found==set(byidx):g16stats[lab+':complete_identity_arrays']+=1
-          print('GEOMETRY_LAYOUT_V16',json.dumps(dict(root=f'{root:08x}',stats=dict(g16stats),error_count=len(g16errors),errors=g16errors[:40],samples=g16samples),sort_keys=True),flush=True)
           # V17: verify triangulation and source tactical objective dependencies.
-          v17hist=collections.Counter(); v17errors=[]; v17samples=[]; v17seen=set(); area_by_group=collections.defaultdict(set)
+          area_by_group=collections.defaultdict(set)
           for gr in group_results:
-              er=gr['er']; cs=gr['role']
-              if er in v17seen:continue
-              v17seen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
-              for off,mc,kind in secondary[cs]:
-                  at=b+off;n=I(d,at); st=at+8+L(d,at+8)+16
-                  stride={41:0x80,42:0x20,44:0x30,45:0x50,58:0x120}[kind]
-                  byidx={i:name for g,k,i,name in gr['refs'] if k==kind}
-                  for j in range(n):
-                      o=st+j*stride
-                      ix=struct.unpack_from('<h',d,o+0x12)[0] if kind==58 else I(d,o+(4 if kind in (44,45) else 8))
-                      name=byidx.get(ix,'?')
-                      if kind in (41,42):area_by_group[(int(gr['key'],16),kind)].add(ix)
-                      try:
-                          if kind in (41,58):
-                              ao=0x30 if kind==41 else 0xd0
-                              nv=I(d,o+ao); vv=o+ao+8+L(d,o+ao+8)+16
-                              nt=I(d,o+ao+0x10);tt=o+ao+0x18+L(d,o+ao+0x18)+16
-                              assert U(d,vv-8)==0x80800094 and U(d,tt-8)==0x80800903
-                              assert 3<=nv<=65536 and 1<=nt<=65536 and tt+4*nt<=len(d)
-                              verts=[vec4(d,vv+i*16) for i in range(nv)]
-                              tri=[list(d[tt+i*4:tt+i*4+4]) for i in range(nt)]
-                              v17hist[f'{kind}:tested']+=1
-                              v17hist[f'{kind}:n_minus_2']+=nt==nv-2
-                              v17hist[f'{kind}:byte4_zero']+=all(t[3]==0 for t in tri)
-                              v17hist[f'{kind}:byte3_valid']+=all(max(t[:3])<nv and len(set(t[:3]))==3 for t in tri)
-                              # Compare all four possible 3-of-4 byte layouts and 6-byte u16 triples without assuming endianness.
-                              for omit in range(4):
-                                  ts=[[x for k,x in enumerate(t) if k!=omit] for t in tri]
-                                  if all(max(t)<nv and len(set(t))==3 for t in ts):
-                                      v17hist[f'{kind}:omit{omit}:valid']+=1
-                                      if set(i for t in ts for i in t)==set(range(nv)):v17hist[f'{kind}:omit{omit}:all_vertices']+=1
-                                      shoelace=abs(sum(verts[i][0]*verts[(i+1)%nv][1]-verts[(i+1)%nv][0]*verts[i][1] for i in range(nv)))/2
-                                      area=sum(abs((verts[y][0]-verts[x][0])*(verts[z][1]-verts[x][1])-(verts[z][0]-verts[x][0])*(verts[y][1]-verts[x][1]))/2 for x,y,z in ts)
-                                      if abs(shoelace-area)<=max(0.02,shoelace*0.001):v17hist[f'{kind}:omit{omit}:area_match']+=1
-                              if len(v17samples)<16:v17samples.append([kind,er,name,nv,nt,tri[:6]])
-                          elif kind==42:
-                              cnt=I(d,o+0x10);p=o+0x18+L(d,o+0x18)+16
-                              v17hist['42:sets']+=1
-                              if not cnt:v17hist['42:empty']+=1;continue
-                              assert I(d,p-16)==cnt and U(d,p-8)==0x8080138c
-                              v17hist['42:member_count']+=cnt
-                              fas={i for g,k,i,nm in gr['refs'] if k==41}
-                              for step in (2,4,8,12,16):
-                                  for mo in range(0,step,2):
-                                      if p+step*cnt>len(d):continue
-                                      vals=[struct.unpack_from('<h',d,p+step*i+mo)[0] for i in range(cnt)]
-                                      if all(x in fas for x in vals):v17hist[f'42:stride{step}:member{mo}:exact']+=1
-                              if len(v17samples)<30:v17samples.append([42,er,name,cnt,[f'{U(d,p+i*4):08x}' for i in range(min(12,(len(d)-p)//4))]])
-                      except Exception as ex:v17errors.append([kind,er,name,str(ex)])
+              for g,k,i,nm in gr['refs']:
+                  if k in (41,42):area_by_group[(int(g,16),k)].add(i)
           tacthist=collections.Counter(); tacterrors=[]; tactdetails=[]; tactseen=set()
           for tag,(key,rows,sd,names,hashes) in catalog.items():
               for stage in arr(sd,0x30,0x28):
@@ -983,7 +611,7 @@ jobs:
                           name=names[ix][1]
                           rr=[]; shape=[]
                           # Original runtime definition pointer may point at discriminator or parent; test both against exact class headers.
-                          for base,which in ((b,'parent'),(a,'disc')):
+                          for base,which in ((b,'parent'),):
                               if base+0x88>len(d):continue
                               n=I(d,base+0x78); st=base+0x80+L(d,base+0x80)+16
                               if not 0<=n<=4096 or (n and (st<16 or st+n*0x28>len(d) or I(d,st-16)!=n)):continue
@@ -998,7 +626,7 @@ jobs:
                                   for j in range(cnt):
                                       oo=pos+j*0x24; gg=U(d,oo+0x1c);kk=d[oo+0x20];ii=struct.unpack_from('<h',d,oo+0x22)[0]
                                       if gg!=key or not 0<=ii<len(names) or names[ii][0]!=kk:ok=False;break
-                                      operands.append([kk,ii,names[ii][1],I(d,oo+8),vec4(d,oo+0xc)[:3]])
+                                      operands.append([kk,ii,names[ii][1],I(d,oo+8),[I(d,oo+0xc),I(d,oo+0x10),I(d,oo+0x14)],U(d,oo),U(d,oo+4),U(d,oo+0x18)])
                                   if not ok:break
                                   opts.append([i,cnt,f'{tm:08x}',operands])
                               if ok:
@@ -1007,13 +635,12 @@ jobs:
                               tacthist[f'{which}:arrays']+=1;tacthist[f'{which}:task_count']+=n
                               for _,cnt,tm,ops in opts:
                                   tacthist[f'{which}:nested_marker:{tm}']+=1
-                                  for kk,ii,nn,_,_ in ops:
+                                  for kk,ii,nn,_,_,_,_,_ in ops:
                                       tacthist[f'{which}:operand_kind:{kk}']+=1
                                       if ii in area_by_group[(key,kk)]:tacthist[f'{which}:operand_geometry_match']+=1
                           if not shape:tacterrors.append([f'{er:08x}',name,[f'{U(d,b+j):08x}' for j in range(0,min(0xa0,len(d)-b-3),4)]])
                           tactdetails.append(dict(er=f'{er:08x}',name=name,key=f'{key:08x}',owner=ix,parent=f'{p:08x}',shape=shape))
                       except Exception as ex:tacterrors.append([f'{er:08x}',str(ex)])
-          print('V17_TRIANGULATION',json.dumps(dict(root=f'{root:08x}',stats=dict(v17hist),errors=v17errors[:40],error_count=len(v17errors),samples=v17samples),sort_keys=True),flush=True)
           print('V17_TACTICAL_OBJECTIVES',json.dumps(dict(root=f'{root:08x}',stats=dict(tacthist),errors=tacterrors[:30],error_count=len(tacterrors)),sort_keys=True),flush=True)
           for i in range(0,len(tactdetails),10):print('V17_TACTICAL_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=tactdetails[i:i+10]),separators=(',',':')),flush=True)
           # V17 executable-confirmed packed 3-byte triangle and 8-byte influence member records.
@@ -1062,6 +689,75 @@ jobs:
                               if len(geo17samples)<30:geo17samples.append([42,er,j,cnt,[[f'{v:08x}',i,fa_indices[i]] for v,i in vals[:12]]])
                       except Exception as ex:geo17err.append([kind,er,j,str(ex)])
           print('V17_NATIVE_GEOMETRY',json.dumps(dict(root=f'{root:08x}',stats=dict(geo17),error_count=len(geo17err),errors=geo17err[:50],samples=geo17samples),sort_keys=True),flush=True)
+          # V17 targeted exact tactical/squad link census; preserve source typed group scope.
+          links=collections.Counter(); fields17=collections.Counter(); links_examples=[]; squad_links=[]; tact_links=[]; scope_links=[]; inv_sets=collections.defaultdict(set); seen_squads=set()
+          for gr in group_results:
+              for g,k,i,nm in gr['refs']:
+                  if k==42:inv_sets[int(g,16)].add(i)
+          namesbygroup={}
+          for _,(key,rows,sd,names,hashes) in catalog.items():
+              if key in namesbygroup:assert namesbygroup[key]==names
+              else:namesbygroup[key]=names
+          objective_operands=collections.defaultdict(set)
+          for x in tactdetails:
+              key=int(x['key'],16); er=int(x['er'],16); d=load(er,0x80800861); b,_=rp(d,0x18); a,_=rp(d,0x10)
+              tasks=arr(d,b+0x78,0x28)
+              assert U(d,tasks[0]-8)==0x8080050b if tasks else True
+              links['tactical_objects']+=1; links['task_rows']+=len(tasks)
+              tx=[]
+              for ti,o in enumerate(tasks):
+                  task_flags=U(d,o); weight0=struct.unpack_from('<f',d,o+4)[0]; weight1=struct.unpack_from('<f',d,o+8)[0]
+                  fields17[f'task_flags:{task_flags:08x}']+=1
+                  if math.isfinite(weight0):fields17['weight0_finite']+=1
+                  if math.isfinite(weight1):fields17['weight1_finite']+=1
+                  nested=arr(d,o+0x10,0x24)
+                  if nested:assert U(d,nested[0]-8)==0x8080057d
+                  nr=[]
+                  for oo in nested:
+                      maxcount=I(d,oo+8); threshold=I(d,oo+0xc); mincount=I(d,oo+0x10); margin=I(d,oo+0x14)
+                      k=d[oo+0x20];ix=struct.unpack_from('<h',d,oo+0x22)[0];g=U(d,oo+0x1c)
+                      assert k==42 and g==key and ix in inv_sets[key]
+                      objective_operands[key].add(ix)
+                      for f,v in [('max',maxcount),('threshold',threshold),('min',mincount),('margin',margin),('word0',U(d,oo)),('word4',U(d,oo+4)),('word18',U(d,oo+0x18))]:fields17[f'{f}:{v}']+=1
+                      links['task_operand_rows']+=1;links['min_valid']+=mincount>=0;links['max_valid']+=maxcount==-1 or maxcount>=mincount
+                      nr.append([ix,maxcount,threshold,mincount,margin])
+                  tx.append([ti,task_flags,weight0 if math.isfinite(weight0) else None,weight1 if math.isfinite(weight1) else None,nr])
+              tact_links.append([x['key'],x['owner'],x['name'],x['er'],tx])
+          for key,ss in inv_sets.items():
+              links['unique_group_sets']+=len(ss);links['group_sets_referenced']+=len(ss & objective_operands[key])
+          # Every squad's serialized resource, typed owner and nonself references; exact keys and kinds, not string-name heuristics.
+          for stag,w,er,dt,g,k,ix,name,machine in strict_rows:
+              key=int(g,16); d=load(int(er,16),0x80800861);a,_=rp(d,0x10);b,_=rp(d,0x18); names=namesbygroup[key]
+              if (key,er) in seen_squads:continue
+              seen_squads.add((key,er));links['unique_squads']+=1
+              ee=[]
+              for o in range(0,len(d)-7,4):
+                  if U(d,o)!=key:continue
+                  kk=d[o+4];ii=struct.unpack_from('<h',d,o+6)[0]
+                  if not 0<=ii<len(names) or names[ii][0]!=kk or (kk==1 and ii==ix):continue
+                  links[f'squad_operand_kind:{kk}']+=1;fields17[f'squad_kind{kk}_parent_relative:{o-b:+x}']+=1
+                  ee.append([o-b,kk,ii,names[ii][1]])
+              if any(e[1]==3 for e in ee):links['squads_with_objective_ref']+=1
+              if ee:squad_links.append([g,ix,name,er,dt,ee])
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              for stage in arr(sd,0x30,0x28):
+                  stagek=U(sd,stage); relevant=collections.Counter()
+                  for q in arr(sd,stage+0x18,4):
+                      w=U(sd,q)
+                      if w in (0,0xffffffff):continue
+                      c,p,_=parse_wrapper(w)
+                      if c==0x80800560:relevant['tactical']+=1
+                      if c==0x808007bc:relevant['squad']+=1
+                      if c==0x80800548:relevant['firing_container']+=1
+                      if c==0x80800937:relevant['trigger_container']+=1
+                  links['stages']+=1
+                  if relevant['squad'] and relevant['tactical']:links['stages_with_squads_and_tactical']+=1
+                  if relevant['squad'] and not relevant['tactical']:links['stages_squad_without_tactical']+=1
+                  if relevant['tactical'] and not relevant['squad']:links['stages_tactical_without_squad']+=1
+                  if relevant:scope_links.append([f'{tag:08x}',f'{key:08x}',f'{stagek:08x}',dict(relevant)])
+          print('V17_DIRECTED_AI_LINKS',json.dumps(dict(root=f'{root:08x}',stats=dict(links),fields=dict(fields17),squad_examples=squad_links[:20],stage_examples=scope_links[:20]),sort_keys=True),flush=True)
+          for i in range(0,len(tact_links),10):print('V17_TACTICAL_FIELDS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=tact_links[i:i+10]),separators=(',',':')),flush=True)
+          for i in range(0,len(squad_links),20):print('V17_SQUAD_TYPED_LINKS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=squad_links[i:i+20]),separators=(',',':')),flush=True)
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
