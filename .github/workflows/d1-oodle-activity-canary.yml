@@ -1,4 +1,4 @@
-name: D1 focused geometry and squad tactical objective authored dependency closure
+name: D1 five scenario exact geometry and tactical closure including set-only containers
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -500,7 +500,8 @@ jobs:
                               if gg==key and 0<=ii<len(names) and names[ii][0]==kk:return (gg,kk,ii,names[ii][1])
                               return None
                           lead=ref_at(b+0x1c)
-                          assert lead is not None and lead[1]==k,('lead',hex(w),hex(key))
+                          allowed_kinds=(41,42) if c==0x80800548 else (k,)
+                          assert lead is not None and lead[1] in allowed_kinds,('lead',hex(w),hex(key))
                           candidates=[]
                           for off in range(0,first-7,4):
                               at=b+off; count=I(d,at); rel=L(d,at+8); start=at+8+rel+16
@@ -510,7 +511,7 @@ jobs:
                               marker=U(d,start-8)
                               if I(d,start-16)!=count or not 0x80800000<=marker<0x80810000:continue
                               rr=[ref_at(start+member+24*i) for i in range(count)]
-                              if any(x is None for x in rr) or rr[0]!=lead:continue
+                              if any(x is None or x[1] not in allowed_kinds for x in rr) or rr[0]!=lead:continue
                               candidates.append((off,count,marker,rr,member))
                           assert len(candidates)==1,('grouped_array_candidates',len(candidates),hex(w),hex(b),[f'{U(d,b+i):08x}' for i in range(0,first+24,4)])
                           off,count,clsid,rr,member=candidates[0]
@@ -758,6 +759,45 @@ jobs:
           print('V17_DIRECTED_AI_LINKS',json.dumps(dict(root=f'{root:08x}',stats=dict(links),fields=dict(fields17),squad_examples=squad_links[:20],stage_examples=scope_links[:20]),sort_keys=True),flush=True)
           for i in range(0,len(tact_links),10):print('V17_TACTICAL_FIELDS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=tact_links[i:i+10]),separators=(',',':')),flush=True)
           for i in range(0,len(squad_links),20):print('V17_SQUAD_TYPED_LINKS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=squad_links[i:i+20]),separators=(',',':')),flush=True)
+          # Final per-class identity verification, including set-only source containers and pose rows.
+          closure=collections.Counter(); closureerrors=[]; closureseen=set()
+          for gr in group_results:
+              er=gr['er']; cs=gr['role']
+              if er in closureseen:continue
+              closureseen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
+              for off,mc,kind in secondary[cs]:
+                  stride={41:0x80,42:0x20,44:0x30,45:0x50,58:0x120}[kind]
+                  byidx={i:nm for g,k,i,nm in gr['refs'] if k==kind}; found=set(); rr=arr(d,b+off,stride)
+                  try:
+                      assert len(rr)==len(byidx)
+                      if rr:assert U(d,rr[0]-8)==mc
+                      if not rr and kind==41:closure['set_only_containers']+=1
+                      for o in rr:
+                          ix=struct.unpack_from('<h',d,o+0x12)[0] if kind==58 else I(d,o+(4 if kind in (44,45) else 8))
+                          assert ix in byidx and ix not in found
+                          nm=byidx[ix];found.add(ix)
+                          if kind in (41,42,58):
+                              p=o+L(d,o); e=d.index(b'\x00',p);assert d[p:e].decode('ascii')==nm
+                          else:
+                              hv=0x811c9dc5
+                              for ch in nm.encode('ascii'):hv=((hv*0x01000193)&0xffffffff)^ch
+                              assert U(d,o)==hv
+                          closure[f'{kind}:identities']+=1
+                          if kind==44:
+                              q=vec4(d,o+0x10);p=vec4(d,o+0x20);assert all(math.isfinite(v) for v in (*q,*p))
+                              assert abs(sum(v*v for v in q)-1)<0.002
+                              closure['44:finite_unit_poses']+=1
+                          if kind in (41,58):
+                              ao=0x10 if kind==41 else 0xb0
+                              lo=vec4(d,o+ao);hi=vec4(d,o+ao+0x10)
+                              assert all(math.isfinite(v) for v in (*lo,*hi)) and all(lo[i]<=hi[i] for i in range(3)) and lo[3]==hi[3]==1
+                              verts=arr(d,o+ao+0x20,16)
+                              assert verts and all(lo[i]-0.02<=vec4(d,vo)[i]<=hi[i]+0.02 for vo in verts for i in range(3))
+                              closure[f'{kind}:vertices']+=len(verts);closure[f'{kind}:bounds']+=1
+                      assert found==set(byidx)
+                  except Exception as ex:closureerrors.append([er,kind,str(ex)])
+          print('V17_FULL_IDENTITY_CLOSURE',json.dumps(dict(root=f'{root:08x}',stats=dict(closure),errors=closureerrors,group_errors=group_errors),sort_keys=True),flush=True)
+          assert not closureerrors and not group_errors and not geo17err and not tacterrors,(closureerrors,group_errors,geo17err,tacterrors)
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
