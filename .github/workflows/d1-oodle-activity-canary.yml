@@ -1,4 +1,4 @@
-name: D1 original vendor prices, offer availability, rotation groups, seeds and exact rewards
+name: D1 complete vendor eligibility and secondary purchase restrictions
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -194,7 +194,9 @@ jobs:
                   req=[expr(data,ep+k*16) for k in range(e)]
                   k,kp=span(data,o,0x18,0x20,8)
                   costs=[dict(item=H(data,kp+m*8+4),quantity=I(data,kp+m*8),aux=H(data,kp+m*8+6)) for m in range(k)]
-                  out['offers'].append(dict(index=j,item=H(data,o+0x3c),quantity=I(data,o+0x40),seed=I(data,o+0x44),group=I(data,o+0x48),weight=struct.unpack_from('<f',data,o+0x4c)[0],explicit_price=data[o+0x10],costs=costs,requirements=req,flag68=H(data,o+0x68),raw28=data[o+0x28:o+0x3c].hex(),raw50=data[o+0x50:o+0x70].hex()))
+                  se,sp2=span(data,o,0x58,0x60,16)
+                  secondary=[expr(data,sp2+k*16) for k in range(se)]
+                  out['offers'].append(dict(secondary=secondary,rank_min=I(data,o+0x50),rank_max=I(data,o+0x54),index=j,item=H(data,o+0x3c),quantity=I(data,o+0x40),seed=I(data,o+0x44),group=I(data,o+0x48),weight=struct.unpack_from('<f',data,o+0x4c)[0],explicit_price=data[o+0x10],costs=costs,requirements=req,flag68=H(data,o+0x68),raw28=data[o+0x28:o+0x3c].hex(),raw50=data[o+0x50:o+0x70].hex()))
               vendors.append(out)
           pathlib.Path(f'vendor-routes-{family:04x}.json').write_text(json.dumps(vendors))
           print('VENDOR_ROUTES',json.dumps(dict(family=family,vendors=len(vendors),routes=sum(len(v['routes']) for v in vendors),offers=sum(len(v['offers']) for v in vendors),route_vendors=[dict(tag=v['tag'],routes=v['routes']) for v in vendors if v['routes']])),flush=True)
@@ -220,5 +222,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-v34-vendor-offers-${{ matrix.group }}
+          name: d1-v34-vendor-gates-${{ matrix.group }}
           path: vendor-routes-*.json
