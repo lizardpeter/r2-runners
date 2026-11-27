@@ -1,4 +1,4 @@
-name: D1 exact scenario and shared authored resource join
+name: D1 exact source-owned encounter graph and metadata join
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -168,7 +168,10 @@ jobs:
           lua_blocks=sum(v.count(b'\x1bLua') for v in cache.values())
           raw_bytes=sum(len(v) for v in cache.values())
           pins=json.loads(os.environ['ALL_PINS'])
+          payload_cache={}
+          occupancies={}
           def get_target(tag):
+              if tag in payload_cache:return payload_cache[tag]
               p=(tag-0x80800000)>>13;idx=tag&8191
               if p not in views:
                   members=index['package_families'].get(f'{p:04X}') or index['package_families'].get(f'{p:04x}')
@@ -193,15 +196,18 @@ jobs:
               length=(info>>28)&0x3fffffff
               assert length>0
               # Compute occupancy in the target package, use authenticated block ownership.
-              occupancy={}
               def iter_spans(inf):
                   n=(inf>>28)&0x3fffffff; k=inf&0x3fff; off=((inf>>14)&0x3fff)*16
                   while n:
                       m=min(n,B-off);yield k,off,m;n-=m;k+=1;off=0
               wanted=list(iter_spans(info)); need={x[0] for x in wanted}
-              for ii in range(count):
-                  for k,o,n in iter_spans(Q(et,16*ii+8)):
-                      if k in need:occupancy[k]=max(occupancy.get(k,0),o+n)
+              if p not in occupancies:
+                  occupancy={}
+                  for ii in range(count):
+                      for k,o,n in iter_spans(Q(et,16*ii+8)):
+                          occupancy[k]=max(occupancy.get(k,0),o+n)
+                  occupancies[p]=occupancy
+              occupancy=occupancies[p]
               result=[]
               for k,o,n in wanted:
                   if (p,k) not in target_cache:
@@ -222,7 +228,8 @@ jobs:
                       target_cache[p,k]=data
                   result.append(target_cache[p,k][o:o+n])
               data=b''.join(result);assert len(data)==length
-              return ref,typ,data, f'{p:04x}' in pins
+              payload_cache[tag]=(ref,typ,data,f'{p:04x}' in pins)
+              return payload_cache[tag]
           views={};target_cache={};refs=collections.Counter();nulls=0;other=0;d912_word0c=collections.Counter()
           for i,sp in targets:
               if any(k not in cache for k,o,n in sp):continue
@@ -267,6 +274,84 @@ jobs:
               import math
               assert all(math.isfinite(x[2]) for x in rr)
               joins.append(dict(tag=f'{h:08x}',rows=count,first_unique=len(set(x[0] for x in rr)),second_unique=len(set(x[1] for x in rr)),first_matches=[sum(x[0] in y for x in rr) for y in (locs,phases,bubbles)],second_matches=[sum(x[1] in y for x in rr) for y in (locs,phases,bubbles)],float_values=sorted(set(x[2] for x in rr)),rows_data=[[f'{a:08x}',f'{b:08x}',c] for a,b,c in rr]))
+          def load(h,expected=None):
+              assert h not in (0,0xffffffff)
+              c,t,d,pin=get_target(h)
+              if expected is not None:assert c==expected,(hex(h),hex(c),hex(expected))
+              return d
+          def rp(d,o):
+              rel=L(d,o)
+              if not rel:return None,None
+              at=o+rel;assert 4<=at<=len(d),(o,at,len(d))
+              return at,U(d,at-4)
+          role_hist=collections.Counter();root_wrappers=set();root_d912=set();root_entities=set();root_refs=set();root_maps=set();root_s6=set();root_parents=set()
+          root_stages=0;root_edges=[];root_errors=[];d912_records={};wrapper_cache={};first_hits=collections.Counter();ref_null=0
+          def parse_wrapper(h):
+              if h in wrapper_cache:return wrapper_cache[h]
+              f=load(h,0x808003f6);er=U(f,0xc);d=load(er,0x80800861)
+              _,c=rp(d,0x10);t,p=rp(d,0x18)
+              result=(c,p,None)
+              if c==0x808007bc:
+                  assert p==0x808005a7 and t+0x6c<=len(d),(hex(h),hex(er),p,t)
+                  tag=U(d,t+0x68)
+                  result=(c,p,tag)
+              wrapper_cache[h]=result
+              return result
+          def parse_spawn(h):
+              if h in d912_records:return d912_records[h]
+              d=load(h,0x808012d9)
+              location=U(d,0xc);shared=U(d,0x10);machine=U(d,8)
+              ents=set();n=0;names=0;loc_count=len(arr(d,0x30,0x30))
+              for o in arr(d,0x20,0x38):
+                  for q in arr(d,o+8,0x10):
+                      t,c=rp(d,q)
+                      assert c==0x80800406 and t+0x90<=len(d)
+                      ents.add(U(d,t));n+=1
+                      _,dc=rp(d,t+0x88)
+                      names+=dc==0x80801333
+              match=False
+              if shared not in (0,0xffffffff):
+                  sh=load(shared,0x808008b9)
+                  ct=Q(sh,8);assert len(sh)==48+12*ct
+                  match=any(U(sh,48+i*12)==location for i in range(ct))
+              result=(n,loc_count,ents,names,location,shared,machine,match)
+              d912_records[h]=result
+              return result
+          for loc,phase,bubble,parent in [[int(x,16) for x in row] for row in scenario_rows]:
+              f603=set();maps=set();s6es=set();stage_count=0;spawns=set();phase_err=[]
+              try:
+                  pd=load(parent,0x808008f0);root_parents.add(parent)
+                  child=U(pd,0x1c);cd=load(child)
+                  for slot in (8,0x18,0x28):
+                      for a in arr(cd,slot,4):
+                          h=U(cd,a);sd=load(h,0x8080076e);s6es.add(h)
+                          for st in arr(sd,0x30,0x28):
+                              stage_count+=1
+                              m=U(sd,st+0x10)
+                              if m not in (0,0xffffffff):maps.add(m)
+                              for q in arr(sd,st+0x18,4):
+                                  w=U(sd,q)
+                                  if w not in (0,0xffffffff):f603.add(w)
+              except Exception as ex:phase_err.append(['graph',str(ex)])
+              for w in sorted(f603):
+                  try:
+                      c,p,h=parse_wrapper(w)
+                      if h is not None:spawns.add(h);parse_spawn(h)
+                  except Exception as ex:phase_err.append([f'{w:08x}',str(ex)])
+              root_wrappers.update(f603);root_maps.update(maps);root_s6.update(s6es);root_stages+=stage_count;root_d912.update(spawns)
+              errs=[x for x in spawns if x not in d912_records]
+              good=[d912_records[x] for x in spawns if x in d912_records]
+              root_edges.append(dict(location=f'{loc:08x}',phase=f'{phase:08x}',bubble=f'{bubble:08x}',parent=f'{parent:08x}',stage_records=stage_count,s6e=len(s6es),maps=len(maps),wrappers=len(f603),script_tables=len(spawns),spawn_records=sum(x[0] for x in good),authored_locations=sum(x[1] for x in good),script_location_matches=sum(x[4]==loc for x in good),shared_location_matches=sum(x[7] for x in good),errors=len(phase_err)))
+              root_errors.extend([[f'{phase:08x}',*x] for x in phase_err])
+          for w in root_wrappers:
+              if w not in wrapper_cache:continue
+              c,p,h=wrapper_cache[w];role_hist[f'{c:08x}' if c is not None else 'null']+=1
+          for h in root_d912:
+              if h not in d912_records:continue
+              n,locct,ents,names,l,shared,machine,match=d912_records[h]
+              root_entities.update(ents);root_refs.add(shared);first_hits['matched' if match else 'null_shared' if shared in (0,0xffffffff) else 'unmatched']+=1
+          print('ROOT_GRAPH',json.dumps(dict(root=f'{root:08x}',parents=len(root_parents),s6e=len(root_s6),stage_occurrences=root_stages,map_tables=len(root_maps),f603=len(root_wrappers),wrapper_roles=dict(role_hist),d912=len(root_d912),d912_parsed=len(d912_records),spawn_records=sum(x[0] for x in d912_records.values()),authored_locations=sum(x[1] for x in d912_records.values()),unique_entity_tags=len(root_entities),named_records=sum(x[3] for x in d912_records.values()),shared_tags=[f'{x:08x}' for x in sorted(root_refs)],d912_location_join=dict(first_hits),unique_payloads=len(payload_cache),cross_package_blocks=len(target_cache),errors=len(root_errors),error_sample=root_errors[:12],phases=root_edges),sort_keys=True),flush=True)
+          assert not root_errors,root_errors[:12]
           print('SCENARIO_JOIN',json.dumps(dict(root=f'{root:08x}',size=len(scenario),locations=len(locs),phases=len(phases),bubbles=len(bubbles),scenario_rows=scenario_rows,joins=joins)),flush=True)
           print('REF10_CLOSURE',json.dumps(dict(family=f'{family:04x}',nulls=nulls,other=other,occurrences=sum(refs.values()),unique=len(refs),resolved=resolved,errors=ref_errors,unique_word0c=len(d912_word0c),word0c_null=sum(v for k,v in d912_word0c.items() if k in (0,0xffffffff))),sort_keys=True),flush=True)
 
