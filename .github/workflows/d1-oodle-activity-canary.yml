@@ -1,4 +1,4 @@
-name: D1 trigger 288-byte object and secondary name layout census
+name: D1 original geometry identity bounds and polygon candidate validation
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -835,6 +835,86 @@ jobs:
                               trigger_examples.append([er,name,f'{h:08x}',[f'{U(d,o+joff):08x}' for joff in range(0,0x120,4)]])
                       except Exception as ex:trigger_errors.append([er,j,str(ex)])
           print('TRIGGER_OBJECT_CENSUS',json.dumps(dict(root=f'{root:08x}',count=trigger_count,errors=trigger_errors,assets=dict(trigger_assets),fields=dict(trigger_fields),inline=dict(trigger_inline),examples=trigger_examples,other=dict(other_shape_hist),other_samples=other_samples),sort_keys=True),flush=True)
+          # V16 independent geometry identity based on the actual layouts, plus shape payload closure.
+          import math
+          g16stats=collections.Counter(); g16errors=[]; g16samples=[]; g16details=[]; g16seen=set()
+          def vec4(d,o):return struct.unpack_from('<ffff',d,o)
+          def fnv1(s):
+              h=0x811c9dc5
+              for x in s.encode('ascii'):h=((h*0x01000193)&0xffffffff)^x
+              return h
+          def fnv1a(s):
+              h=0x811c9dc5
+              for x in s.encode('ascii'):h=((h^x)*0x01000193)&0xffffffff
+              return h
+          for gr in group_results:
+              er=gr['er']; cs=gr['role']
+              if er in g16seen:continue
+              g16seen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
+              for off,mc,kind in secondary[cs]:
+                  at=b+off;n=I(d,at); st=at+8+L(d,at+8)+16
+                  byidx={i:name for g,k,i,name in gr['refs'] if k==kind}
+                  stride={41:0x80,42:0x20,44:0x30,45:0x50,58:0x120}[kind]
+                  lab=f'{kind}'; g16stats[lab+':arrays']+=1
+                  found=set()
+                  for j in range(n):
+                      o=st+j*stride
+                      try:
+                          assert o+stride<=len(d)
+                          ix=I(d,o+0x12) if False else (struct.unpack_from('<h',d,o+0x12)[0] if kind==58 else I(d,o+(4 if kind in (44,45) else 8)))
+                          assert ix in byidx and ix not in found,('index',ix)
+                          name=byidx[ix]
+                          if kind in (41,42,58):
+                              t=o+L(d,o);e=d.index(b'\x00',t);assert d[t:e].decode('ascii')==name,('name',ix)
+                              g16stats[lab+':name_exact']+=1
+                          else:
+                              hv=U(d,o)
+                              if hv==fnv1(name):g16stats[lab+':fnv1']+=1
+                              elif hv==fnv1a(name):g16stats[lab+':fnv1a']+=1
+                              else:g16stats[lab+':hash_other']+=1
+                          found.add(ix);g16stats[lab+':rows']+=1
+                          data=dict(er=er,kind=kind,index=ix,name=name)
+                          if kind==44:
+                              q=vec4(d,o+0x10);p=vec4(d,o+0x20)
+                              assert all(math.isfinite(v) for v in (*q,*p))
+                              g16stats[lab+':finite_pose']+=1
+                              if abs(sum(v*v for v in q)-1)<0.002:g16stats[lab+':unit_rotation']+=1
+                              data.update(q=q,p=p)
+                          if kind in (41,58):
+                              aoff=0x10 if kind==41 else 0xb0
+                              lo=vec4(d,o+aoff);hi=vec4(d,o+aoff+0x10)
+                              assert all(math.isfinite(v) for v in (*lo,*hi))
+                              if all(lo[i]<=hi[i] for i in range(3)):g16stats[lab+':ordered_bounds']+=1
+                              if lo[3]==hi[3]==1:g16stats[lab+':bounds_w_one']+=1
+                              polys=[]
+                              for doff in (aoff+0x20,aoff+0x30):
+                                  cnt=I(d,o+doff);p=o+doff+8+L(d,o+doff+8)+16
+                                  assert 0<=cnt<=65536 and (not cnt or 16<=p<=len(d)),('polygon_header',doff,cnt,p)
+                                  if cnt:
+                                      assert I(d,p-16)==cnt
+                                      m=U(d,p-8);g16stats[f'{lab}:array{doff:x}:{m:08x}']+=1
+                                      assert p+cnt*16<=len(d)
+                                      vs=[vec4(d,p+16*u) for u in range(cnt)]
+                                      assert all(math.isfinite(v) for vv in vs for v in vv)
+                                      g16stats[f'{lab}:array{doff:x}:rows']+=cnt
+                                      if all(lo[i]-0.02<=vv[i]<=hi[i]+0.02 for vv in vs for i in range(3)):g16stats[f'{lab}:array{doff:x}:within_bounds']+=1
+                                      if all(abs(sum(vv[i]*vv[i] for i in range(3))-1)<0.002 for vv in vs):g16stats[f'{lab}:array{doff:x}:unit_xyz']+=1
+                                      polys.append(dict(off=doff,marker=f'{m:08x}',count=cnt,first=vs[:2]))
+                              data.update(lo=lo,hi=hi,arrays=polys)
+                          if kind==42:
+                              cnt=I(d,o+0x10);p=o+0x18+L(d,o+0x18)+16
+                              if 0<cnt<=4096 and 16<=p<=len(d) and I(d,p-16)==cnt:
+                                  m=U(d,p-8);g16stats[f'{lab}:member_marker:{m:08x}']+=1
+                                  if p+cnt*4<=len(d):
+                                      vals=[I(d,p+4*u) for u in range(cnt)]
+                                      allfa={i for g,k,i,name in gr['refs'] if k==41}
+                                      if all(v in allfa for v in vals):g16stats[lab+':member_i32_local_indices']+=1
+                                      data.update(member_count=cnt,member_marker=f'{m:08x}',first_member_words=[f'{U(d,p+4*u):08x}' for u in range(min(cnt*4,(len(d)-p)//4,16))])
+                          if len(g16samples)<35 or (kind==58 and ('start_encounter' in name or 'tv_flashlight' in name) and len(g16samples)<60):g16samples.append(data)
+                          g16details.append([er,kind,ix,name])
+                      except Exception as ex:g16errors.append([er,kind,j,str(ex)])
+                  if found==set(byidx):g16stats[lab+':complete_identity_arrays']+=1
+          print('GEOMETRY_LAYOUT_V16',json.dumps(dict(root=f'{root:08x}',stats=dict(g16stats),error_count=len(g16errors),errors=g16errors[:40],samples=g16samples),sort_keys=True),flush=True)
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
