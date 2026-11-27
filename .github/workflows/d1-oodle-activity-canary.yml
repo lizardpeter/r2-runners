@@ -71,13 +71,14 @@ jobs:
                           dest.write_bytes(dst.raw[:n]);print('DECODE',n);sys.exit(0)
               sys.exit(2)
           stem=os.environ['STEM'];patch=int(os.environ['PATCH']);family=int(os.environ['FAMILY'],16)
-          origin='https://r2.houseofkublai.com/destiny/CUSA00219_01.33/packages/'
-          def get(p,off=None,n=None):
-              url=origin+stem+'_'+str(p)+'.pkg'
+          import bisect,re
+          base='https://crypt.cohae.dev/destiny/ps4/packages/latest'
+          def http(url,off=None,n=None):
               for attempt in range(3):
                   try:
-                      req=urllib.request.Request(url,headers={'Range':f'bytes={off}-{off+n-1}'} if off is not None else {})
-                      with urllib.request.urlopen(req,timeout=60) as r:
+                      headers={'User-Agent':'d1-package-research/1.0'}
+                      if off is not None:headers['Range']=f'bytes={off}-{off+n-1}'
+                      with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=60) as r:
                           if off is not None:
                               assert r.status==206,(r.status,'expected range response')
                               assert r.headers['Content-Range'].startswith(f'bytes {off}-{off+n-1}/')
@@ -87,7 +88,36 @@ jobs:
                   except Exception:
                       if attempt==2:raise
                       time.sleep(1)
+          index=json.loads(http('https://github.com/lizardpeter/destiny-1/releases/download/d1-global-activity-index-r1/D1_CURRENT_ACTIVITY_INDEX.json'))
+          assert index['status']=='D1_REMOTE_ACTIVITY_INDEX_COMPLETE'
+          source=index['source']
+          sizes=list(map(int,source['part_sizes']))
+          starts=[0]
+          for n in sizes:starts.append(starts[-1]+n)
+          assert hashlib.sha256(http(base+'/packages.txt')).hexdigest()==source['package_list_sha256']
+          fam=index['package_families']
+          members=fam.get(f'{family:04X}') or fam.get(f'{family:04x}')
+          assert members
+          byname={pathlib.Path(x['name']).name:x for x in members}
+          def readat(off,n):
+              chunks=[]
+              while n:
+                  part=bisect.bisect_right(starts,off)-1
+                  assert 0<=part<len(sizes)
+                  local=off-starts[part];take=min(n,sizes[part]-local)
+                  chunks.append(http(f'{base}/packages.tar.{part+1:03d}',local,take))
+                  off+=take;n-=take
+              return b''.join(chunks)
+          def get(p,off=None,n=None):
+              name=stem+'_'+str(p)+'.pkg'
+              row=byname[name];start=int(row['data_offset']);size=int(row['size'])
+              if off is None:off=0;n=size
+              assert 0<=off<=off+n<=size
+              return readat(start+off,n)
           b=get(patch)
+          pins={'025c':'c6424371d5e675263a949184f48a936328294ee51b9f15d17c78744b9ad79e05','0261':'2ac1b8471c355d4a79ba18671934428f31916715d5947ca603dc57d9081e8590','02a6':'f344538a2d68d7787494aa725467d3c5f7443209b29ac38517e8fa27c1c52493','03f0':'e25f2019f10f05dc1c550c89a4b23e98d703642cbc6a9af4e4cb2bf18aea03c3','0447':'012525f124c7a2c671f0f6f32ef4207bf07ae4a6496b4ae5897fe9b787395bf1','0538':'453763222619df768d6f304ecc1464f2ba582a75eb78d6da9439c0d21e91ce2e','07cf':'3864d97aece9e1b2576f3fde09da82fd5b0c398fb981d172ed476ca260e227a1'}
+          assert hashlib.sha256(b).hexdigest()==pins[f'{family:04x}'],('R2 logical snapshot mismatch',hashlib.sha256(b).hexdigest())
+          print('R2_LOGICAL_SNAPSHOT_MATCH',hashlib.sha256(b).hexdigest(),flush=True)
           assert H(b,0)==24 and H(b,4)==family and H(b,0x20)==patch
           ec,eo,bc,bo=U(b,0xb4),U(b,0xb8),U(b,0xd0),U(b,0xd4)
           assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
@@ -169,6 +199,6 @@ jobs:
           if [ "${{ job.status }}" != success ]; then state=failure; fi
           desc="Research run did not complete"
           if [ -f result.json ]; then
-            desc=$(python -c 'import json; d=json.load(open("result.json")); print(f"{d[chr(100)+chr(101)+chr(99)+chr(111)+chr(100)+chr(101)+chr(100)+chr(95)+chr(116)+chr(97)+chr(98)+chr(108)+chr(101)+chr(115)]}/{d[chr(116)+chr(97)+chr(114)+chr(103)+chr(101)+chr(116)+chr(95)+chr(116)+chr(97)+chr(98)+chr(108)+chr(101)+chr(115)]} decoded; {d[chr(115)+chr(112)+chr(97)+chr(119)+chr(110)+chr(95)+chr(114)+chr(101)+chr(99)+chr(111)+chr(114)+chr(100)+chr(115)]} spawn records; {d[chr(108)+chr(97)+chr(121)+chr(111)+chr(117)+chr(116)+chr(95)+chr(101)+chr(114)+chr(114)+chr(111)+chr(114)+chr(115)]} layout errors")')
+            desc=$(python -c 'import json; d=json.load(open("result.json")); print("{decoded_tables}/{target_tables} decoded; {spawn_records} spawn records; {layout_errors} layout errors".format(**d))')
           fi
           gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-oodle/$FAMILY" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="$desc"
