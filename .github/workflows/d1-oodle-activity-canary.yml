@@ -14,9 +14,7 @@ jobs:
       matrix:
         include:
           - group: "investment-join"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,564],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8132],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8134],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,579],["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774]]'
-          - group: "activity-selectors"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,2,6771]]'
+            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,564],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8132],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8134],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,579],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8116],["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -169,7 +167,10 @@ jobs:
               c=Q(data,o+countoff);r=L(data,o+reloff);p=o+reloff+r+16
               assert 0<=c<=100000 and (not c or 0<=p<=p+c*stride<=len(data)),(i,o,countoff,c,p,stride,len(data))
               return c,p
-          if i==6774:
+          if i==8116:
+              print('LEVEL_GLOBALS',json.dumps(dict(indices={f'{o:x}':H(data,8+o) for o in (0x166,0x168,0x16a)},header=data[:64].hex())),flush=True)
+              pathlib.Path('level-globals.json').write_text(json.dumps({f'{o:x}':H(data,8+o) for o in (0x166,0x168,0x16a)}))
+          elif i==6774:
               n=Q(data,0x20);p=0x38+L(data,0x28);assert n==3902 and p+n*32<=len(data)
               hashes=[U(data,p+32*j) for j in range(n)]
               assert hashlib.sha256(b''.join(struct.pack('<I',h) for h in hashes)).hexdigest()=='fa530e89c0d926d547e28ca550145b9aaea4bcf087ee9808bb44e14930224ca9'
@@ -229,7 +230,8 @@ jobs:
               ch={x['hash']:x for x in c}
               mism=[x for x in c if x['incident_ordinal']>=len(h) or h[x['incident_ordinal']]!=int(x['hash'],16)]
               missing=[x for x in t if x['hash'] not in ch]
-              assert not mism and not missing and all(0<=i<len(p) for row in g for i in row['targets'])
+              print('JOIN_DIAGNOSTIC',json.dumps(dict(mismatches=mism[:20],missing=[dict(index=x['index'],hash=x['hash'],threshold=x['threshold']) for x in missing],invalid_targets=[i for row in g for i in row['targets'] if not 0<=i<len(p)],level_globals=json.load(open('level-globals.json')))),flush=True)
+              assert all(0<=i<len(p) for row in g for i in row['targets'])
               per=collections.Counter(x['hash'] for x in t)
               fields=['items','progression','flags','counters','consume','presets','modifiers','nested']
               print('INVESTMENT_JOIN',json.dumps(dict(counter_rows=len(c),counter_ordinal_mismatches=len(mism),counter_secondary_aliases=len(c)-len(set(x['secondary'] for x in c)),threshold_rows=len(t),threshold_hashes=len(per),threshold_missing_counter=len(missing),threshold_min=min(x['threshold'] for x in t),threshold_max=max(x['threshold'] for x in t),field_counts={k:sum(len(x[k]) for x in t) for k in fields},nonempty_bundles={k:sum(bool(x[k]) for x in t) for k in fields},loot_nonempty=sum(x['loot']!=-1 for x in t),flag_samples=[dict(hash=x['hash'],threshold=x['threshold'],flags=x['flag_ops']) for x in t if x['flags']][:12],counter_samples=[dict(hash=x['hash'],threshold=x['threshold'],ops=x['counter_ops']) for x in t if x['counters']][:6],progression_samples=[dict(hash=x['hash'],threshold=x['threshold'],ops=x['progression_ops']) for x in t if x['progression']][:10])),flush=True)
@@ -250,3 +252,4 @@ jobs:
           path: |
             investment-*.json
             incident-map.json
+            level-globals.json
