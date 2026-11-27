@@ -1,4 +1,4 @@
-name: D1 item transfer restrictions and item definition action fields
+name: D1 original item direct exchange recipes and vendor redemption metadata
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -183,6 +183,12 @@ jobs:
                   z=ptr(data,o)
                   if z is not None:
                       row['relative_blocks'][f'{o:02x}']=dict(offset=z,extent=min(len(data)-z,16),header=data[z:z+min(len(data)-z,16)].hex())
+              z=ptr(data,0x70)
+              row['exchange']=None
+              if z is not None:
+                  n=I(data,z)
+                  assert 0<=n<=10000 and z+4+n*8<=len(data),(fh,z,n,len(data))
+                  row['exchange']=[dict(item=H(data,z+4+8*j),aux=H(data,z+6+8*j),quantity=I(data,z+8+8*j)) for j in range(n)]
               items.append(row)
           pathlib.Path(f'transfer-items-{family:04x}.json').write_text(json.dumps(dict(family=f'{family:04x}',items=items)))
           print('TRANSFER_ITEM_AUDIT',len(items),flush=True)
@@ -208,5 +214,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-v34-transfer-items-${{ matrix.group }}
+          name: d1-v34-exchange-items-${{ matrix.group }}
           path: transfer-items-*.json
