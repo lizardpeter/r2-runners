@@ -1,4 +1,4 @@
-name: D1 original inventory bucket layout, complete item ownership and stack metadata, stat curves
+name: D1 original equip constraints, item constructor and talent grid binding
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,10 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "buckets"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,8118]]'
-          - group: "stat-curves"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,580]]'
+          - group: "equip-slots"
+            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,561],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,8131]]'
           - group: "items-0131"
             rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",4092,-1,-1]]'
           - group: "items-0132"
@@ -176,6 +174,9 @@ jobs:
               p=o+r
               assert 0<=p<len(data),(o,r,p,len(data))
               return p
+          def exprs(data,z):
+              n,p=span(data,z,0,8,16)
+              return [expr(data,p+16*k) for k in range(n)]
           items=[]
           for i,sp in targets:
               data=b''.join(cache[k][o:o+n] for k,o,n in sp)
@@ -183,46 +184,35 @@ jobs:
               assert len(data)==(info>>28)&0x3fffffff
               fh=f'{0x80800000+family*8192+i:08x}'
               out=dict(filehash=fh,resource_class=f'{ref:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest())
-              if family==0x12f and i==8118:
-                  # native 265e30 payload+8. Count +84, inline rows +88 (not +8c).
-                  n=I(data,8+0x84);p=8+0x88
-                  assert 0<=n<=100 and p+n*20<=len(data),(n,len(data))
-                  out['buckets']=[dict(index=j,code=data[p+j*20],start=I(data,p+j*20+4),count=I(data,p+j*20+8),field_c=H(data,p+j*20+12),scope=data[p+j*20+16],replace=data[p+j*20+17],byte12=data[p+j*20+18],byte13=data[p+j*20+19],raw=data[p+j*20:p+(j+1)*20].hex()) for j in range(n)]
-                  out['prefix']=data[:p].hex()
-              elif family==0x12f and i==580:
-                  n,p=span(data,0,8,16,16)
-                  out['curves']=[]
+              if family==0x12f and i==561:
+                  n,p=span(data,0,8,16,56)
+                  out['slots']=[]
                   for j in range(n):
-                      o=p+j*16;z=ptr(data,o+8)
-                      if z is None:continue
-                      f,q=span(data,z,0,8,8)
-                      t,w=span(data,z,0x10,0x18,8)
-                      out['curves'].append(dict(stat=j,key=f'{U(data,o):08x}',forward=[list(struct.unpack_from('<if',data,q+k*8)) for k in range(f)],display=[list(struct.unpack_from('<ii',data,w+k*8)) for k in range(t)]))
+                      o=p+56*j
+                      a,q=span(data,o,0x28,0x30,1)
+                      out['slots'].append(dict(index=j,key=f'{U(data,o):08x}',bucket=data[o+5],raw_header=data[o:o+8].hex(),availability=expr(data,o+8),eligibility=expr(data,o+0x18),selectors=list(data[q:q+a])))
+              elif family==0x12f and i==8131:
+                  n,p=span(data,0,8,16,8)
+                  out['equip_rank_selectors']=[dict(index=j,key=f'{U(data,p+8*j):08x}',progression=H(data,p+8*j+4),raw=data[p+8*j:p+8*j+8].hex()) for j in range(n)]
               elif family in (0x131,0x132):
                   assert ref==0x80801806 and len(data)>=0x94
-                  row=dict(tag=fh,hash=f'{U(data,0x78):08x}',group=f'{U(data,0x80):08x}',max_stack=I(data,0x84),bucket=data[0x88],alternate=data[0x89],type=data[0x8a],instanced=data[0x8b],grid=H(data,0x58),binding=None,equip=None,stats=[],related=None,ordered_group=None)
-                  z=ptr(data,0x10)
-                  if z is not None:row['binding']=[data[z],data[z+1]]
+                  row=dict(tag=fh,hash=f'{U(data,0x78):08x}',grid=None,constructor=None,equip_exprs=None)
+                  z=ptr(data,0x58)
+                  if z is not None:row['grid']=H(data,z)
                   z=ptr(data,0x18)
-                  if z is not None:row['equip']=dict(group=f'{U(data,z+0x14):08x}',slot=data[z+0x18],auto=data[z+0x19],expr=expr(data,z))
-                  z=ptr(data,0x50)
+                  if z is not None:row['equip_exprs']=exprs(data,z)
+                  z=ptr(data,0x30)
                   if z is not None:
-                      n,p=span(data,z,0,8,8)
-                      row['stats']=[[data[p+k*8],I(data,p+k*8+4)] for k in range(n)]
-                  z=ptr(data,0x20)
-                  if z is not None:row['related']=H(data,z+0x18)
-                  z=ptr(data,0x40)
-                  if z is not None:
-                      n,p=span(data,z,0,8,8)
-                      row['ordered_group']=dict(enabled=data[z+0x14],members=[[H(data,p+k*8+4),data[p+k*8+6],data[p+k*8+7]] for k in range(n)])
+                      assert z+0x1c<=len(data)
+                      row['constructor']=dict(initial=I(data,z),field4=I(data,z+4),selector=H(data,z+8),rules=list(struct.unpack_from('<iiii',data,z+0xc)))
                   items.append(row)
                   continue
               else:raise AssertionError(i)
-              pathlib.Path(f'inventory-{family:04x}-{i}.json').write_text(json.dumps(out))
-              print('INVENTORY_TABLE',json.dumps(dict(filehash=fh,resource_class=out['resource_class'],size=out['size'],sha256=out['sha256'],counts={k:len(v) for k,v in out.items() if isinstance(v,list)})),flush=True)
+              pathlib.Path(f'equip-{family:04x}-{i}.json').write_text(json.dumps(out))
+              print('EQUIP_TABLE',json.dumps(dict(filehash=fh,resource_class=out['resource_class'],size=out['size'],sha256=out['sha256'],counts={k:len(v) for k,v in out.items() if isinstance(v,list)})),flush=True)
           if items:
-              pathlib.Path(f'inventory-items-{family:04x}.json').write_text(json.dumps(dict(family=f'{family:04x}',items=items)))
-              print('ITEM_METADATA',len(items),flush=True)
+              pathlib.Path(f'equip-items-{family:04x}.json').write_text(json.dumps(dict(family=f'{family:04x}',items=items)))
+              print('ITEM_CONSTRUCTORS',len(items),flush=True)
           PY
           python - <<'PY'
           import json,os,subprocess,sys
@@ -245,5 +235,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-v32-inventory-${{ matrix.group }}
-          path: inventory-*.json
+          name: d1-v32-equip-${{ matrix.group }}
+          path: equip-*.json
