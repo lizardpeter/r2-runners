@@ -1,4 +1,4 @@
-name: D1 original reward bundle and progression curve join
+name: D1 exact unlock flag value objective and progression policy extraction
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,8 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "investment-join"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,564],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8132],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8134],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,579],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8116],["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774]]'
+          - group: "unlock-objective-master"
+            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8141],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,570],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8127],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8126],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8132],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,579],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,564]]'
+          - group: "activity-expressions"
+            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,2,6771]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -163,56 +165,55 @@ jobs:
           ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
           assert len(data)==(info>>28)&0x3fffffff
           print('INCIDENT_PAYLOAD',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',entry_b=f'{typ:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),header=data[:128].hex())),flush=True)
-          def span(o,countoff,reloff,stride):
-              c=Q(data,o+countoff);r=L(data,o+reloff);p=o+reloff+r+16
-              assert 0<=c<=100000 and (not c or 0<=p<=p+c*stride<=len(data)),(i,o,countoff,c,p,stride,len(data))
+          def span(o,co,ro,st):
+              c=Q(data,o+co);r=L(data,o+ro);p=o+ro+r+16
+              assert 0<=c<=100000 and (not c or 0<=p<=p+c*st<=len(data)),(i,o,co,c,p,st,len(data))
               return c,p
-          if i==8116:
-              print('LEVEL_GLOBALS',json.dumps(dict(indices={f'{o:x}':H(data,8+o) for o in (0x166,0x168,0x16a)},header=data[:64].hex())),flush=True)
-              pathlib.Path('level-globals.json').write_text(json.dumps({f'{o:x}':H(data,8+o) for o in (0x166,0x168,0x16a)}))
-          elif i==6774:
-              n=Q(data,0x20);p=0x38+L(data,0x28);assert n==3902 and p+n*32<=len(data)
-              hashes=[U(data,p+32*j) for j in range(n)]
-              assert hashlib.sha256(b''.join(struct.pack('<I',h) for h in hashes)).hexdigest()=='fa530e89c0d926d547e28ca550145b9aaea4bcf087ee9808bb44e14930224ca9'
-              pathlib.Path('incident-map.json').write_text(json.dumps(hashes))
-          else:
-              stride={564:8,8132:56,8134:40,579:152,6771:16}[i]
-              n,p=span(0,8,16,stride);out=[]
-              for j in range(n):
-                  o=p+j*stride;h=U(data,o)
-                  row=dict(index=j,hash=f'{h:08x}')
-                  if i==564:
-                      row.update(incident_ordinal=H(data,o+4),secondary=H(data,o+6))
-                  elif i==8132:
-                      c,b=span(o,8,16,8)
-                      row.update(scope=data[o+4],repeat_last=data[o+5],storage_index=struct.unpack_from('<h',data,o+0x30)[0],steps=[dict(cost=I(data,b+8*k),word=f'{U(data,b+8*k+4):08x}') for k in range(c)])
-                  elif i==8134:
-                      c,b=span(o,8,16,2);nc,nb=span(o,0x18,0x20,24)
-                      row.update(mode=data[o+4],targets=[H(data,b+2*k) for k in range(c)],extra_counter_selectors=[dict(counter=H(data,nb+24*k),condition_raw=data[nb+24*k+8:nb+24*(k+1)].hex()) for k in range(nc)])
-                  elif i==579:
-                      v=o+8
-                      row.update(threshold=I(data,o+4),loot=struct.unpack_from('<h',data,v)[0],tail=f'{U(data,v+0x8c):08x}')
-                      fields=[('items',8,0x10,8),('progression',0x18,0x20,12),('flags',0x28,0x30,4),('counters',0x38,0x40,24),('consume',0x48,0x50,8),('presets',0x58,0x60,2),('modifiers',0x68,0x70,2),('nested',0x78,0x80,2)]
-                      for name,co,ro,st in fields:
-                          c,b=span(v,co,ro,st)
-                          row[name]=[data[b+k*st:b+(k+1)*st].hex() for k in range(c)]
-                      row['flag_ops']=[dict(index=H(bytes.fromhex(x),0),value=bytes.fromhex(x)[2]) for x in row['flags']]
-                      row['progression_ops']=[dict(category=H(bytes.fromhex(x),0),amount=I(bytes.fromhex(x),4),scaled=bytes.fromhex(x)[8]) for x in row['progression']]
-                      row['counter_ops']=[dict(index=H(bytes.fromhex(x),0),mode=bytes.fromhex(x)[2],expression=bytes.fromhex(x)[8:].hex()) for x in row['counters']]
-                  elif i==6771:
-                      v=o+8+L(data,o+8)
-                      assert 0<=v<=len(data)-0xa9 and U(data,v)==h
-                      r=L(data,v+0x48)
-                      selectors=[]
-                      if r:
-                          z=v+0x48+r;c,b=span(z,0,8,24)
-                          selectors=[dict(site=struct.unpack_from('<h',data,b+24*k+0x10)[0],condition_raw=data[b+24*k:b+24*k+0x10].hex()) for k in range(c)]
-                      row.update(category=struct.unpack_from('<b',data,v+0xa8)[0],selectors=selectors,definition_offset=v)
-                  out.append(row)
-              if i==6771:
-                  vals=[a['site'] for row in out for a in row['selectors']]
-                  print('ACTIVITY_SELECTOR_AUDIT',json.dumps(dict(count=n,nonempty=sum(bool(x['selectors']) for x in out),selector_count=len(vals),site_counts=dict(collections.Counter(vals)),sample=[x for x in out if x['selectors']][:8])),flush=True)
-              pathlib.Path(f'investment-{i}.json').write_text(json.dumps(out,indent=2))
+          stride={8141:8,570:8,8127:64,8126:24,8132:56,579:152,564:8,6771:16}[i]
+          n,p=span(0,8,16,stride);out=[]
+          def expr(z):
+              c,b=span(z,0,8,8);return [[data[b+k*8],I(data,b+k*8+4)] for k in range(c)]
+          for j in range(n):
+              o=p+j*stride;h=U(data,o);row=dict(index=j,hash=f'{h:08x}')
+              if i in (8141,570):
+                  row.update(scope=data[o+4],byte5=data[o+5],slot=struct.unpack_from('<h',data,o+6)[0])
+              elif i==8127:
+                  row.update(value=struct.unpack_from('<h',data,o+4)[0],byte6=data[o+6],byte7=data[o+7],reverse=data[o+8],threshold=I(data,o+0x20),raw=data[o:o+64].hex())
+              elif i==8126:
+                  row.update(ref=f'{U(data,o+0x10):08x}',raw=data[o:o+24].hex())
+              elif i==8132:
+                  c,b=span(o,8,16,8);nc,nb=span(o,0x18,0x20,64)
+                  row.update(scope=data[o+4],repeat=data[o+5],steps=[dict(cost=I(data,b+k*8),reward=struct.unpack_from('<h',data,b+k*8+4)[0],raw_word=f'{U(data,b+k*8+4):08x}') for k in range(c)],policies=[])
+                  for k in range(nc):
+                      v=nb+64*k;ops=expr(v+8)
+                      row['policies'].append(dict(mode=data[v],expression=ops,min_rank=I(data,v+0x18),max_rank=I(data,v+0x1c),relative_lower=I(data,v+0x20),relative_upper=I(data,v+0x24),context=data[v+0x2a:v+0x2f].hex(),multiplier=struct.unpack_from('<f',data,v+0x30)[0],cap1=I(data,v+0x34),cap2=I(data,v+0x38),rank_cap=I(data,v+0x3c)))
+              elif i==579:
+                  v=o+8;c,b=span(v,0x28,0x30,4)
+                  row.update(threshold=I(data,o+4),flags=[dict(index=H(data,b+k*4),value=data[b+k*4+2]) for k in range(c)])
+              elif i==564:
+                  row.update(incident=H(data,o+4),slot=H(data,o+6))
+              elif i==6771:
+                  v=o+8+L(data,o+8);assert 0<=v<=len(data)-0xa9 and U(data,v)==h
+                  r=L(data,v+0x48);selectors=[]
+                  if r:
+                      z=v+0x48+r;c,b=span(z,0,8,24)
+                      for k in range(c):
+                          x=b+24*k;selectors.append(dict(site=struct.unpack_from('<h',data,x+0x10)[0],expression=expr(x)))
+                  row.update(category=data[v+0xa8],selectors=selectors)
+              out.append(row)
+          pathlib.Path(f'investment-{i}.json').write_text(json.dumps(out,indent=2))
+          stats=dict(entry=i,count=n,base=p,stride=stride,marker=f'{U(data,p-8):08x}',unique_hashes=len(set(x['hash'] for x in out)),first=out[:3])
+          if i in (8141,570):
+              stats.update(scopes=dict(collections.Counter(x['scope'] for x in out)),slot_ranges={str(k):[min(x['slot'] for x in out if x['scope']==k),max(x['slot'] for x in out if x['scope']==k)] for k in set(x['scope'] for x in out)},duplicate_scope_slots=len(out)-len(set((x['scope'],x['slot']) for x in out)))
+          elif i==8127:
+              stats.update(reverse_counts=dict(collections.Counter(x['reverse'] for x in out)),threshold_min=min(x['threshold'] for x in out),threshold_max=max(x['threshold'] for x in out),value_min=min(x['value'] for x in out),value_max=max(x['value'] for x in out),no_value=sum(x['value']==-1 for x in out))
+          elif i==8132:
+              pol=[x for row in out for x in row['policies']];steps=[x for row in out for x in row['steps']]
+              stats.update(policies=len(pol),nonempty_expression=sum(bool(x['expression']) for x in pol),mode_counts=dict(collections.Counter(x['mode'] for x in pol)),nondefault_multiplier=sum(x['multiplier']!=1 for x in pol),rank_cap=sum(x['rank_cap']!=0 for x in pol),cap1=sum(x['cap1']!=0 for x in pol),cap2=sum(x['cap2']!=0 for x in pol),step_rewards=sum(x['reward']!=-1 for x in steps),step_reward_min=min((x['reward'] for x in steps if x['reward']!=-1),default=-1),step_reward_max=max((x['reward'] for x in steps if x['reward']!=-1),default=-1),policy_examples=pol[:8],level_policies=out[117]['policies'])
+          elif i==6771:
+              sel=[x for row in out for x in row['selectors']];ops=[a for x in sel for a in x['expression']]
+              stats.update(selectors=len(sel),nonempty=sum(bool(x['expression']) for x in sel),op_counts=dict(collections.Counter(a[0] for a in ops)),examples=[dict(index=x['index'],hash=x['hash'],selectors=[a for a in x['selectors'] if a['expression']]) for x in out if any(a['expression'] for a in x['selectors'])][:8])
+          print('TABLE_AUDIT',json.dumps(stats),flush=True)
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
           python - <<'PY'
@@ -224,18 +225,15 @@ jobs:
               p=subprocess.run([sys.executable,'scan.py'],env=env)
               if p.returncode:failed.append(fam)
           print('GROUP_FAILURES',failed,flush=True)
-          if not failed and os.environ['GROUP_ID']=='investment-join':
-              import collections,hashlib
-              h=json.load(open('incident-map.json'));c=json.load(open('investment-564.json'));p=json.load(open('investment-8132.json'));g=json.load(open('investment-8134.json'));t=json.load(open('investment-579.json'))
-              ch={x['hash']:x for x in c}
-              mism=[x for x in c if x['incident_ordinal']>=len(h) or h[x['incident_ordinal']]!=int(x['hash'],16)]
-              missing=[x for x in t if x['hash'] not in ch]
-              print('JOIN_DIAGNOSTIC',json.dumps(dict(mismatches=mism[:20],missing=[dict(index=x['index'],hash=x['hash'],threshold=x['threshold']) for x in missing],invalid_targets=[i for row in g for i in row['targets'] if not 0<=i<len(p)],level_globals=json.load(open('level-globals.json')))),flush=True)
-              assert all(0<=i<len(p) for row in g for i in row['targets'])
-              per=collections.Counter(x['hash'] for x in t)
-              fields=['items','progression','flags','counters','consume','presets','modifiers','nested']
-              print('INVESTMENT_JOIN',json.dumps(dict(counter_rows=len(c),counter_ordinal_mismatches=len(mism),counter_secondary_aliases=len(c)-len(set(x['secondary'] for x in c)),threshold_rows=len(t),threshold_hashes=len(per),threshold_missing_counter=len(missing),threshold_min=min(x['threshold'] for x in t),threshold_max=max(x['threshold'] for x in t),field_counts={k:sum(len(x[k]) for x in t) for k in fields},nonempty_bundles={k:sum(bool(x[k]) for x in t) for k in fields},loot_nonempty=sum(x['loot']!=-1 for x in t),flag_samples=[dict(hash=x['hash'],threshold=x['threshold'],flags=x['flag_ops']) for x in t if x['flags']][:12],counter_samples=[dict(hash=x['hash'],threshold=x['threshold'],ops=x['counter_ops']) for x in t if x['counters']][:6],progression_samples=[dict(hash=x['hash'],threshold=x['threshold'],ops=x['progression_ops']) for x in t if x['progression']][:10])),flush=True)
-              print('PROGRESSION_CURVES',json.dumps(dict(count=len(p),total_steps=sum(len(x['steps']) for x in p),empty=sum(not x['steps'] for x in p),repeat_last=sum(x['repeat_last']!=0 for x in p),repeat_empty=sum(x['repeat_last']!=0 and not x['steps'] for x in p),repeat_nonpositive_last=[x['index'] for x in p if x['repeat_last'] and x['steps'] and x['steps'][-1]['cost']<=0],negative_costs=sum(y['cost']<0 for x in p for y in x['steps']),scope1=[dict(index=x['index'],hash=x['hash'],slot=x['storage_index'],repeat=x['repeat_last'],count=len(x['steps']),costs=[y['cost'] for y in x['steps']][:40]) for x in p if x['scope']==1],scope0=[x for x in p if x['scope']==0],extra_category_counter_rows=sum(len(x['extra_counter_selectors']) for x in g))),flush=True)
+          if not failed and os.environ['GROUP_ID']=='unlock-objective-master':
+              import collections
+              f=json.load(open('investment-8141.json'));v=json.load(open('investment-570.json'));o=json.load(open('investment-8127.json'));t=json.load(open('investment-579.json'));p=json.load(open('investment-8132.json'))
+              ops=[a for row in t for a in row['flags']]
+              invalid=[a for a in ops if not 0<=a['index']<len(f)]
+              invalid_values=[x for x in o if x['value']!=-1 and not 0<=x['value']<len(v)]
+              assert not invalid and not invalid_values
+              refs=collections.Counter(x['value'] for x in o if x['value']!=-1)
+              print('UNLOCK_JOIN',json.dumps(dict(flag_ops=len(ops),flag_scope_counts=dict(collections.Counter(f[a['index']]['scope'] for a in ops)),flag_value_counts=dict(collections.Counter(a['value'] for a in ops)),objective_scope_counts=dict(collections.Counter(v[x['value']]['scope'] for x in o if x['value']!=-1)),distinct_objective_values=len(refs),shared_value_ids=sum(n>1 for n in refs.values()),max_shared=max(refs.values()),examples=[dict(flag=f[a['index']],value=a['value']) for a in ops[:8]],policy_flag_refs=sum(a[0]==1 for x in p for q in x['policies'] for a in q['expression']),policy_value_refs=sum(a[0]==10 for x in p for q in x['policies'] for a in q['expression']))),flush=True)
           sys.exit(bool(failed))
           PY
       - name: Publish incident research status (no raw data uploads)
@@ -251,5 +249,4 @@ jobs:
           name: d1-investment-definition-${{ matrix.group }}
           path: |
             investment-*.json
-            incident-map.json
-            level-globals.json
+
