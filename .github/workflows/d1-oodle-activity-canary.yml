@@ -1,4 +1,4 @@
-name: D1 objective sequence template and typed operand census
+name: D1 unique orchestration resources and exceptional reference analysis
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -556,6 +556,73 @@ jobs:
           print('ORCHESTRATION_CENSUS',json.dumps(dict(root=f'{root:08x}',classes={k:dict(v) for k,v in cls_stats.items()},shapes=dict(shape_hist),callback_hist=dict(cb_hist),pointer_hist=dict(pointer_hist),external_hist=dict(external_hist),errors=errors),sort_keys=True),flush=True)
           for i in range(0,len(details),20):print('ORCHESTRATION_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=details[i:i+20]),separators=(',',':')),flush=True)
           assert not errors and sum(v['parsed'] for v in cls_stats.values())==sum(v['wrappers'] for v in cls_stats.values()),errors[:10]
+          # V14 second pass: deduplicated objective and sequence subresource layout and reference census.
+          unique={x['er']:x for x in details}; substats=collections.Counter(); nested=collections.Counter(); target_roles=collections.Counter(); graph_edges=[]; sub_examples=[]; seen_obj=set(); unknown_roles=collections.Counter(); unknown_hits=collections.Counter(); unknown_examples=[]
+          for er,x in sorted(unique.items()):
+              d=load(int(er,16),0x80800861); a=x['disc']; b=x['parent']; cls=x['cls']; n=x['name']
+              # exact layout of template, callback and relocation rows
+              assert Q(d,0)==len(d)
+              assert a+Q(d,0x48)<=len(d)
+              assert len(x['callbacks'])==2 and len(x['fixups'])==4
+              assert x['callbacks'][0][:4]==[a,'80800404',1,2]
+              assert x['callbacks'][1][:4]==[a,cls,0,1]
+              assert all(a<=o<=a+Q(d,0x48)-16 for o in x['fixups'])
+              substats[cls+':unique_templates']+=1
+              substats[cls+':template_bytes']+=Q(d,0x48)
+              if cls=='80802590':
+                  rr=arr(d,b+0x68,0x10)
+                  # marker and raw row words, no semantic assumptions
+                  for o in rr:
+                      mh=U(d,o-8) if o==rr[0] else 0x808031d7
+                      assert mh==0x808031d7
+                      nested[f'objective_rows:{len(rr)}']+=1
+                      if len(sub_examples)<45:sub_examples.append([er,n,'objective_row',o-b,[f'{U(d,o+i):08x}' for i in (0,4,8,12)]])
+                  substats['objective_rows']+=len(rr)
+              else:
+                  for off,mc,st in [(0x70,0x808004b1,0x20),(0x88,0x808030c9,0x18)]:
+                      if b+off+16>len(d):continue
+                      count=Q(d,b+off); rel=L(d,b+off+8)
+                      start=b+off+8+rel+16
+                      if 0<count<=4096 and 8<=start<=len(d) and U(d,start-8)==mc:
+                          nested[f'sequence_{off:x}_arrays']+=1
+                          nested[f'sequence_{off:x}_rows']+=count
+                          if start+count*st<=len(d) and len(sub_examples)<45:
+                              sub_examples.append([er,n,f'array_{off:x}',start-b,count,[f'{U(d,start+i):08x}' for i in range(0,min(st,len(d)-start),4)]])
+                  ext=x['external']
+                  if ext and len(ext)==3 and ext[1]=='80800734':
+                      h=int(ext[0],16); t=load(h,0x80800734)
+                      target_roles[f'{len(t)}']+=1
+                      if h not in seen_obj:
+                          seen_obj.add(h)
+                          # report only type/size and structural descriptors, not original payloads
+                          for off in range(8,min(len(t)-15,0x180),8):
+                              count=Q(t,off); start=off+8+L(t,off+8)+16
+                              if 0<count<=4096 and 8<=start<=len(t) and start+4*count<=len(t):
+                                  marker=U(t,start-8)
+                                  if 0x80800000<=marker<0x80810000:nested[f'dialogue_target:{off:x}:{marker:08x}']+=1
+                  for e in x['edges']:
+                      graph_edges.append([er,n,*e])
+          # Find alternate owner tuple positions for the four exceptional discriminator types.
+          unknown={0x80800548,0x80800937,0x80800962,0x808008bc}
+          seen3=set()
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              for st in arr(sd,0x30,0x28):
+                  for q in arr(sd,st+0x18,4):
+                      w=U(sd,q)
+                      if w in (0,0xffffffff) or (tag,w) in seen3:continue
+                      seen3.add((tag,w)); c,p,_=parse_wrapper(w)
+                      if c not in unknown:continue
+                      er=U(load(w,0x808003f6),0xc); d=load(er,0x80800861); a,_=rp(d,0x10); b,_=rp(d,0x18); cs=f'{c:08x}'
+                      unknown_roles[cs]+=1; hits=[]
+                      for o in range(0,len(d)-7,4):
+                          if U(d,o)!=key:continue
+                          k=d[o+4]; i=struct.unpack_from('<h',d,o+6)[0]
+                          if 0<=i<len(names) and names[i][0]==k:
+                              hits.append([o-a if a is not None else None,o-b if b is not None else None,k,i,names[i][1]])
+                      if hits:
+                          unknown_hits[cs]+=1
+                          if len(unknown_examples)<35:unknown_examples.append([cs,f'{w:08x}',f'{p:08x}',f'{er:08x}',hits[:8]])
+          print('ORCHESTRATION_DEDUP',json.dumps(dict(root=f'{root:08x}',unique=len(unique),stats=dict(substats),nested=dict(nested),dialogue_target_occurrences=dict(target_roles),unique_dialogue_targets=len(seen_obj),other_edges=graph_edges,examples=sub_examples,unknown_roles=dict(unknown_roles),unknown_hits=dict(unknown_hits),unknown_examples=unknown_examples),sort_keys=True),flush=True)
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
