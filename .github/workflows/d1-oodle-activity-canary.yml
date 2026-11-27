@@ -1,4 +1,4 @@
-name: D1 original item direct exchange recipes and vendor redemption metadata
+name: D1 original vendor prices, offer availability, rotation groups, seeds and exact rewards
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,10 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "items-0131"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",4092,-1,-1]]'
-          - group: "items-0132"
-            rows: '[["0132","ps4_investment_globals_0132",6,"6f978a6c98d57af7cbeab4d7a84fc2a0bbc7c98a6fab4832051fb1cffc2b1eea",4517,-1,-1]]'
+          - group: "0132"
+            rows: '[["0132","ps4_investment_globals_0132",6,"6f978a6c98d57af7cbeab4d7a84fc2a0bbc7c98a6fab4832051fb1cffc2b1eea",14,-1,-1]]'
+          - group: "0133"
+            rows: '[["0133","ps4_investment_globals_0133",6,"d976e040f955173c112ff007438da3de5f166df34f2668c8fb16aa1344fcb2f9",110,-1,-1]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -125,6 +125,7 @@ jobs:
           assert hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0xbc:0xd0]
           assert hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0xd8:0xec]
           used=[0]*bc;targets=[];needed=set()
+          target_ids={x&0x1fff for x in (range(0x61e8,0x6256) if family==0x133 else [0x4a84,0x4a85,0x4a86,0x4a87,0x4a88,0x4a8c,0x4a96,0x4a97,0x4a98,0x4a9e,0x4aa0,0x4aa8,0x4abe,0x4ac5])}
           def spans(i):
               p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
               while sz:
@@ -133,7 +134,7 @@ jobs:
           for i in range(ec):
               s=list(spans(i))
               for k,o,n in s:used[k]=max(used[k],o+n)
-              if s and (i==int(os.environ['ENTRY']) or (int(os.environ['ENTRY'])==-1 and U(b,eo+i*16)==0x80801806)):
+              if s and (i in target_ids):
                   targets.append((i,s));needed.update(k for k,o,n in s)
           print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
           def block(k):
@@ -172,26 +173,31 @@ jobs:
               p=o+r
               assert 0<=p<len(data),(o,r,p,len(data))
               return p
-          items=[]
+          vendors=[]
           for i,sp in targets:
               data=b''.join(cache[k][o:o+n] for k,o,n in sp)
               ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
-              assert len(data)==(info>>28)&0x3fffffff and ref==0x80801806 and len(data)>=0x94
+              assert len(data)==(info>>28)&0x3fffffff
               fh=f'{0x80800000+family*8192+i:08x}'
-              row=dict(tag=fh,hash=f'{U(data,0x78):08x}',bucket=data[0x88],alternate=data[0x89],type=data[0x8a],instanced=data[0x8b],transfer_restriction=data[0x8c],tail=data[0x8c:0x94].hex(),relative_blocks={})
-              for o in range(8,0x70,8):
-                  z=ptr(data,o)
-                  if z is not None:
-                      row['relative_blocks'][f'{o:02x}']=dict(offset=z,extent=min(len(data)-z,16),header=data[z:z+min(len(data)-z,16)].hex())
-              z=ptr(data,0x70)
-              row['exchange']=None
-              if z is not None:
-                  n=I(data,z)
-                  assert 0<=n<=10000 and z+4+n*8<=len(data),(fh,z,n,len(data))
-                  row['exchange']=[dict(item=H(data,z+4+8*j),aux=H(data,z+6+8*j),quantity=I(data,z+8+8*j)) for j in range(n)]
-              items.append(row)
-          pathlib.Path(f'transfer-items-{family:04x}.json').write_text(json.dumps(dict(family=f'{family:04x}',items=items)))
-          print('TRANSFER_ITEM_AUDIT',len(items),flush=True)
+              n,p=span(data,0,0x48,0x50,2)
+              a,q=span(data,0,0x28,0x30,0x70)
+              out=dict(tag=fh,resource_class=f'{ref:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),key=f'{U(data,0):08x}',routes=[[data[p+j*2],data[p+j*2+1]] for j in range(n)],offers=[])
+              out['key']=f'{U(data,8):08x}'
+              out['period_minutes']=I(data,0x10)
+              out['offset_minutes']=I(data,0x14)
+              out['vendor_flags']=[data[0x58],data[0x59]]
+              g,gp=span(data,0,0x18,0x20,12)
+              out['groups']=[dict(index=j,key=f'{U(data,gp+j*12):08x}',select_count=I(data,gp+j*12+4),raw=data[gp+j*12:gp+j*12+12].hex()) for j in range(g)]
+              for j in range(a):
+                  o=q+j*0x70
+                  e,ep=span(data,o,0,8,16)
+                  req=[expr(data,ep+k*16) for k in range(e)]
+                  k,kp=span(data,o,0x18,0x20,8)
+                  costs=[dict(item=H(data,kp+m*8+4),quantity=I(data,kp+m*8),aux=H(data,kp+m*8+6)) for m in range(k)]
+                  out['offers'].append(dict(index=j,item=H(data,o+0x3c),quantity=I(data,o+0x40),seed=I(data,o+0x44),group=I(data,o+0x48),weight=struct.unpack_from('<f',data,o+0x4c)[0],explicit_price=data[o+0x10],costs=costs,requirements=req,flag68=H(data,o+0x68),raw28=data[o+0x28:o+0x3c].hex(),raw50=data[o+0x50:o+0x70].hex()))
+              vendors.append(out)
+          pathlib.Path(f'vendor-routes-{family:04x}.json').write_text(json.dumps(vendors))
+          print('VENDOR_ROUTES',json.dumps(dict(family=family,vendors=len(vendors),routes=sum(len(v['routes']) for v in vendors),offers=sum(len(v['offers']) for v in vendors),route_vendors=[dict(tag=v['tag'],routes=v['routes']) for v in vendors if v['routes']])),flush=True)
           PY
           python - <<'PY'
           import json,os,subprocess,sys
@@ -214,5 +220,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-v34-exchange-items-${{ matrix.group }}
-          path: transfer-items-*.json
+          name: d1-v34-vendor-offers-${{ matrix.group }}
+          path: vendor-routes-*.json
