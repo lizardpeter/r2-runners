@@ -1,4 +1,4 @@
-name: D1 authored reference names and exact owner tuple join
+name: D1 strict squad identity and noncombat reference closure
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -447,6 +447,48 @@ jobs:
                                       owner_tests[k+'_typed_match']+=1
                                       if len(owner_examples)<24:owner_examples.append([k,f'{tag:08x}',f'{w:08x}',f'{er:08x}',f'{d912:08x}',f'{g:08x}',kind,idx,names[idx][1]])
           print('AUTHORED_REFERENCE_JOIN',json.dumps(dict(root=f'{root:08x}',name_stats=dict(name_stats),name_hash_matches=dict(name_matches),same_bundle_machine_join=dict(hash_join),hash_examples=hash_examples,variant_groups=len(variants),different_variant_catalogs=variant_different,variants=variants,owner_tuple_tests=dict(owner_tests),owner_examples=owner_examples,name_examples=name_examples),sort_keys=True),flush=True)
+          # Exact row-index name/hash check and typed reference closure beyond AI.
+          strict=collections.Counter(); strict_errors=[]; strict_rows=[]; other_roles=collections.Counter(); other_matches=collections.Counter(); role_kind=collections.Counter(); other_samples=[]; seen2=set()
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              for st in arr(sd,0x30,0x28):
+                  for q in arr(sd,st+0x18,4):
+                      w=U(sd,q)
+                      if w in (0,0xffffffff) or (tag,w) in seen2:continue
+                      seen2.add((tag,w))
+                      c,p,d912=parse_wrapper(w)
+                      f=load(w,0x808003f6); er=U(f,0xc); d=load(er,0x80800861)
+                      a,_=rp(d,0x10); b,_=rp(d,0x18)
+                      if d912 is not None:
+                          strict['tested']+=1
+                          g=U(d,b+0x40); kind=d[b+0x44]; idx=struct.unpack_from('<h',d,b+0x46)[0]
+                          machine=d912_records[d912][6]
+                          if g==key and 0<=idx<len(names) and names[idx][0]==kind and names[idx][1] is not None:
+                              name=names[idx][1]
+                              if fnv(name.encode('ascii'),'1')==machine:
+                                  strict['exact']+=1;strict[f'kind_{kind}']+=1
+                                  strict_rows.append([f'{tag:08x}',f'{w:08x}',f'{er:08x}',f'{d912:08x}',f'{g:08x}',kind,idx,name,f'{machine:08x}'])
+                              else:strict_errors.append([f'{d912:08x}','name_hash_mismatch',name,f'{machine:08x}'])
+                          else:strict_errors.append([f'{d912:08x}','reference_mismatch',f'{g:08x}',kind,idx])
+                      else:
+                          role=f'{c:08x}' if c is not None else 'null'
+                          other_roles[role]+=1
+                          if b is not None and b+0x48<=len(d):
+                              g=U(d,b+0x40);kind=d[b+0x44];idx=struct.unpack_from('<h',d,b+0x46)[0]
+                              if g==key and 0<=idx<len(names) and names[idx][0]==kind:
+                                  other_matches[role]+=1;role_kind[role+f':{kind}']+=1
+                                  if len(other_samples)<40:other_samples.append([f'{tag:08x}',f'{w:08x}',role,f'{p:08x}',f'{g:08x}',kind,idx,names[idx][1]])
+          print('STRICT_REFERENCE_CLOSURE',json.dumps(dict(root=f'{root:08x}',counts=dict(strict),errors=strict_errors,other_role_tested=dict(other_roles),other_role_typed_matches=dict(other_matches),other_role_kind=dict(role_kind),other_examples=other_samples),sort_keys=True),flush=True)
+          for i in range(0,len(strict_rows),40):print('SQUAD_REFERENCE_CATALOG',json.dumps(dict(root=f'{root:08x}',offset=i,rows=strict_rows[i:i+40]),separators=(',',':')),flush=True)
+          # One reference catalog per proven identical group-signature, but retain variants separately.
+          unique_catalog={}
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              sig=hashlib.sha256(json.dumps(names,separators=(',',':')).encode()).hexdigest()
+              unique_catalog.setdefault((key,sig),names)
+          if family==0x025c:
+              for (key,sig),names in sorted(unique_catalog.items()):
+                  for i in range(0,len(names),60):print('PROLOGUE_NAMED_REFS',json.dumps(dict(group=f'{key:08x}',signature=sig,offset=i,rows=names[i:i+60]),separators=(',',':')),flush=True)
+          assert not strict_errors and strict['exact']==len(root_d912),(strict,strict_errors[:8])
+
           print('SCENARIO_JOIN',json.dumps(dict(root=f'{root:08x}',size=len(scenario),locations=len(locs),phases=len(phases),bubbles=len(bubbles),scenario_rows=scenario_rows,joins=joins)),flush=True)
           print('REF10_CLOSURE',json.dumps(dict(family=f'{family:04x}',nulls=nulls,other=other,occurrences=sum(refs.values()),unique=len(refs),resolved=resolved,errors=ref_errors,unique_word0c=len(d912_word0c),word0c_null=sum(v for k,v in d912_word0c.items() if k in (0,0xffffffff))),sort_keys=True),flush=True)
 
