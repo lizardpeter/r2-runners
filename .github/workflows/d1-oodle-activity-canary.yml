@@ -1,4 +1,4 @@
-name: D1 heterogeneous firing area reference and row payload research
+name: D1 grouped geometry typed arrays and index range census
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -691,6 +691,46 @@ jobs:
           print('GROUPED_REFERENCE_ARRAYS',json.dumps(dict(root=f'{root:08x}',containers=dict(containers),layout_matches=dict(layouts),entry_occurrences=dict(exact_entries),unique_tuples=len(root_ids),parsed=len(group_results),errors=group_errors[:40],error_count=len(group_errors),kind_hist=dict(group_kind_hist),payload_hist=dict(group_payloads),payload_examples=group_payload_examples,diagnostics=group_diagnostics),sort_keys=True),flush=True)
           for i in range(0,len(group_results),10):print('GROUPED_REFERENCE_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=group_results[i:i+10]),separators=(',',':')),flush=True)
           # Audit is exploratory: do not fail the existing source tests if a different grouped layout is present.
+          # V15 geometry-side arrays: distinguish reference catalog rows from shape and point data.
+          geo_stats=collections.Counter(); geo_shapes=collections.Counter(); geo_fields=collections.Counter(); geo_examples=[]; geo_seen=set(); geo_errors=[]
+          for gr in group_results:
+              er=gr['er']; cs=gr['role']
+              if er in geo_seen:continue
+              geo_seen.add(er); d=load(int(er,16),0x80800861); a,_=rp(d,0x10); b,_=rp(d,0x18)
+              geo_stats[cs+':unique']+=1
+              # Descriptor start and marker were independently verified by the exact name/tuple audit.
+              start=b+gr['array_offset']-8; refcount=gr['count']; types=collections.Counter(x[1] for x in gr['refs'])
+              assert I(d,start-16)==refcount and U(d,start-8)==0x808003e0
+              # Enumerate plausible dynamic array headers only when the repeated count and typed marker agree.
+              candidates=[]
+              for off in range(0x38,min(gr['array_offset']-16,0xb0),8):
+                  o=b+off
+                  if o+16>len(d):continue
+                  n=I(d,o); st=o+8+L(d,o+8)+16
+                  if not 0<n<=65536 or not 16<=st<=len(d) or I(d,st-16)!=n:continue
+                  m=U(d,st-8)
+                  if not 0x80800000<=m<0x80810000:continue
+                  candidates.append((off,n,st,m))
+              # Rows store a signed index-like word at +16. Retain -1 and test range against each actual table.
+              vals=[I(d,start+24*i+16) for i in range(refcount)]
+              for off,n,st,m in candidates:
+                  lab=f'{cs}:{off:x}:{m:08x}'
+                  geo_shapes[lab]+=1; geo_fields[lab+':count_sum']+=n
+                  geo_fields[lab+':row_null']+=sum(v==-1 for v in vals)
+                  geo_fields[lab+':row_in_range']+=sum(0<=v<n for v in vals)
+                  geo_fields[lab+':row_out_of_range']+=sum(v<-1 or v>=n for v in vals)
+                  # Recover bounded per-type row index histograms; do not call the word a shape index yet.
+                  for k in types:
+                      vs=[vals[i] for i,x in enumerate(gr['refs']) if x[1]==k]
+                      geo_fields[lab+f':kind{k}_count']+=len(vs)
+                      geo_fields[lab+f':kind{k}_nonnegative_in_range']+=sum(0<=v<n for v in vs)
+                  # Only report a small metadata sample, and candidate distances to next array header.
+                  after=sorted(t for _,_,t,_ in candidates if t>st)
+                  next_header=(after[0]-16) if after else len(d)
+                  words=[f'{U(d,st+i):08x}' for i in range(0,min(96,len(d)-st-3),4)]
+                  if len(geo_examples)<40:geo_examples.append(dict(role=cs,er=er,offset=off,count=n,marker=f'{m:08x}',start=st-b,span_to_next_header=next_header-st,first_words=words,ref_kind_counts=dict(types),ref_values=vals[:32]))
+              if not candidates:geo_errors.append([cs,er,'no secondary typed arrays'])
+          print('GROUPED_GEOMETRY_CANDIDATES',json.dumps(dict(root=f'{root:08x}',stats=dict(geo_stats),arrays=dict(geo_shapes),fields=dict(geo_fields),examples=geo_examples,errors=geo_errors),sort_keys=True),flush=True)
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
