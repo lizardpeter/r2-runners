@@ -20,7 +20,7 @@ jobs:
           import json, pathlib
           p=pathlib.Path('incident/incident-index-0131.json')
           a=json.loads(p.read_text())['rows']
-          wanted=['f41ef26b','aff7735c','5f39a8ca','d89fc868','790c2a95','d03d5d1f','74af5222','e74eed45']
+          wanted=['f41ef26b','aff7735c','5f39a8ca','d89fc868','790c2a95','bd1ba345','74af5222','e74eed45']
           found=[x for x in a if x['hash'] in wanted]
           assert len(found)==len(wanted),(found,wanted)
           print('CHECKPOINT_INCIDENT_INDEX',json.dumps(found),flush=True)
