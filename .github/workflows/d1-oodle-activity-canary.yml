@@ -1,4 +1,4 @@
-name: D1 research six original item action localization banks
+name: D1 research original action language payload layout
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,12 +13,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "bank-012c"
-            rows: '[["012c","ps4_investment_globals_012c",6,"9fd411e9ed0965260e04c9661fff8dc995d426667079e1cbc3bec8ca665d9f82",1,-1,[[1085,1085]]]]'
-          - group: "bank-012f"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",3,-1,[[2297,2297],[2491,2491],[2511,2511]]]]'
-          - group: "bank-0130"
-            rows: '[["0130","ps4_investment_globals_0130",6,"4285fc340fb6cdfc770387d5ed53151f70e5bce939f6b9615e92c14c421df671",2,-1,[[237,237],[342,342]]]]'
+          - group: "lang-012f"
+            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,[[968,968]]]]'
+          - group: "lang-0130"
+            rows: '[["0130","ps4_investment_globals_0130",6,"4285fc340fb6cdfc770387d5ed53151f70e5bce939f6b9615e92c14c421df671",1,-1,[[7278,7278]]]]'
+          - group: "lang-0131"
+            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",2,-1,[[549,549],[691,691]]]]'
+          - group: "lang-0132"
+            rows: '[["0132","ps4_investment_globals_0132",6,"6f978a6c98d57af7cbeab4d7a84fc2a0bbc7c98a6fab4832051fb1cffc2b1eea",2,-1,[[3185,3185],[3917,3917]]]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -170,10 +172,8 @@ jobs:
               data=b''.join(cache[k][o:o+n] for k,o,n in sp)
               ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
               assert len(data)==(info>>28)&0x3fffffff
-              print('STRING_BANK',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),header=data[:256].hex(),refs=[(k,f'{U(data,k):08x}') for k in range(0,min(len(data)-3,256),4) if 0x80800000<=U(data,k)<0x81000000])),flush=True)
-              keys=[int(v,16) for v in '01fde4c3 03adc432 066957b9 06bed58a 073bdbb8 0f324d01 0f5d3b4f 32e24bff 354757cc 3584841f 3bdfed97 3c6c736b 3e3ec9b4 4ffd413d 650d0339 756796dd 7b9e5f5f 82aa21ee 87854130 89068058 a622b286 a7b98888 b7d49523 b8e4c7f2 ba3bdeb1 d81085bc e4004f58 e7efc229 f3e3736f f6b5e311'.split()]
-              print('BANK_KEY_POSITIONS',json.dumps(dict(entry=i,keys={f'{key:08x}':[j for j in range(0,len(data)-3,4) if U(data,j)==key] for key in keys if struct.pack('<I',key) in data})),flush=True)
-              if len(data)<=4096:print('BANK_HEX',i,data.hex(),flush=True)
+              print('LANGUAGE_PAYLOAD',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),header=data[:256].hex())),flush=True)
+              for j in range(0,len(data),1024):print('LANG_HEX',i,j,data[j:j+1024].hex(),flush=True)
               pathlib.Path(f'presentation-use-{family:04x}-{i}.json').write_text(json.dumps(dict(entry=i,ref=f'{ref:08x}',data=data.hex())))
           PY
           python - <<'PY'
