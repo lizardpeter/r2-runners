@@ -1,4 +1,4 @@
-name: D1 original talent modifiers, node groups and step prerequisites
+name: D1 original talent step costs, dependency graph and infusion coefficients
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -133,6 +133,7 @@ jobs:
           gi=json.loads(pathlib.Path('grid-index/detail-012f-551.json').read_text())
           assert gi['sha256']=='f49c15f969495a69817feece1ea29ff3a104322e0cb432a55c4f66045c036980'
           target_ids={int(x['tag'],16)&0x1fff for x in gi['grid_index'] if (int(x['tag'],16)-0x80800000)//8192==family}
+          if family==0x12f: target_ids.add(571)
           def spans(i):
               p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
               while sz:
@@ -191,21 +192,32 @@ jobs:
               fh=f'{0x80800000+family*8192+i:08x}'
               try:
                   assert len(data)==(info>>28)&0x3fffffff
+                  if family==0x12f and i==571:
+                      n,p=span(data,0,8,16,12)
+                      inf=dict(filehash=fh,resource_class=f'{ref:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),rows=[dict(index=j,key=f'{U(data,p+12*j):08x}',factor=struct.unpack_from('<f',data,p+12*j+4)[0],minimum=struct.unpack_from('<h',data,p+12*j+8)[0],tail=data[p+12*j+10:p+12*j+12].hex()) for j in range(n)])
+                      pathlib.Path('infusion-012f.json').write_text(json.dumps(inf))
+                      print('INFUSION_TABLE',json.dumps(inf),flush=True)
+                      continue
                   n,p=span(data,0,0x10,0x18,0x40)
                   assert n<=36,(fh,'node_count',n)
                   grid=dict(tag=fh,resource_class=f'{ref:08x}',size=len(data),hash0=f'{U(data,0):08x}',nodes=[])
                   for j in range(n):
                       o=p+j*0x40;c,q=span(data,o,0x18,0x20,0x90)
                       assert c<=127,(fh,j,c)
+                      dn,dp=span(data,o,8,16,1)
                       selector=ptr(data,o+0x28)
                       guard=ptr(data,o+0x30)
-                      nd=dict(index=j,hash=f'{U(data,o+0x38):08x}',mode=data[o+0x3c],selector=None if selector is None else struct.unpack_from('<b',data,selector)[0],guard=None if guard is None else exprs(data,guard),group=f'{U(data,o+0x38):08x}',steps=[])
+                      nd=dict(index=j,hash=f'{U(data,o+0x38):08x}',mode=data[o+0x3c],selector=None if selector is None else struct.unpack_from('<b',data,selector)[0],guard=None if guard is None else exprs(data,guard),group=f'{U(data,o+0x38):08x}',prerequisite_nodes=list(data[dp:dp+dn]),steps=[])
                       for k in range(c):
                           s=q+k*0x90;v,r=span(data,s,0,8,0x58)
                           assert v<=255,(fh,j,k,'variants',v)
                           st=dict(index=k,rank=data[s+0x34],requirements=exprs(data,s+0x10),variants=[])
-                          pn,pp=span(data,s,0x30,0x38,1) if False else (0,0) # no inferred arrays
                           st['raw_fields_30_40']=data[s+0x30:s+0x40].hex()
+                          st['cost_selectors']=u16s(data,s,0x20,0x28)
+                          st['prerequisite_group']=f'{U(data,s+0x30):08x}'
+                          st['infusion_only']=data[s+0x35]
+                          gz=ptr(data,s+0x88)
+                          st['conditional_guard']=None if gz is None else dict(expressions=exprs(data,gz),minimum=I(data,gz+0x10),maximum=I(data,gz+0x14))
                           for a in range(v):
                               z=r+a*0x58
                               cn=u16s(data,z,0x20,0x28);fl=u16s(data,z,0x48,0x50)
@@ -259,5 +271,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-v33-grid-modifiers-${{ matrix.group }}
-          path: grids-*.json
+          name: d1-v33-grid-costs-${{ matrix.group }}
+          path: |
+            grids-*.json
+            infusion-*.json
