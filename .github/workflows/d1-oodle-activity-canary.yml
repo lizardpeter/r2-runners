@@ -1,4 +1,4 @@
-name: D1 exact source-owned encounter graph and metadata join
+name: D1 authored blueprint binding and facet census
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -352,6 +352,33 @@ jobs:
               root_entities.update(ents);root_refs.add(shared);first_hits['matched' if match else 'null_shared' if shared in (0,0xffffffff) else 'unmatched']+=1
           print('ROOT_GRAPH',json.dumps(dict(root=f'{root:08x}',parents=len(root_parents),s6e=len(root_s6),stage_occurrences=root_stages,map_tables=len(root_maps),f603=len(root_wrappers),wrapper_roles=dict(role_hist),d912=len(root_d912),d912_parsed=len(d912_records),spawn_records=sum(x[0] for x in d912_records.values()),authored_locations=sum(x[1] for x in d912_records.values()),unique_entity_tags=len(root_entities),named_records=sum(x[3] for x in d912_records.values()),shared_tags=[f'{x:08x}' for x in sorted(root_refs)],d912_location_join=dict(first_hits),unique_payloads=len(payload_cache),cross_package_blocks=len(target_cache),errors=len(root_errors),error_sample=root_errors[:12],phases=root_edges),sort_keys=True),flush=True)
           assert not root_errors,root_errors[:12]
+          # V13: original client blueprint set registration layout, independently traced
+          # in PS4 01.33 344F00 -> 345CC0 -> 106D60 -> 100D5E0.
+          bundle_rows=[]; bundle_errors=[]; kinds=collections.Counter(); machine_candidates=collections.Counter()
+          machines={v[6] for v in d912_records.values()}
+          for tag in sorted(root_s6):
+              try:
+                  sd=load(tag,0x8080076e)
+                  assert len(sd)>=0x48
+                  facet_count=struct.unpack_from('<h',sd,0x10)[0]
+                  group_key=U(sd,0x0c)
+                  rows=arr(sd,0x18,0x10)
+                  assert Q(sd,0x18)==len(rows)
+                  row_kinds=collections.Counter(sd[o] for o in rows)
+                  kinds.update(row_kinds)
+                  stage_rows=arr(sd,0x30,0x28)
+                  sensor_counts=[]; stage_flags=[]
+                  for st in stage_rows:
+                      stage_flags.append(U(sd,st))
+                      sensor_counts.append(len(arr(sd,st+0x18,4)))
+                  # Hash equality is a candidate join, not identity proof.
+                  machine_candidates['group_key_match']+=group_key in machines
+                  machine_candidates['word08_match']+=U(sd,8) in machines
+                  machine_candidates['word1c_match']+=U(sd,0x1c) in machines
+                  bundle_rows.append(dict(tag=f'{tag:08x}',key=f'{group_key:08x}',word08=f'{U(sd,8):08x}',facet_count=facet_count,reference_rows=len(rows),kind_counts=dict(sorted(row_kinds.items())),stage_count=len(stage_rows),sensor_ref_count=sum(sensor_counts),stage_flags=sorted(set(stage_flags)),sha256=hashlib.sha256(sd).hexdigest()))
+              except Exception as ex:bundle_errors.append([f'{tag:08x}',str(ex)])
+          print('BLUEPRINT_BINDING_AUDIT',json.dumps(dict(root=f'{root:08x}',bundles=len(root_s6),parsed=len(bundle_rows),distinct_group_keys=len(set(x['key'] for x in bundle_rows)),reference_rows=sum(x['reference_rows'] for x in bundle_rows),facet_rows=sum(x['facet_count'] for x in bundle_rows),kind_counts=dict(sorted(kinds.items())),machine_hash_candidates=dict(machine_candidates),errors=bundle_errors,rows=bundle_rows),sort_keys=True),flush=True)
+          assert not bundle_errors,bundle_errors[:12]
           print('SCENARIO_JOIN',json.dumps(dict(root=f'{root:08x}',size=len(scenario),locations=len(locs),phases=len(phases),bubbles=len(bubbles),scenario_rows=scenario_rows,joins=joins)),flush=True)
           print('REF10_CLOSURE',json.dumps(dict(family=f'{family:04x}',nulls=nulls,other=other,occurrences=sum(refs.values()),unique=len(refs),resolved=resolved,errors=ref_errors,unique_word0c=len(d912_word0c),word0c_null=sum(v for k,v in d912_word0c.items() if k in (0,0xffffffff))),sort_keys=True),flush=True)
 
