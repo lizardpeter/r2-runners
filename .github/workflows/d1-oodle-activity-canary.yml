@@ -1,4 +1,4 @@
-name: D1 original companion catalogue namespace closure
+name: D1 original incident conditional action rows
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -260,6 +260,34 @@ jobs:
                   print('CATEGORY7_RESOURCE',json.dumps(dict(hash=f'{h:08x}',index=j,offset=p,marker=f'{U(data,p-4):08x}',words=[f'{U(data,p+4*k):08x}' for k in range(12)])),flush=True)
               q=0x30;num=Q(data,q);p=q+8+L(data,q+8)+16
               print('INCIDENT_AUX_ARRAY',json.dumps(dict(count=num,base=p,marker=f'{U(data,p-8):08x}',first_words=[f'{U(data,p+4*k):08x}' for k in range(16)],candidate_stride=64,candidate_end=p+64*num,next_base=0x40+8+L(data,0x48)+16)),flush=True)
+          if ref==0x80802468:
+              n=Q(data,0x38);base=0x50+L(data,0x40)
+              keys=collections.Counter();markers=collections.Counter();errors=[];stats=collections.Counter();rulekeys=collections.defaultdict(list);rules=[]
+              for j in range(n):
+                  o=base+j*24;h=U(data,o);keys[h]+=1;c=Q(data,o+8);p=o+0x20+L(data,o+0x10)
+                  if not (0<=c<=10000 and (not c or 0<=p<=p+c*0x90<=len(data))):
+                      errors.append((j,c,p));continue
+                  if c:markers[f'{U(data,p-8):08x}']+=1
+                  for k in range(c):
+                      v=p+k*0x90
+                      req=U(data,v+0x44);nc=Q(data,v+0x48);np=v+0x60+L(data,v+0x50)
+                      if not(0<=nc<=10000 and (not nc or 0<=np<=np+4*nc<=len(data))):errors.append((j,k,nc,np));continue
+                      neg=[U(data,np+4*t) for t in range(nc)]
+                      dist=struct.unpack_from('<f',data,v+0x60)[0]
+                      row=dict(parent_index=j,rule_index=k,parent_hash=f'{h:08x}',required=f'{req:08x}',excluded=[f'{x:08x}' for x in neg],mode=data[v+0x40],action_08=f'{U(data,v+8):08x}',ref_18=f'{U(data,v+0x18):08x}',ref_20=f'{U(data,v+0x20):08x}',action_24=f'{U(data,v+0x24):08x}',ref_30=f'{U(data,v+0x30):08x}',action_38=f'{U(data,v+0x38):08x}',distance_selector=f'{U(data,v+0x5c):08x}',distance=dist if abs(dist)<1e30 else None,gate_70=f'{U(data,v+0x70):08x}')
+                      for fo in (8,0x24,0x38,0x44,0x5c,0x70):
+                          if U(data,v+fo)!=0x811c9dc5:stats[f'nonnull_{fo:02x}']+=1
+                      for fo in (0x18,0x20,0x30):
+                          if U(data,v+fo)!=0xffffffff:stats[f'valid_{fo:02x}']+=1
+                      stats['mode_'+str(data[v+0x40])]+=1
+                      stats['excluded_total']+=nc;stats['excluded_nonempty']+=bool(nc)
+                      stats['positive_distance']+=dist>0
+                      stats['multiple_action_hashes']+=sum(U(data,v+fo)!=0x811c9dc5 for fo in (8,0x24,0x38))>1
+                      rules.append(row)
+                      rulekeys[h].append(row)
+              assert not errors,errors[:10]
+              print('COMPANION_RULE_AUDIT',json.dumps(dict(groups=n,unique_groups=len(keys),rules=len(rules),max_per_group=max(map(len,rulekeys.values())),markers=dict(markers),stats=dict(stats),duplicates=[f'{h:08x}' for h,c in keys.items() if c>1],example=rules[:3])),flush=True)
+              pathlib.Path('companion-rules.json').write_text(json.dumps(rules,indent=2))
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
           python - <<'PY'
@@ -295,6 +323,17 @@ jobs:
               for h in adj:
                   if not color.get(h):dfs(h)
               print('INCIDENT_CONDITIONAL_DFS',json.dumps(dict(nodes=len(adj),edges=sum(map(len,adj.values())),back_edges=len(back),examples=back[:12])),flush=True)
+          if not failed:
+              rules=json.load(open('companion-rules.json'))
+              ir=json.load(open('incident-index-0131.json'))['rows']
+              rr=collections.defaultdict(list)
+              for r in rules:rr[r['parent_hash']].append(r)
+              cats=collections.Counter();matched=0;trigger=[]
+              for row in ir:
+                  for h in row['list_10_hashes']:
+                      if h in rr:matched+=1;cats[str(row['category'])]+=len(rr[h])
+                  if row['category']==7:trigger.append(dict(hash=row['hash'],links=row['list_10_hashes'],direct_companion_rules=rr[row['hash']]))
+              print('RULE_INCIDENT_JOIN',json.dumps(dict(matched_list10_occurrences=matched,rules_by_category=dict(cats),trigger=trigger,activity_completion_examples=[dict(hash=row['hash'],links=row['list_10_hashes'],rules=[r for h in row['list_10_hashes'] for r in rr[h]][:2]) for row in ir if row['category']==27 and row['list_10_hashes']][:3])),flush=True)
           sys.exit(bool(failed))
           PY
       - name: Publish incident research status (no raw data uploads)
@@ -311,4 +350,5 @@ jobs:
           path: |
             incident-index-*.json
             companion-index-*.json
+            companion-rules.json
           if-no-files-found: error
