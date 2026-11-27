@@ -1,4 +1,4 @@
-name: D1 original geometry identity bounds and polygon candidate validation
+name: D1 triangulation and original AI tactical objective operand census
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -915,6 +915,107 @@ jobs:
                       except Exception as ex:g16errors.append([er,kind,j,str(ex)])
                   if found==set(byidx):g16stats[lab+':complete_identity_arrays']+=1
           print('GEOMETRY_LAYOUT_V16',json.dumps(dict(root=f'{root:08x}',stats=dict(g16stats),error_count=len(g16errors),errors=g16errors[:40],samples=g16samples),sort_keys=True),flush=True)
+          # V17: verify triangulation and source tactical objective dependencies.
+          v17hist=collections.Counter(); v17errors=[]; v17samples=[]; v17seen=set(); area_by_group=collections.defaultdict(set)
+          for gr in group_results:
+              er=gr['er']; cs=gr['role']
+              if er in v17seen:continue
+              v17seen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
+              for off,mc,kind in secondary[cs]:
+                  at=b+off;n=I(d,at); st=at+8+L(d,at+8)+16
+                  stride={41:0x80,42:0x20,44:0x30,45:0x50,58:0x120}[kind]
+                  byidx={i:name for g,k,i,name in gr['refs'] if k==kind}
+                  for j in range(n):
+                      o=st+j*stride
+                      ix=struct.unpack_from('<h',d,o+0x12)[0] if kind==58 else I(d,o+(4 if kind in (44,45) else 8))
+                      name=byidx.get(ix,'?')
+                      if kind in (41,42):area_by_group[(int(gr['key'],16),kind)].add(ix)
+                      try:
+                          if kind in (41,58):
+                              ao=0x30 if kind==41 else 0xd0
+                              nv=I(d,o+ao); vv=o+ao+8+L(d,o+ao+8)+16
+                              nt=I(d,o+ao+0x10);tt=o+ao+0x18+L(d,o+ao+0x18)+16
+                              assert U(d,vv-8)==0x80800094 and U(d,tt-8)==0x80800903
+                              assert 3<=nv<=65536 and 1<=nt<=65536 and tt+4*nt<=len(d)
+                              verts=[vec4(d,vv+i*16) for i in range(nv)]
+                              tri=[list(d[tt+i*4:tt+i*4+4]) for i in range(nt)]
+                              v17hist[f'{kind}:tested']+=1
+                              v17hist[f'{kind}:n_minus_2']+=nt==nv-2
+                              v17hist[f'{kind}:byte4_zero']+=all(t[3]==0 for t in tri)
+                              v17hist[f'{kind}:byte3_valid']+=all(max(t[:3])<nv and len(set(t[:3]))==3 for t in tri)
+                              # Compare all four possible 3-of-4 byte layouts and 6-byte u16 triples without assuming endianness.
+                              for omit in range(4):
+                                  ts=[[x for k,x in enumerate(t) if k!=omit] for t in tri]
+                                  if all(max(t)<nv and len(set(t))==3 for t in ts):
+                                      v17hist[f'{kind}:omit{omit}:valid']+=1
+                                      if set(i for t in ts for i in t)==set(range(nv)):v17hist[f'{kind}:omit{omit}:all_vertices']+=1
+                                      shoelace=abs(sum(verts[i][0]*verts[(i+1)%nv][1]-verts[(i+1)%nv][0]*verts[i][1] for i in range(nv)))/2
+                                      area=sum(abs((verts[y][0]-verts[x][0])*(verts[z][1]-verts[x][1])-(verts[z][0]-verts[x][0])*(verts[y][1]-verts[x][1]))/2 for x,y,z in ts)
+                                      if abs(shoelace-area)<=max(0.02,shoelace*0.001):v17hist[f'{kind}:omit{omit}:area_match']+=1
+                              if len(v17samples)<16:v17samples.append([kind,er,name,nv,nt,tri[:6]])
+                          elif kind==42:
+                              cnt=I(d,o+0x10);p=o+0x18+L(d,o+0x18)+16
+                              v17hist['42:sets']+=1
+                              if not cnt:v17hist['42:empty']+=1;continue
+                              assert I(d,p-16)==cnt and U(d,p-8)==0x8080138c
+                              v17hist['42:member_count']+=cnt
+                              fas={i for g,k,i,nm in gr['refs'] if k==41}
+                              for step in (2,4,8,12,16):
+                                  for mo in range(0,step,2):
+                                      if p+step*cnt>len(d):continue
+                                      vals=[struct.unpack_from('<h',d,p+step*i+mo)[0] for i in range(cnt)]
+                                      if all(x in fas for x in vals):v17hist[f'42:stride{step}:member{mo}:exact']+=1
+                              if len(v17samples)<30:v17samples.append([42,er,name,cnt,[f'{U(d,p+i*4):08x}' for i in range(min(12,(len(d)-p)//4))]])
+                      except Exception as ex:v17errors.append([kind,er,name,str(ex)])
+          tacthist=collections.Counter(); tacterrors=[]; tactdetails=[]; tactseen=set()
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              for stage in arr(sd,0x30,0x28):
+                  for q in arr(sd,stage+0x18,4):
+                      w=U(sd,q)
+                      if w in (0,0xffffffff) or (tag,w) in tactseen:continue
+                      tactseen.add((tag,w)); c,p,_=parse_wrapper(w)
+                      if c!=0x80800560:continue
+                      er=U(load(w,0x808003f6),0xc);d=load(er,0x80800861);a,_=rp(d,0x10);b,_=rp(d,0x18)
+                      try:
+                          g=U(d,b+0x40);k=d[b+0x44];ix=struct.unpack_from('<h',d,b+0x46)[0]
+                          assert g==key and k==3 and 0<=ix<len(names) and names[ix][0]==3
+                          tacthist['owner_exact']+=1
+                          name=names[ix][1]
+                          rr=[]; shape=[]
+                          # Original runtime definition pointer may point at discriminator or parent; test both against exact class headers.
+                          for base,which in ((b,'parent'),(a,'disc')):
+                              if base+0x88>len(d):continue
+                              n=I(d,base+0x78); st=base+0x80+L(d,base+0x80)+16
+                              if not 0<=n<=4096 or (n and (st<16 or st+n*0x28>len(d) or I(d,st-16)!=n)):continue
+                              marker=U(d,st-8) if n else 0
+                              if n and not 0x80800000<=marker<0x80810000:continue
+                              opts=[]; ok=True
+                              for i in range(n):
+                                  row=st+0x28*i;cnt=I(d,row+0x10);pos=row+0x18+L(d,row+0x18)+16
+                                  if not 0<=cnt<=4096 or (cnt and (pos<16 or pos+0x24*cnt>len(d) or I(d,pos-16)!=cnt)):ok=False;break
+                                  tm=U(d,pos-8) if cnt else 0
+                                  operands=[]
+                                  for j in range(cnt):
+                                      oo=pos+j*0x24; gg=U(d,oo+0x1c);kk=d[oo+0x20];ii=struct.unpack_from('<h',d,oo+0x22)[0]
+                                      if gg!=key or not 0<=ii<len(names) or names[ii][0]!=kk:ok=False;break
+                                      operands.append([kk,ii,names[ii][1],I(d,oo+8),vec4(d,oo+0xc)[:3]])
+                                  if not ok:break
+                                  opts.append([i,cnt,f'{tm:08x}',operands])
+                              if ok:
+                                  shape.append([which,n,f'{marker:08x}',opts])
+                          for which,n,marker,opts in shape:
+                              tacthist[f'{which}:arrays']+=1;tacthist[f'{which}:task_count']+=n
+                              for _,cnt,tm,ops in opts:
+                                  tacthist[f'{which}:nested_marker:{tm}']+=1
+                                  for kk,ii,nn,_,_ in ops:
+                                      tacthist[f'{which}:operand_kind:{kk}']+=1
+                                      if ii in area_by_group[(key,kk)]:tacthist[f'{which}:operand_geometry_match']+=1
+                          if not shape:tacterrors.append([f'{er:08x}',name,[f'{U(d,b+j):08x}' for j in range(0,min(0xa0,len(d)-b-3),4)]])
+                          tactdetails.append(dict(er=f'{er:08x}',name=name,key=f'{key:08x}',owner=ix,parent=f'{p:08x}',shape=shape))
+                      except Exception as ex:tacterrors.append([f'{er:08x}',str(ex)])
+          print('V17_TRIANGULATION',json.dumps(dict(root=f'{root:08x}',stats=dict(v17hist),errors=v17errors[:40],error_count=len(v17errors),samples=v17samples),sort_keys=True),flush=True)
+          print('V17_TACTICAL_OBJECTIVES',json.dumps(dict(root=f'{root:08x}',stats=dict(tacthist),errors=tacterrors[:30],error_count=len(tacterrors)),sort_keys=True),flush=True)
+          for i in range(0,len(tactdetails),10):print('V17_TACTICAL_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=tactdetails[i:i+10]),separators=(',',':')),flush=True)
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
