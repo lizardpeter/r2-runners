@@ -1,9 +1,10 @@
-name: D1 original special inventory and stat modifier routing
+name: D1 original talent modifiers, node groups and step prerequisites
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
 permissions:
   contents: read
+  actions: read
   statuses: write
 jobs:
   scan:
@@ -13,8 +14,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "special-items"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,573]]'
+          - group: "012f"
+            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",-1,-1,-2]]'
+          - group: "0132"
+            rows: '[["0132","ps4_investment_globals_0132",6,"6f978a6c98d57af7cbeab4d7a84fc2a0bbc7c98a6fab4832051fb1cffc2b1eea",-1,-1,-2]]'
+          - group: "0133"
+            rows: '[["0133","ps4_investment_globals_0133",6,"d976e040f955173c112ff007438da3de5f166df34f2668c8fb16aa1344fcb2f9",-1,-1,-2]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -36,6 +41,8 @@ jobs:
         run: |
           curl -fsSL --retry 3 https://github.com/lizardpeter/destiny-1/releases/download/d1-global-activity-index-r1/D1_CURRENT_ACTIVITY_INDEX.json -o activity-index.json
           curl -fsSL --retry 3 https://crypt.cohae.dev/destiny/ps4/packages/latest/packages.txt -o packages.txt
+      - name: Retrieve exact original grid index
+        run: gh run download 46054904804 -R "$GITHUB_REPOSITORY" -n d1-v30-grid-index -D grid-index
       - name: Decompress exact source activity blocks and validate tables
         run: |
           set -euo pipefail
@@ -123,6 +130,9 @@ jobs:
           assert hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0xbc:0xd0]
           assert hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0xd8:0xec]
           used=[0]*bc;targets=[];needed=set()
+          gi=json.loads(pathlib.Path('grid-index/detail-012f-551.json').read_text())
+          assert gi['sha256']=='f49c15f969495a69817feece1ea29ff3a104322e0cb432a55c4f66045c036980'
+          target_ids={int(x['tag'],16)&0x1fff for x in gi['grid_index'] if (int(x['tag'],16)-0x80800000)//8192==family}
           def spans(i):
               p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
               while sz:
@@ -131,7 +141,7 @@ jobs:
           for i in range(ec):
               s=list(spans(i))
               for k,o,n in s:used[k]=max(used[k],o+n)
-              if s and (i==int(os.environ['ENTRY']) or (int(os.environ['ENTRY'])==-1 and U(b,eo+i*16)==0x80801806)):
+              if s and (i in target_ids):
                   targets.append((i,s));needed.update(k for k,o,n in s)
           print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
           def block(k):
@@ -155,7 +165,7 @@ jobs:
                   if error:fail[k]=error
                   else:cache[k]=data
           print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
-          assert len(targets)==int(os.environ['EXPECTED_TABLES'])
+          assert len(targets)==len(target_ids),(len(targets),len(target_ids))
           assert int(os.environ['EXPECTED_BLOCKS'])<0 or len(needed)==int(os.environ['EXPECTED_BLOCKS'])
           assert not fail
           def span(data,o,co,ro,st):
@@ -170,15 +180,63 @@ jobs:
               p=o+r
               assert 0<=p<len(data),(o,r,p,len(data))
               return p
+          def u16s(data,o,co,ro):
+              n,p=span(data,o,co,ro,2);return [H(data,p+2*k) for k in range(n)]
+          def exprs(data,o):
+              n,p=span(data,o,0,8,16);return [expr(data,p+16*k) for k in range(n)]
+          results=[];errors=[];stats=collections.Counter()
           for i,sp in targets:
               data=b''.join(cache[k][o:o+n] for k,o,n in sp)
               ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
-              assert len(data)==(info>>28)&0x3fffffff
               fh=f'{0x80800000+family*8192+i:08x}'
-              n,p=span(data,0,8,16,8)
-              out=dict(filehash=fh,resource_class=f'{ref:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),rows=[dict(index=j,item=H(data,p+j*8),raw=data[p+j*8:p+(j+1)*8].hex()) for j in range(n)])
-              pathlib.Path('special-items.json').write_text(json.dumps(out))
-              print('SPECIAL_ITEM_TABLE',json.dumps(out),flush=True)
+              try:
+                  assert len(data)==(info>>28)&0x3fffffff
+                  n,p=span(data,0,0x10,0x18,0x40)
+                  assert n<=36,(fh,'node_count',n)
+                  grid=dict(tag=fh,resource_class=f'{ref:08x}',size=len(data),hash0=f'{U(data,0):08x}',nodes=[])
+                  for j in range(n):
+                      o=p+j*0x40;c,q=span(data,o,0x18,0x20,0x90)
+                      assert c<=127,(fh,j,c)
+                      selector=ptr(data,o+0x28)
+                      guard=ptr(data,o+0x30)
+                      nd=dict(index=j,hash=f'{U(data,o+0x38):08x}',mode=data[o+0x3c],selector=None if selector is None else struct.unpack_from('<b',data,selector)[0],guard=None if guard is None else exprs(data,guard),group=f'{U(data,o+0x38):08x}',steps=[])
+                      for k in range(c):
+                          s=q+k*0x90;v,r=span(data,s,0,8,0x58)
+                          assert v<=255,(fh,j,k,'variants',v)
+                          st=dict(index=k,rank=data[s+0x34],requirements=exprs(data,s+0x10),variants=[])
+                          pn,pp=span(data,s,0x30,0x38,1) if False else (0,0) # no inferred arrays
+                          st['raw_fields_30_40']=data[s+0x30:s+0x40].hex()
+                          for a in range(v):
+                              z=r+a*0x58
+                              cn=u16s(data,z,0x20,0x28);fl=u16s(data,z,0x48,0x50)
+                              vn,vp=span(data,z,0x38,0x40,24)
+                              vals=[dict(value=H(data,vp+t*24),expr=expr(data,vp+t*24+8)) for t in range(vn)]
+                              mn,mp=span(data,z,0x10,0x18,16)
+                              mods=[]
+                              for m in range(mn):
+                                  mo=mp+16*m
+                                  mods.append(dict(base=I(data,mo),scale0=struct.unpack_from('<f',data,mo+4)[0],scale1=struct.unpack_from('<f',data,mo+8)[0],stat=data[mo+12],random=struct.unpack_from('<b',data,mo+13)[0],tail=data[mo+14:mo+16].hex(),raw=data[mo:mo+16].hex()))
+                              st['variants'].append(dict(index=a,collections=cn,flags=fl,values=vals,stat_modifiers=mods))
+                          nd['steps'].append(st)
+                      grid['nodes'].append(nd)
+                  results.append(grid)
+                  stats['nodes']+=len(grid['nodes'])
+                  for nd in grid['nodes']:
+                      stats['steps']+=len(nd['steps'])
+                      stats['node_guards']+=nd['guard'] is not None
+                      for st in nd['steps']:
+                          stats['requirements']+=len(st['requirements'])
+                          stats['variants']+=len(st['variants'])
+                          for vr in st['variants']:
+                              stats['collections']+=len(vr['collections'])
+                              stats['flags']+=len(vr['flags'])
+                              stats['values']+=len(vr['values'])
+                              stats['stat_modifiers']+=len(vr['stat_modifiers'])
+              except (AssertionError,struct.error,IndexError) as e:
+                  errors.append(dict(tag=fh,resource_class=f'{ref:08x}',error=str(e),header=data[:64].hex()))
+          pathlib.Path(f'grids-{family:04x}.json').write_text(json.dumps(dict(family=f'{family:04x}',target_count=len(target_ids),stats=dict(stats),grids=results,errors=errors)))
+          print('TALENT_GRID_AUDIT',json.dumps(dict(family=f'{family:04x}',targets=len(target_ids),grids=len(results),errors=len(errors),sample_errors=errors[:5],stats=dict(stats))),flush=True)
+          assert not errors
           PY
           python - <<'PY'
           import json,os,subprocess,sys
@@ -198,8 +256,8 @@ jobs:
           if [ "${{ job.status }}" != success ]; then state=failure; fi
           gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-incident-catalogue/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Incident catalogue extraction audit"
       - name: Upload normalized definition records
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-v33-special-items
-          path: special-items.json
+          name: d1-v33-grid-modifiers-${{ matrix.group }}
+          path: grids-*.json
