@@ -1,4 +1,4 @@
-name: D1 inspect decompressed Lua signature candidates
+name: D1 structured and opaque script resource search
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,8 +13,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "lua-0260"
+          - group: "0260"
             rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",463,31]]'
+          - group: "0268"
+            rows: '[["0268","ps4_cosmo_ambient_activityonl_0268",5,"4479b7565e52e4d6ff723c500dac0f8d2afc4531972d5c88e273a410c3804ec6",74,4]]'
+          - group: "0447"
+            rows: '[["0447","ps4_moon_hive_raid1_activitie_0447",4,"012525f124c7a2c671f0f6f32ef4207bf07ae4a6496b4ae5897fe9b787395bf1",200,9]]'
+          - group: "03f3"
+            rows: '[["03f3","ps4_venus_activities_activity_03f3",6,"9ef75ca71d152210a290f888b78e8561af8da2ede857519a0c8d79cb0cccb3eb",326,29]]'
+          - group: "025c"
+            rows: '[["025c","ps4_cosmo_activities_activity_025c",5,"c6424371d5e675263a949184f48a936328294ee51b9f15d17c78744b9ad79e05",336,17]]'
+          - group: "053b"
+            rows: '[["053b","ps4_hiveship_activities_activ_053b",4,"82fd87417244d42c0bd8c519fa4594e9ae1fd102375125b6bc2dc1c6a49cce6d",368,18]]'
+          - group: "07cf"
+            rows: '[["07cf","ps4_cosmo_plaguelands_activit_07cf",3,"3864d97aece9e1b2576f3fde09da82fd5b0c398fb981d172ed476ca260e227a1",114,6]]'
+          - group: "0262"
+            rows: '[["0262","ps4_cosmo_activities_activity_0262",5,"1310a07cc31f2615ad999976feb66b6b132c6329b56aa63a1e1decd61dbd7b62",420,12]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -121,7 +135,7 @@ jobs:
           assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
           assert hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0xbc:0xd0]
           assert hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0xd8:0xec]
-          used=[0]*bc;targets=[];needed=set()
+          used=[0]*bc;targets=[];needed=set();d912=[];all_entries=[]
           def spans(i):
               p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
               while sz:
@@ -130,7 +144,10 @@ jobs:
           for i in range(ec):
               s=list(spans(i))
               for k,o,n in s:used[k]=max(used[k],o+n)
-              if U(b,eo+i*16)==0x808012d9 and U(b,eo+i*16+4)&255==16 and s:
+              ref,typ=struct.unpack_from('<II',b,eo+i*16)
+              all_entries.append((i,s,ref,typ))
+              if ref==0x808012d9 and typ&255==16 and s:d912.append((i,s))
+              if s and ((typ&255) in (0,16,128) or (family==0x260 and i in (0x1722,0x1735)) or (family==0x262 and i==0x3c6)):
                   targets.append((i,s));needed.update(k for k,o,n in s)
           print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
           def block(k):
@@ -154,43 +171,9 @@ jobs:
                   if error:fail[k]=error
                   else:cache[k]=data
           print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
-          assert len(targets)==int(os.environ['EXPECTED_TABLES'])
-          assert len(needed)==int(os.environ['EXPECTED_BLOCKS'])
+          assert len(d912)==int(os.environ['EXPECTED_TABLES'])
           lua_blocks=sum(v.count(b'\x1bLua') for v in cache.values())
           raw_bytes=sum(len(v) for v in cache.values())
-          for k,data in sorted(cache.items()):
-              pos=-1
-              while True:
-                  pos=data.find(b'\x1bLua',pos+1)
-                  if pos<0:break
-                  hdr=data[pos:pos+24]
-                  owners=[]
-                  for i in range(ec):
-                      cur=0
-                      for kk,oo,nn in spans(i):
-                          if kk==k and oo<=pos<oo+nn:
-                              p=eo+i*16
-                              owners.append(dict(tag=f'{0x80800000+(family<<13)+i:08x}',ref=f'{U(b,p):08x}',type_word=f'{U(b,p+4):08x}',entry_size=(Q(b,p+8)>>28)&0x3fffffff,entry_offset=cur+pos-oo))
-                          cur+=nn
-                  ver=hdr[4] if len(hdr)>4 else None
-                  fmt=hdr[5] if len(hdr)>5 else None
-                  valid51=len(hdr)>=12 and ver==0x51 and fmt==0 and hdr[6] in (0,1) and hdr[7] in (4,8) and hdr[8] in (4,8) and hdr[9]==4 and hdr[10] in (4,8) and hdr[11] in (0,1)
-                  valid52=len(hdr)>=18 and ver==0x52 and fmt==0 and hdr[12:18]==b'\x19\x93\r\n\x1a\n'
-                  valid53=len(hdr)>=12 and ver in (0x53,0x54) and fmt==0 and hdr[6:12]==b'\x19\x93\r\n\x1a\n'
-                  print('LUA_CANDIDATE',json.dumps(dict(block=k,offset=pos,header_hex=hdr.hex(),version=ver,format=fmt,standard_header_plausible=bool(valid51 or valid52 or valid53),owners=owners,block_sha256=hashlib.sha256(data).hexdigest())),flush=True)
-          r10_refs=collections.Counter()
-          for i,sp in targets:
-              if any(k not in cache for k,o,n in sp):continue
-              data=b''.join(cache[k][o:o+n] for k,o,n in sp)
-              v=U(data,0x10)
-              if v in (0,0xffffffff):r10_refs['null']+=1
-              elif 0x80800000<=v<0x82000000:
-                  famid=(v-0x80800000)>>13
-                  idx=v&8191
-                  if famid==family and idx<ec:r10_refs[f'local_ref_{U(b,eo+idx*16):08x}']+=1
-                  else:r10_refs[f'other_family_{famid:04x}']+=1
-              else:r10_refs['other']+=1
-          print('R10_REFS',json.dumps(dict(r10_refs),sort_keys=True),flush=True)
           def dyn(data,o,stride):
               assert o+16<=len(data)
               count=I(data,o);start=o+8+L(data,o+8)+16
@@ -202,38 +185,68 @@ jobs:
               if not rel:return None,None
               t=o+rel;assert 4<=t<=len(data)
               return t,U(data,t-4)
-          done=valid=records=locations=lua=group_total=worldid_null=names_count=0;errors=[];families=set();group_types=set();script_families=set();other_classes=collections.Counter();ref10=collections.Counter()
-          digest=hashlib.sha256()
-          for i,s in targets:
-              if any(k not in cache for k,o,n in s):continue
-              data=b''.join(cache[k][o:o+n] for k,o,n in s);done+=1
-              digest.update(struct.pack('<I',i));digest.update(hashlib.sha256(data).digest())
-              lua+=data.count(b'\x1bLua')
-              try:
-                  assert len(data)>=0x40
-                  groups,g=dyn(data,0x20,0x38);loc,_=dyn(data,0x30,0x30)
-                  rec=0;ent=[];worldid=nm=0;types=set();other=collections.Counter()
-                  sf=U(data,8);r10=U(data,0x10)
-                  refkey='null' if r10 in (0,0xffffffff) else 'filehash_range' if 0x80800000<=r10<0x82000000 else 'other'
-                  for j in range(groups):
-                      types.add(U(data,g+j*0x38))
-                      num,a=dyn(data,g+j*0x38+8,0x10)
-                      for x in range(num):
-                          t,c=ptr(data,a+x*0x10)
-                          assert c==0x80800406 and t+0x90<=len(data)
-                          ent.append(U(data,t));rec+=1
-                          if Q(data,t+0x80)==0xffffffffffffffff:worldid+=1
-                          dr,dc=ptr(data,t+0x88)
-                          if dc==0x80801333:
-                              assert dr+0x24<=len(data)
-                              nm+=1
-                          elif dc is not None:other[f'{dc:08x}']+=1
-                  valid+=1;records+=rec;locations+=loc;families.update(ent);group_total+=groups;worldid_null+=worldid;names_count+=nm;group_types.update(types);script_families.add(sf);other_classes.update(other);ref10[refkey]+=1
-              except (AssertionError,struct.error) as e:errors.append((i,str(e)))
-          result=dict(family=f'{family:04x}',target_tables=len(targets),blocks=len(needed),decoded_blocks=len(cache),failed_blocks=len(fail),decoded_tables=done,structurally_valid_tables=valid,spawn_records=records,location_rows=locations,entity_families=len(families),lua_magic_hits=lua,lua_magic_hits_in_full_blocks=lua_blocks,decoded_block_bytes=raw_bytes,groups=group_total,unique_group_type_hashes=len(group_types),unique_script_family_hashes=len(script_families),worldid_null_records=worldid_null,records_with_name_data=names_count,other_dataresource_classes=dict(other_classes),unknown_ref10_classification=dict(ref10),layout_errors=len(errors),first_errors=errors[:10],entry_digest=digest.hexdigest())
+          def payload(sp):
+              if any(k not in cache for k,o,n in sp):return None
+              return b''.join(cache[k][o:o+n] for k,o,n in sp)
+          import re
+          class_counts=collections.Counter();magic_hits=[];text_hits=[];ref10=collections.Counter();ref_targets={};missing=0
+          tables={}
+          def resolve_meta(tag):
+              famid=(tag-0x80800000)>>13;idx=tag&8191
+              if famid<0:return ('invalid',None,None)
+              if famid==family: bb=b; ee=eo; cc=ec
+              else:
+                  if famid not in tables:
+                      fam=index['package_families'].get(f'{famid:04X}') or index['package_families'].get(f'{famid:04x}')
+                      if not fam:tables[famid]=None
+                      else:
+                          m=max(fam,key=lambda x:int(x['filename_generation']))
+                          start=int(m['data_offset']); head=readat(start,0x140)
+                          assert H(head,4)==famid and H(head,0)==24
+                          cc,ee=U(head,0xb4),U(head,0xb8)
+                          raw=readat(start+ee,cc*16)
+                          assert hashlib.sha1(raw).digest()==head[0xbc:0xd0]
+                          tables[famid]=(raw,0,cc)
+                  if tables[famid] is None:return ('missing_family',None,None)
+                  bb,ee,cc=tables[famid]
+              if idx>=cc:return ('missing_index',None,None)
+              off=ee+16*idx
+              ref,typ=struct.unpack_from('<II',bb,off)
+              size=(Q(bb,off+8)>>28)&0x3fffffff
+              return (f'{ref:08x}',f'{typ&255}:{typ>>24}',size)
+          total_bytes=0;marker_hits=0
+          for i,sp in targets:
+              data=payload(sp)
+              if data is None:missing+=1;continue
+              total_bytes+=len(data)
+              tag=0x80800000+(family<<13)+i;ref,typ=struct.unpack_from('<II',b,eo+i*16)
+              class_counts[f'{typ&255}:{typ>>24}']+=1
+              for m in re.finditer(b'\x1bLua',data):
+                  hdr=data[m.start():m.start()+24]
+                  magic_hits.append(dict(tag=f'{tag:08x}',ref=f'{ref:08x}',type=f'{typ&255}:{typ>>24}',offset=m.start(),header=hdr.hex(),size=len(data)))
+              for m in re.finditer(rb'(?i)(?:\.lua\b|lua_[a-z]+|havokscript|script_state|script_event|activity_script|mission_script|scriptable_auth)',data):
+                  marker_hits+=1
+                  if len(text_hits)<30:text_hits.append([f'{tag:08x}',f'{ref:08x}',m.start(),m.group().decode('ascii')])
+              if tag in (0x80cc1722,0x80cc1735,0x80cc43c6):
+                  out=dict(tag=f'{tag:08x}',ref=f'{ref:08x}',type=f'{typ&255}:{typ>>24}',size=len(data),sha256=hashlib.sha256(data).hexdigest())
+                  if tag==0x80cc1722:
+                      out.update(header_hex=data.hex(),data_size=U(data,0),magic=f'{U(data,0x24):08x}',width=H(data,0x28),height=H(data,0x2a),depth=H(data,0x2c),array=H(data,0x2e),gcn_format=(H(data,6)>>4)&0x3f)
+                  if tag==0x80cc1735:
+                      out.update(signature_ranges=[[m.start(),len(data)-m.start()] for m in re.finditer(b'\x1bLua',data)],matching_header_bytes=next((n for n in range(9376) if data[80144+n]!=data[89520+n]),80) if False else sum(a==b for a,b in zip(data[80144:80224],data[89520:89600])))
+                  print('EXACT_RESOURCE',json.dumps(out,sort_keys=True),flush=True)
+          for i,sp in d912:
+              data=payload(sp)
+              if data is None:continue
+              v=U(data,0x10)
+              if v in (0,0xffffffff):ref10['null']+=1;continue
+              if not 0x80800000<=v<0x82000000:ref10['out_of_range']+=1;continue
+              if v not in ref_targets:ref_targets[v]=resolve_meta(v)
+              ref,typ,size=ref_targets[v]
+              ref10[f'{typ}/{ref}/{"nonempty" if size else "empty"}']+=1
+          result=dict(family=f'{family:04x}',target_tables=len(targets),decoded_tables=len(targets)-missing,structurally_valid_tables=0,spawn_records=0,layout_errors=0,decoded_blocks=len(cache),failed_blocks=len(fail),entry_bytes=total_bytes,selected_type_counts=dict(class_counts),lua_magic_hits=len(magic_hits),magic_hits=magic_hits,script_text_hits=marker_hits,text_hit_sample=text_hits,d912_ref10_target_types=dict(ref10),d912_ref10_unique_targets=len(ref_targets))
           print('RESULT',json.dumps(result,sort_keys=True),flush=True)
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(result))
-          assert done==len(targets) and valid==done and not fail,result
+          assert missing==0 and not fail,result
           PY
           python - <<'PY'
           import json,os,subprocess,sys
