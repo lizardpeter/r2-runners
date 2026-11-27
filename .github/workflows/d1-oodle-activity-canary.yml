@@ -1,4 +1,4 @@
-name: D1 grouped trigger firing area and placement reference arrays
+name: D1 heterogeneous firing area reference and row payload research
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -625,7 +625,7 @@ jobs:
           print('ORCHESTRATION_DEDUP',json.dumps(dict(root=f'{root:08x}',unique=len(unique),stats=dict(substats),nested=dict(nested),dialogue_target_occurrences=dict(target_roles),unique_dialogue_targets=len(seen_obj),other_edges=graph_edges,examples=sub_examples,unknown_roles=dict(unknown_roles),unknown_hits=dict(unknown_hits),unknown_examples=unknown_examples),sort_keys=True),flush=True)
           # V14 grouped-reference arrays: verify repeated count, class, stride and exact local reference identities.
           grouped={0x80800548:(0x80800633,41,0x88),0x80800937:(0x8080067a,58,0x88),0x80800962:(0x808007cf,45,0x70),0x808008bc:(0x808008b0,44,0x70)}
-          containers=collections.Counter(); layouts=collections.Counter(); group_errors=[]; group_results=[]; seen4=set(); root_ids=set(); exact_entries=collections.Counter()
+          group_kind_hist=collections.Counter(); group_payloads=collections.Counter(); group_payload_examples=[]; group_diagnostics=[]; containers=collections.Counter(); layouts=collections.Counter(); group_errors=[]; group_results=[]; seen4=set(); root_ids=set(); exact_entries=collections.Counter()
           for tag,(key,rows,sd,names,hashes) in catalog.items():
               for st in arr(sd,0x30,0x28):
                   for q in arr(sd,st+0x18,4):
@@ -641,10 +641,10 @@ jobs:
                           def ref_at(o):
                               if o+8>len(d):return None
                               gg=U(d,o); kk=d[o+4]; ii=struct.unpack_from('<h',d,o+6)[0]
-                              if gg==key and kk==k and 0<=ii<len(names) and names[ii][0]==kk:return (gg,kk,ii,names[ii][1])
+                              if gg==key and 0<=ii<len(names) and names[ii][0]==kk:return (gg,kk,ii,names[ii][1])
                               return None
                           lead=ref_at(b+0x1c)
-                          assert lead is not None,('lead',hex(w),hex(key))
+                          assert lead is not None and lead[1]==k,('lead',hex(w),hex(key))
                           candidates=[]
                           for off in range(0,first-7,4):
                               at=b+off; count=I(d,at); rel=L(d,at+8); start=at+8+rel+16
@@ -659,11 +659,36 @@ jobs:
                           assert len(candidates)==1,('grouped_array_candidates',len(candidates),hex(w),hex(b),[f'{U(d,b+i):08x}' for i in range(0,first+24,4)])
                           off,count,clsid,rr,member=candidates[0]
                           layouts[f'{cs}:{off:x}:{first-member:x}:{member:x}:{clsid:08x}']+=1
+                          for i,(gg,kk,ii,nn) in enumerate(rr):
+                              o=b+first-member+i*24
+                              group_kind_hist[f'{cs}:{kk}']+=1
+                              rel=L(d,o); target=o+rel
+                              v=U(d,o+16)
+                              if rel and 0<=target<len(d):
+                                  end=d.find(b'\x00',target,min(len(d),target+512))
+                                  raw=d[target:end] if end>=target else b''
+                                  if raw and all(32<=u<127 for u in raw):
+                                      desc='ascii_exact' if raw.decode('ascii')==nn else 'ascii_different'
+                                  else:desc='non_ascii'
+                                  group_payloads[f'{cs}:{desc}']+=1
+                                  if len(group_payload_examples)<24:group_payload_examples.append([cs,nn,hex(v),target,desc,raw[:120].decode('ascii','replace') if desc.startswith('ascii') else None])
+                              else:group_payloads[f'{cs}:null_or_oob']+=1
                           exact_entries[cs]+=count
                           root_ids.update((gg,kk,ii) for gg,kk,ii,n in rr)
                           group_results.append(dict(blueprint=f'{tag:08x}',wrapper=f'{w:08x}',er=f'{er:08x}',role=cs,parent=f'{p:08x}',key=f'{key:08x}',descriptor_offset=off,array_offset=first,row_class=f'{clsid:08x}',count=count,refs=[[f'{gg:08x}',kk,ii,n] for gg,kk,ii,n in rr],raw_first_row_words=[f'{U(d,b+first+i):08x}' for i in range(0,24,4)]))
-                      except Exception as ex:group_errors.append([cs,f'{w:08x}',str(ex)])
-          print('GROUPED_REFERENCE_ARRAYS',json.dumps(dict(root=f'{root:08x}',containers=dict(containers),layout_matches=dict(layouts),entry_occurrences=dict(exact_entries),unique_tuples=len(root_ids),parsed=len(group_results),errors=group_errors[:40],error_count=len(group_errors)),sort_keys=True),flush=True)
+                      except Exception as ex:
+                          group_errors.append([cs,f'{w:08x}',str(ex)])
+                          if len(group_diagnostics)<8:
+                              st=b+first-8;n=I(d,b+0x30)
+                              diag=[]
+                              for i in range(min(n,4096)):
+                                  o=st+24*i
+                                  if o+24>len(d):break
+                                  gg=U(d,o+8);kk=d[o+12];ii=struct.unpack_from('<h',d,o+14)[0]
+                                  diag.append([i,f'{gg:08x}',kk,ii,names[ii] if 0<=ii<len(names) else None,U(d,o+16)])
+                              group_diagnostics.append([cs,f'{w:08x}',n,diag[:160]])
+
+          print('GROUPED_REFERENCE_ARRAYS',json.dumps(dict(root=f'{root:08x}',containers=dict(containers),layout_matches=dict(layouts),entry_occurrences=dict(exact_entries),unique_tuples=len(root_ids),parsed=len(group_results),errors=group_errors[:40],error_count=len(group_errors),kind_hist=dict(group_kind_hist),payload_hist=dict(group_payloads),payload_examples=group_payload_examples,diagnostics=group_diagnostics),sort_keys=True),flush=True)
           for i in range(0,len(group_results),10):print('GROUPED_REFERENCE_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=group_results[i:i+10]),separators=(',',':')),flush=True)
           # Audit is exploratory: do not fail the existing source tests if a different grouped layout is present.
           # One reference catalog per proven identical group-signature, but retain variants separately.
