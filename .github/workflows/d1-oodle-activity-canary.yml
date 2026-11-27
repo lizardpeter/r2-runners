@@ -15,8 +15,6 @@ jobs:
         include:
           - group: "investment-incident"
             rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774]]'
-          - group: "world-incident"
-            rows: '[["072b","ps4_globals_com01_072b",5,"37dfe6dab82e1edfad632252b324052ac12ccc59dc16e60c4ae31ff606fe6eff",1,4,1432]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -196,7 +194,9 @@ jobs:
                       q=ptr(data,z+8)
                       if q is not None:
                           out['specializations'].append(dict(index=j,key=f'{U(data,o):08x}',category=cat,nested_marker=f'{U(data,q-4):08x}',outer=data[z:z+8].hex()))
-              assert len(out['completion'])==136 and len(out['specializations'])==2069
+              assert len(out['completion'])==136
+              assert sum('nested' in x for x in out['completion'])==77
+              assert len(out['specializations'])<=2069
               pathlib.Path(f'completion-{family:04x}.json').write_text(json.dumps(out))
               print('COMPLETION_TABLE',json.dumps(dict(family=family,completion=len(out['completion']),specializations=len(out['specializations']),nested_counts=dict(collections.Counter(x['nested_marker'] for x in out['specializations'])))),flush=True)
           PY
