@@ -1,4 +1,4 @@
-name: D1 strict squad identity and noncombat reference closure
+name: D1 objective sequence template and typed operand census
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -479,6 +479,83 @@ jobs:
                                   if len(other_samples)<40:other_samples.append([f'{tag:08x}',f'{w:08x}',role,f'{p:08x}',f'{g:08x}',kind,idx,names[idx][1]])
           print('STRICT_REFERENCE_CLOSURE',json.dumps(dict(root=f'{root:08x}',counts=dict(strict),errors=strict_errors,other_role_tested=dict(other_roles),other_role_typed_matches=dict(other_matches),other_role_kind=dict(role_kind),other_examples=other_samples),sort_keys=True),flush=True)
           for i in range(0,len(strict_rows),40):print('SQUAD_REFERENCE_CATALOG',json.dumps(dict(root=f'{root:08x}',offset=i,rows=strict_rows[i:i+40]),separators=(',',':')),flush=True)
+          # V14: loss-preserving objective and sequence template census.
+          focus={0x80802590:0x80802993,0x808026b9:0x808028da}
+          cls_stats={}; shape_hist=collections.Counter(); cb_hist=collections.Counter(); pointer_hist=collections.Counter(); external_hist=collections.Counter(); errors=[]; details=[]; other_edges=[]; seen=set()
+          group_names=collections.defaultdict(list)
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              if names not in group_names[key]:group_names[key].append(names)
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              for st in arr(sd,0x30,0x28):
+                  for q in arr(sd,st+0x18,4):
+                      w=U(sd,q)
+                      if w in (0,0xffffffff) or (tag,w) in seen:continue
+                      seen.add((tag,w))
+                      c,p,d912=parse_wrapper(w)
+                      if c not in focus:continue
+                      cs=f'{c:08x}'; stats=cls_stats.setdefault(cs,collections.Counter());stats['wrappers']+=1
+                      try:
+                          assert p==focus[c]
+                          er=U(load(w,0x808003f6),0xc); d=load(er,0x80800861)
+                          a,_=rp(d,0x10); b,_=rp(d,0x18)
+                          assert a is not None and b is not None and b+0x48<=len(d)
+                          g=U(d,b+0x40); k=d[b+0x44]; ix=struct.unpack_from('<h',d,b+0x46)[0]
+                          assert g==key and 0<=ix<len(names) and names[ix][0]==k
+                          name=names[ix][1]
+                          shape_hist[cs+f':{len(d)}:{a}:{b}']+=1
+                          # Callback rows and fixups as used by the original executable.
+                          callbacks=[]; fixups=[]; ncb=Q(d,0x30); nf=U(d,0x20)
+                          try:
+                              assert ncb<=4096 and nf<=4096
+                              cr=arr(d,0x30,16)
+                              assert ncb==len(cr)
+                              for o in cr:
+                                  t=o+L(d,o); typ=U(d,o+8); ini,fin=struct.unpack_from('<hh',d,o+12)
+                                  cb_hist[f'{cs}:{typ:08x}:{ini}:{fin}']+=1
+                                  callbacks.append([t, f'{typ:08x}',ini,fin, f'{U(d,t-4):08x}' if 4<=t<=len(d) else None])
+                              # fixup count is i32, pointer at +28, dynamic-array prologue.
+                              fstart=0x28+L(d,0x28)+16
+                              assert nf==0 or 0<=fstart<=fstart+8*nf<=len(d)
+                              fixups=[fstart+i*8+L(d,fstart+i*8) for i in range(nf)]
+                              stats['callback_layout_ok']+=1
+                          except (AssertionError,struct.error,IndexError):stats['callback_layout_unknown']+=1
+                          stats['callback_rows']+=len(callbacks);stats['fixup_rows']+=len(fixups)
+                          # Scan only aligned serialized positions for full exact typed tuples, excluding self.
+                          edges=[]
+                          for o in range(0,len(d)-7,4):
+                              gg=U(d,o)
+                              if gg not in group_names:continue
+                              kk=d[o+4]; ii=struct.unpack_from('<h',d,o+6)[0]
+                              opts={ns[ii][1] for ns in group_names[gg] if 0<=ii<len(ns) and ns[ii][0]==kk}
+                              if len(opts)!=1:continue
+                              nn=next(iter(opts))
+                              if (gg,kk,ii)==(g,k,ix):stats['self_tuple_hits']+=1;continue
+                              edges.append([o-a,o-b,f'{gg:08x}',kk,ii,nn])
+                              stats['other_tuple_hits']+=1
+                              if kk==1:stats['squad_tuple_hits']+=1
+                          # External hash candidates at parent+68, and bounded relative pointer candidates.
+                          ext=None
+                          if b+0x6c<=len(d):
+                              h=U(d,b+0x68)
+                              if 0x80800000<=h<0x82000000:
+                                  try:
+                                      tc,tt,td,tp=get_target(h);ext=[f'{h:08x}',f'{tc:08x}',len(td)]
+                                      external_hist[cs+':'+ext[1]]+=1
+                                      stats['external_resolved']+=1
+                                  except Exception as ex:ext=[f'{h:08x}',str(ex)];stats['external_unresolved']+=1
+                          arrays=[]
+                          for base,label in [(a,'discriminator'),(b,'parent')]:
+                              for off in range(8,min(0x120,len(d)-base-15),8):
+                                  n=Q(d,base+off); rel=L(d,base+off+8); start=base+off+8+rel+16
+                                  if 0<n<=4096 and 8<=start<=len(d) and start+4*n<=len(d):
+                                      mh=U(d,start-8); arrays.append([label,off,n,start,f'{mh:08x}'])
+                                      pointer_hist[f'{cs}:{label}:{off:x}:{mh:08x}']+=1
+                          details.append(dict(cls=cs,blueprint=f'{tag:08x}',wrapper=f'{w:08x}',er=f'{er:08x}',group=f'{g:08x}',kind=k,index=ix,name=name,size=len(d),disc=a,parent=b,template_size=Q(d,0x48),callbacks=callbacks,fixups=fixups,external=ext,edges=edges,arrays=arrays,sha256=hashlib.sha256(d).hexdigest()))
+                          stats['parsed']+=1
+                      except Exception as ex:errors.append([cs,f'{w:08x}',str(ex)])
+          print('ORCHESTRATION_CENSUS',json.dumps(dict(root=f'{root:08x}',classes={k:dict(v) for k,v in cls_stats.items()},shapes=dict(shape_hist),callback_hist=dict(cb_hist),pointer_hist=dict(pointer_hist),external_hist=dict(external_hist),errors=errors),sort_keys=True),flush=True)
+          for i in range(0,len(details),20):print('ORCHESTRATION_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=details[i:i+20]),separators=(',',':')),flush=True)
+          assert not errors and sum(v['parsed'] for v in cls_stats.values())==sum(v['wrappers'] for v in cls_stats.values()),errors[:10]
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
