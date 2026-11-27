@@ -1,4 +1,4 @@
-name: D1 original incident dictionary and relationship graph audit
+name: D1 original companion catalogue namespace closure
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,12 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "018d"
-            rows: '[["018d","ps4_client_startup_globals_018d",5,"ba3019263a1e9941490b53cb734b8a4b83ed4d1f7931f28c2624ab8da3d4b411",1,2,110]]'
-          - group: "072b"
-            rows: '[["072b","ps4_globals_com01_072b",5,"37dfe6dab82e1edfad632252b324052ac12ccc59dc16e60c4ae31ff606fe6eff",1,4,1432]]'
-          - group: "0131"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774]]'
+          - group: "incident-join"
+            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774],["018d","ps4_client_startup_globals_018d",5,"ba3019263a1e9941490b53cb734b8a4b83ed4d1f7931f28c2624ab8da3d4b411",1,2,110]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -250,6 +246,20 @@ jobs:
               print('INCIDENT_GRAPH',json.dumps(dict(family=f'{family:04x}',rows=count,ref_counts=refs,edge_counts=edges,invalid_indices=len(invalid),first_invalid=invalid[:8],missing_child_hashes=len(missing),first_missing=missing[:8],nonnull_metadata=sum(ptrs.values()),metadata_marker_counts=dict(ptrs),bad_metadata_ptrs=len(ptr_bad),first_bad_ptrs=ptr_bad[:8],graph_digest=digest,category7=[x for x in out if x['category']==7],category255=[x for x in out if x['category']==255],first_examples=[out[g[0][0]] for g in graphs if g])),flush=True)
               assert not invalid and not ptr_bad
               pathlib.Path(f'incident-index-{family:04x}.json').write_text(json.dumps(dict(source_filehash=f'{0x80800000+family*8192+i:08x}',source_sha256=hashlib.sha256(data).hexdigest(),index_digest='fa530e89c0d926d547e28ca550145b9aaea4bcf087ee9808bb44e14930224ca9',graph_digest=digest,rows=out),indent=2))
+          if ref==0x80802468:
+              count=Q(data,0x38);rel=L(data,0x40);base=0x50+rel
+              assert 0<count<=10000 and 0<=base<=base+count*24<=len(data)
+              rows=[dict(index=i,hash=f'{U(data,base+i*24):08x}') for i in range(count)]
+              hashes=[x['hash'] for x in rows]
+              digest=hashlib.sha256(b''.join(bytes.fromhex(h)[::-1] for h in hashes)).hexdigest()
+              print('INCIDENT_COMPANION',json.dumps(dict(count=count,base=base,unique=len(set(hashes)),marker=f'{U(data,base-8):08x}',index_digest=digest,first=rows[:5],last=rows[-5:])),flush=True)
+              pathlib.Path('companion-index-018d.json').write_text(json.dumps(dict(source_filehash='80b1a06e',sha256=hashlib.sha256(data).hexdigest(),rows=rows),indent=2))
+          if ref==0x80800659:
+              for h in (0xdd6d986f,0x04c8ae1d):
+                  j=keymap[h];o=rows[j];p=o+8+L(data,o+8)
+                  print('CATEGORY7_RESOURCE',json.dumps(dict(hash=f'{h:08x}',index=j,offset=p,marker=f'{U(data,p-4):08x}',words=[f'{U(data,p+4*k):08x}' for k in range(12)])),flush=True)
+              q=0x30;num=Q(data,q);p=q+8+L(data,q+8)+16
+              print('INCIDENT_AUX_ARRAY',json.dumps(dict(count=num,base=p,marker=f'{U(data,p-8):08x}',first_words=[f'{U(data,p+4*k):08x}' for k in range(16)],candidate_stride=64,candidate_end=p+64*num,next_base=0x40+8+L(data,0x48)+16)),flush=True)
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
           python - <<'PY'
@@ -261,6 +271,30 @@ jobs:
               p=subprocess.run([sys.executable,'scan.py'],env=env)
               if p.returncode:failed.append(fam)
           print('GROUP_FAILURES',failed,flush=True)
+          if not failed:
+              import hashlib,collections
+              ir=json.load(open('incident-index-0131.json'))['rows']
+              cr=json.load(open('companion-index-018d.json'))['rows']
+              ids={v['hash'] for v in ir};comp={v['hash'] for v in cr}
+              counts={};missing={}
+              for fo in ('10','14','16'):
+                  vals=[h for row in ir for h in row[f'list_{fo}_hashes']]
+                  counts[fo]=dict(occurrences=len(vals),unique=len(set(vals)),in_incident=sum(h in ids for h in vals),in_companion=sum(h in comp for h in vals),in_both=sum(h in ids and h in comp for h in vals),neither=sum(h not in ids and h not in comp and h!='811c9dc5' for h in vals),self_edges=sum(h==row['hash'] for row in ir for h in row[f'list_{fo}_hashes']))
+                  missing[fo]=sorted(set(h for h in vals if h not in ids and h not in comp and h!='811c9dc5'))[:30]
+              incoming=collections.Counter(h for row in ir for h in row['list_10_hashes'])
+              print('INCIDENT_NAMESPACE_JOIN',json.dumps(dict(counts=counts,neither_sample=missing,companion_not_referenced=len(comp-set(incoming)),companion_unique=len(comp),incident_companion_intersection=len(ids&comp))),flush=True)
+              # Structural reachability, not execution: conditional list16 graph.
+              adj={row['hash']:[h for h in row['list_16_hashes'] if h in ids] for row in ir}
+              color={};back=[]
+              def dfs(h):
+                  color[h]=1
+                  for k in adj[h]:
+                      if color.get(k)==1:back.append((h,k))
+                      elif not color.get(k):dfs(k)
+                  color[h]=2
+              for h in adj:
+                  if not color.get(h):dfs(h)
+              print('INCIDENT_CONDITIONAL_DFS',json.dumps(dict(nodes=len(adj),edges=sum(map(len,adj.values())),back_edges=len(back),examples=back[:12])),flush=True)
           sys.exit(bool(failed))
           PY
       - name: Publish incident research status (no raw data uploads)
@@ -274,5 +308,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: d1-incident-index-${{ matrix.group }}
-          path: incident-index-*.json
+          path: |
+            incident-index-*.json
+            companion-index-*.json
           if-no-files-found: error
