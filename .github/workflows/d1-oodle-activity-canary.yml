@@ -1,4 +1,4 @@
-name: D1 exact incident catalogue resource validation
+name: D1 original incident dictionary and relationship graph audit
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -196,6 +196,60 @@ jobs:
                       print('INCIDENT_INDEX_DIGEST',hashlib.sha256(b''.join(struct.pack('<I',h) for h in hashes)).hexdigest(),flush=True)
               print('INCIDENT_CATALOGUE',json.dumps(candidates),flush=True)
               assert any(x['unsorted']==0 and x['unique']==x['count'] for x in candidates)
+          if ref==0x80800659:
+              count=Q(data,0x20);base=0x38+L(data,0x28)
+              rows=[base+32*j for j in range(count)]
+              keys=[U(data,o) for o in rows]
+              keymap={v:i for i,v in enumerate(keys)}
+              assert count==3902 and len(keymap)==count and keys==sorted(keys)
+              assert hashlib.sha256(b''.join(struct.pack('<I',h) for h in keys)).hexdigest()=='fa530e89c0d926d547e28ca550145b9aaea4bcf087ee9808bb44e14930224ca9'
+              def lists(off):
+                  n=Q(data,off);base=off+8+L(data,off+8)+16
+                  assert 0<=base<=base+n*16<=len(data)
+                  result=[];bad=[];classes=collections.Counter()
+                  for j in range(n):
+                      r=base+16*j;c=Q(data,r);rel=L(data,r+8)
+                      p=r+8+rel+16
+                      if not (0<=c<=10000 and (not c or 0<=p<=p+4*c<=len(data))):
+                          bad.append((j,c,rel,p));result.append(None);continue
+                      if c and p>=8:classes[f'{U(data,p-4):08x}']+=1
+                      result.append([U(data,p+4*k) for k in range(c)])
+                  print('INCIDENT_LIST_ARRAY',json.dumps(dict(off=off,n=n,base=base,invalid=len(bad),first_invalid=bad[:4],total_members=sum(len(x) for x in result if x is not None),nonempty=sum(bool(x) for x in result),max_members=max((len(x) for x in result if x is not None),default=0),marker_counts=dict(classes))),flush=True)
+                  assert not bad
+                  return result
+              a=lists(0x40);b2=lists(0x50)
+              fields=[0x10,0x14,0x16];lookups=[a,b2,b2]
+              refs=[0]*3;invalid=[];missing=[];edges=[0]*3;ptrs=collections.Counter();ptr_bad=[];cat=collections.Counter();graphs=[[] for _ in range(3)];out=[]
+              for j,o in enumerate(rows):
+                  c=data[o+0x18];cat[c]+=1
+                  obj=dict(index=j,hash=f'{keys[j]:08x}',category=c)
+                  rel=L(data,o+8);p=o+8+rel
+                  if rel:
+                      if 0<=p<=len(data)-16:
+                          ptrs[f'{U(data,p-4):08x}' if p>=4 else 'boundary']+=1
+                          obj['metadata_resource_offset']=p
+                      else:ptr_bad.append((j,p))
+                  else:obj['metadata_resource_offset']=None
+                  for k,fo in enumerate(fields):
+                      ind=struct.unpack_from('<h',data,o+fo)[0]
+                      obj[f'list_{fo:02x}_index']=ind
+                      values=[]
+                      if ind!=-1:
+                          refs[k]+=1
+                          if not (0<=ind<len(lookups[k])):
+                              invalid.append((j,fo,ind));continue
+                          values=lookups[k][ind]
+                          edges[k]+=len(values)
+                          for v in values:
+                              if v not in keymap and v!=0x811c9dc5:missing.append((j,fo,f'{v:08x}'))
+                          graphs[k].append((j,ind,values))
+                      obj[f'list_{fo:02x}_hashes']=[f'{v:08x}' for v in values]
+                  out.append(obj)
+              normalized=[{k:v for k,v in obj.items() if k!='metadata_resource_offset'} for obj in out]
+              digest=hashlib.sha256(json.dumps(normalized,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+              print('INCIDENT_GRAPH',json.dumps(dict(family=f'{family:04x}',rows=count,ref_counts=refs,edge_counts=edges,invalid_indices=len(invalid),first_invalid=invalid[:8],missing_child_hashes=len(missing),first_missing=missing[:8],nonnull_metadata=sum(ptrs.values()),metadata_marker_counts=dict(ptrs),bad_metadata_ptrs=len(ptr_bad),first_bad_ptrs=ptr_bad[:8],graph_digest=digest,category7=[x for x in out if x['category']==7],category255=[x for x in out if x['category']==255],first_examples=[out[g[0][0]] for g in graphs if g])),flush=True)
+              assert not invalid and not ptr_bad
+              pathlib.Path(f'incident-index-{family:04x}.json').write_text(json.dumps(dict(source_filehash=f'{0x80800000+family*8192+i:08x}',source_sha256=hashlib.sha256(data).hexdigest(),index_digest='fa530e89c0d926d547e28ca550145b9aaea4bcf087ee9808bb44e14930224ca9',graph_digest=digest,rows=out),indent=2))
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
           python - <<'PY'
@@ -215,3 +269,10 @@ jobs:
           state=success
           if [ "${{ job.status }}" != success ]; then state=failure; fi
           gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-incident-catalogue/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Incident catalogue extraction audit"
+      - name: Upload derived incident index (no original package bytes)
+        if: success() && matrix.group != '018d'
+        uses: actions/upload-artifact@v4
+        with:
+          name: d1-incident-index-${{ matrix.group }}
+          path: incident-index-*.json
+          if-no-files-found: error
