@@ -1,4 +1,4 @@
-name: D1 exact unlock flag value objective and progression policy extraction
+name: D1 full original item objective graph and activity prerequisite extraction
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,10 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "unlock-objective-master"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8141],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,570],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8127],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8126],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,2,8132],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,579],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,564]]'
-          - group: "activity-expressions"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,2,6771]]'
+          - group: "items-0131"
+            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",4092,27,-1]]'
+          - group: "items-0132"
+            rows: '[["0132","ps4_investment_globals_0132",6,"6f978a6c98d57af7cbeab4d7a84fc2a0bbc7c98a6fab4832051fb1cffc2b1eea",4517,23,-1]]'
+          - group: "activity-prerequisites"
+            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8112],["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,2,6771]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -133,7 +135,7 @@ jobs:
           for i in range(ec):
               s=list(spans(i))
               for k,o,n in s:used[k]=max(used[k],o+n)
-              if i==int(os.environ['ENTRY']) and s:
+              if s and (i==int(os.environ['ENTRY']) or (int(os.environ['ENTRY'])==-1 and U(b,eo+i*16)==0x80801806)):
                   targets.append((i,s));needed.update(k for k,o,n in s)
           print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
           def block(k):
@@ -160,60 +162,60 @@ jobs:
           assert len(targets)==int(os.environ['EXPECTED_TABLES'])
           assert len(needed)==int(os.environ['EXPECTED_BLOCKS'])
           assert not fail
-          i,sp=targets[0]
-          data=b''.join(cache[k][o:o+n] for k,o,n in sp)
-          ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
-          assert len(data)==(info>>28)&0x3fffffff
-          print('INCIDENT_PAYLOAD',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',entry_b=f'{typ:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),header=data[:128].hex())),flush=True)
-          def span(o,co,ro,st):
+          def span(data,o,co,ro,st):
               c=Q(data,o+co);r=L(data,o+ro);p=o+ro+r+16
-              assert 0<=c<=100000 and (not c or 0<=p<=p+c*st<=len(data)),(i,o,co,c,p,st,len(data))
+              assert 0<=c<=100000 and (not c or 0<=p<=p+c*st<=len(data)),(o,co,c,p,st,len(data))
               return c,p
-          stride={8141:8,570:8,8127:64,8126:24,8132:56,579:152,564:8,6771:16}[i]
-          n,p=span(0,8,16,stride);out=[]
-          def expr(z):
-              c,b=span(z,0,8,8);return [[data[b+k*8],I(data,b+k*8+4)] for k in range(c)]
-          for j in range(n):
-              o=p+j*stride;h=U(data,o);row=dict(index=j,hash=f'{h:08x}')
-              if i in (8141,570):
-                  row.update(scope=data[o+4],byte5=data[o+5],slot=struct.unpack_from('<h',data,o+6)[0])
-              elif i==8127:
-                  row.update(value=struct.unpack_from('<h',data,o+4)[0],byte6=data[o+6],byte7=data[o+7],reverse=data[o+8],threshold=I(data,o+0x20),raw=data[o:o+64].hex())
-              elif i==8126:
-                  row.update(ref=f'{U(data,o+0x10):08x}',raw=data[o:o+24].hex())
-              elif i==8132:
-                  c,b=span(o,8,16,8);nc,nb=span(o,0x18,0x20,64)
-                  row.update(scope=data[o+4],repeat=data[o+5],steps=[dict(cost=I(data,b+k*8),reward=struct.unpack_from('<h',data,b+k*8+4)[0],raw_word=f'{U(data,b+k*8+4):08x}') for k in range(c)],policies=[])
-                  for k in range(nc):
-                      v=nb+64*k;ops=expr(v+8)
-                      row['policies'].append(dict(mode=data[v],expression=ops,min_rank=I(data,v+0x18),max_rank=I(data,v+0x1c),relative_lower=I(data,v+0x20),relative_upper=I(data,v+0x24),context=data[v+0x2a:v+0x2f].hex(),multiplier=struct.unpack_from('<f',data,v+0x30)[0],cap1=I(data,v+0x34),cap2=I(data,v+0x38),rank_cap=I(data,v+0x3c)))
-              elif i==579:
-                  v=o+8;c,b=span(v,0x28,0x30,4)
-                  row.update(threshold=I(data,o+4),flags=[dict(index=H(data,b+k*4),value=data[b+k*4+2]) for k in range(c)])
-              elif i==564:
-                  row.update(incident=H(data,o+4),slot=H(data,o+6))
+          def expr(data,z):
+              c,b=span(data,z,0,8,8);return [[data[b+k*8],I(data,b+k*8+4)] for k in range(c)]
+          def ptr(data,o):
+              r=L(data,o)
+              if not r:return None
+              p=o+r
+              assert 0<=p<len(data),(o,r,p,len(data))
+              return p
+          result=[]
+          for i,sp in targets:
+              data=b''.join(cache[k][o:o+n] for k,o,n in sp)
+              ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
+              assert len(data)==(info>>28)&0x3fffffff
+              if ref==0x80801806:
+                  assert len(data)>=0x94
+                  z=ptr(data,0x20);w=ptr(data,0x68)
+                  objectives=[];values=[];completion=None
+                  if z is not None:
+                      assert z+0x1a<=len(data)
+                      c,p=span(data,z,0,8,2)
+                      objectives=[H(data,p+2*j) for j in range(c)]
+                      completion=dict(bundle_first=struct.unpack_from('<h',data,z+0x12)[0],bundle_second=struct.unpack_from('<h',data,z+0x10)[0],all=data[z+0x14],automatic=data[z+0x15],guard=struct.unpack_from('<h',data,z+0x16)[0],aux=struct.unpack_from('<h',data,z+0x18)[0])
+                  if w is not None:
+                      c,p=span(data,w,0,8,8);values=[dict(index=H(data,p+8*j),raw=data[p+8*j+2:p+8*(j+1)].hex()) for j in range(c)]
+                  result.append(dict(tag=f'{0x80800000+family*8192+i:08x}',hash=f'{U(data,0x78):08x}',instanced=data[0x8b],bucket=data[0x88],progression=struct.unpack_from('<h',data,0x44)[0],acquisition_bundle=struct.unpack_from('<h',data,0x90)[0],acquisition_flag=struct.unpack_from('<h',data,0x92)[0],objectives=objectives,local_values=values,completion=completion))
+              elif i==8112:
+                  c,p=span(data,0x30,0,8,40)
+                  print('GROUP_HEADER',json.dumps(dict(size=len(data),count=c,base=p,header=data[:96].hex(),first=data[p:p+40].hex())),flush=True)
+                  for j in range(c):
+                      o=p+40*j
+                      a,x=span(data,o+8,0,8,16);d,y=span(data,o+24,0,8,16)
+                      result.append(dict(hash=f'{U(data,o):08x}',first=[expr(data,x+k*16) for k in range(a)],second=[expr(data,y+k*16) for k in range(d)]))
               elif i==6771:
-                  v=o+8+L(data,o+8);assert 0<=v<=len(data)-0xa9 and U(data,v)==h
-                  r=L(data,v+0x48);selectors=[]
-                  if r:
-                      z=v+0x48+r;c,b=span(z,0,8,24)
-                      for k in range(c):
-                          x=b+24*k;selectors.append(dict(site=struct.unpack_from('<h',data,x+0x10)[0],expression=expr(x)))
-                  row.update(category=data[v+0xa8],selectors=selectors)
-              out.append(row)
-          pathlib.Path(f'investment-{i}.json').write_text(json.dumps(out,indent=2))
-          stats=dict(entry=i,count=n,base=p,stride=stride,marker=f'{U(data,p-8):08x}',unique_hashes=len(set(x['hash'] for x in out)),first=out[:3])
-          if i in (8141,570):
-              stats.update(scopes=dict(collections.Counter(x['scope'] for x in out)),slot_ranges={str(k):[min(x['slot'] for x in out if x['scope']==k),max(x['slot'] for x in out if x['scope']==k)] for k in set(x['scope'] for x in out)},duplicate_scope_slots=len(out)-len(set((x['scope'],x['slot']) for x in out)))
-          elif i==8127:
-              stats.update(reverse_counts=dict(collections.Counter(x['reverse'] for x in out)),threshold_min=min(x['threshold'] for x in out),threshold_max=max(x['threshold'] for x in out),value_min=min(x['value'] for x in out),value_max=max(x['value'] for x in out),no_value=sum(x['value']==-1 for x in out))
-          elif i==8132:
-              pol=[x for row in out for x in row['policies']];steps=[x for row in out for x in row['steps']]
-              stats.update(policies=len(pol),nonempty_expression=sum(bool(x['expression']) for x in pol),mode_counts=dict(collections.Counter(x['mode'] for x in pol)),nondefault_multiplier=sum(x['multiplier']!=1 for x in pol),rank_cap=sum(x['rank_cap']!=0 for x in pol),cap1=sum(x['cap1']!=0 for x in pol),cap2=sum(x['cap2']!=0 for x in pol),step_rewards=sum(x['reward']!=-1 for x in steps),step_reward_min=min((x['reward'] for x in steps if x['reward']!=-1),default=-1),step_reward_max=max((x['reward'] for x in steps if x['reward']!=-1),default=-1),policy_examples=pol[:8],level_policies=out[117]['policies'])
-          elif i==6771:
-              sel=[x for row in out for x in row['selectors']];ops=[a for x in sel for a in x['expression']]
-              stats.update(selectors=len(sel),nonempty=sum(bool(x['expression']) for x in sel),op_counts=dict(collections.Counter(a[0] for a in ops)),examples=[dict(index=x['index'],hash=x['hash'],selectors=[a for a in x['selectors'] if a['expression']]) for x in out if any(a['expression'] for a in x['selectors'])][:8])
-          print('TABLE_AUDIT',json.dumps(stats),flush=True)
+                  c,p=span(data,0,8,16,16)
+                  for j in range(c):
+                      o=p+16*j;v=ptr(data,o+8);assert v is not None and U(data,v)==U(data,o)
+                      a,x=span(data,v,8,16,4)
+                      keys=[f'{U(data,x+4*k):08x}' for k in range(a)]
+                      z=ptr(data,v+0x40);first=[];second=[]
+                      if z is not None:
+                          n,t=span(data,z,0,8,16);first=[expr(data,t+k*16) for k in range(n)]
+                          n,t=span(data,z+16,0,8,16);second=[expr(data,t+k*16) for k in range(n)]
+                      result.append(dict(index=j,hash=f'{U(data,o):08x}',groups=keys,first=first,second=second))
+          if int(os.environ['ENTRY'])==-1:
+              relevant=[x for x in result if x['completion'] is not None or x['local_values']]
+              print('ITEM_OBJECTIVE_AUDIT',json.dumps(dict(family=f'{family:04x}',items=len(result),unique_hashes=len(set(x['hash'] for x in result)),objective_blocks=sum(x['completion'] is not None for x in result),objective_refs=sum(len(x['objectives']) for x in result),local_value_blocks=sum(bool(x['local_values']) for x in result),local_value_refs=sum(len(x['local_values']) for x in result),max_local_values=max(len(x['local_values']) for x in result),automatic=sum(x['completion'] is not None and bool(x['completion']['automatic']) for x in result),guarded=sum(x['completion'] is not None and x['completion']['guard']!=-1 for x in result),bundle_first=sum(x['completion'] is not None and x['completion']['bundle_first']!=-1 for x in result),bundle_second=sum(x['completion'] is not None and x['completion']['bundle_second']!=-1 for x in result),acquisition_bundle=sum(x['acquisition_bundle']!=-1 for x in result),acquisition_flag=sum(x['acquisition_flag']!=-1 for x in result),sample=relevant[:4])),flush=True)
+              pathlib.Path(f'items-{family:04x}.json').write_text(json.dumps(result,indent=2))
+          else:
+              print('PREREQUISITE_AUDIT',json.dumps(dict(entry=i,count=len(result),first_expr=sum(len(x['first']) for x in result),second_expr=sum(len(x['second']) for x in result),groups=sum(len(x.get('groups',[])) for x in result),sample=[x for x in result if x['first'] or x['second'] or x.get('groups')][:5])),flush=True)
+              pathlib.Path(f'prerequisites-{i}.json').write_text(json.dumps(result,indent=2))
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
           python - <<'PY'
@@ -225,15 +227,10 @@ jobs:
               p=subprocess.run([sys.executable,'scan.py'],env=env)
               if p.returncode:failed.append(fam)
           print('GROUP_FAILURES',failed,flush=True)
-          if not failed and os.environ['GROUP_ID']=='unlock-objective-master':
-              import collections
-              f=json.load(open('investment-8141.json'));v=json.load(open('investment-570.json'));o=json.load(open('investment-8127.json'));t=json.load(open('investment-579.json'));p=json.load(open('investment-8132.json'))
-              ops=[a for row in t for a in row['flags']]
-              invalid=[a for a in ops if not 0<=a['index']<len(f)]
-              invalid_values=[x for x in o if x['value']!=-1 and not 0<=x['value']<len(v)]
-              assert not invalid and not invalid_values
-              refs=collections.Counter(x['value'] for x in o if x['value']!=-1)
-              print('UNLOCK_JOIN',json.dumps(dict(flag_ops=len(ops),flag_scope_counts=dict(collections.Counter(f[a['index']]['scope'] for a in ops)),flag_value_counts=dict(collections.Counter(a['value'] for a in ops)),objective_scope_counts=dict(collections.Counter(v[x['value']]['scope'] for x in o if x['value']!=-1)),distinct_objective_values=len(refs),shared_value_ids=sum(n>1 for n in refs.values()),max_shared=max(refs.values()),examples=[dict(flag=f[a['index']],value=a['value']) for a in ops[:8]],policy_flag_refs=sum(a[0]==1 for x in p for q in x['policies'] for a in q['expression']),policy_value_refs=sum(a[0]==10 for x in p for q in x['policies'] for a in q['expression']))),flush=True)
+          if not failed and os.environ['GROUP_ID']=='activity-prerequisites':
+              g=json.load(open('prerequisites-8112.json'));a=json.load(open('prerequisites-6771.json'))
+              lookup={x['hash']:x for x in g};missing=[h for row in a for h in row['groups'] if h not in lookup]
+              print('PREREQUISITE_JOIN',json.dumps(dict(group_count=len(g),unique=len(lookup),missing=len(missing),missing_sample=missing[:15],referenced_groups=len(set(h for row in a for h in row['groups'])),first_total=sum(len(row['first'])+sum(len(lookup[h]['first']) for h in row['groups'] if h in lookup) for row in a),second_total=sum(len(row['second'])+sum(len(lookup[h]['second']) for h in row['groups'] if h in lookup) for row in a))),flush=True)
           sys.exit(bool(failed))
           PY
       - name: Publish incident research status (no raw data uploads)
@@ -246,7 +243,8 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-investment-definition-${{ matrix.group }}
+          name: d1-item-and-prerequisite-${{ matrix.group }}
           path: |
-            investment-*.json
+            items-*.json
+            prerequisites-*.json
 
