@@ -1,4 +1,4 @@
-name: D1 full authored investment graph closure and expression validation
+name: D1 original rank-derived flag closure and item counter defaults
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -88,7 +88,14 @@ jobs:
               summary[name]=dict(expressions=len(es),nonempty=sum(bool(e) for e in es),op_count=sum(map(len,es)),max_stack=max((n for _,n in checks),default=0),flag_scope_refs=dict(C(f[arg]['scope'] for e in es for op,arg in e if op==1)),value_scope_refs=dict(C(v[arg]['scope'] for e in es for op,arg in e if op==10)),unique_flags=len(set(arg for e in es for op,arg in e if op==1)),unique_values=len(set(arg for e in es for op,arg in e if op==10)))
           print('EXPRESSION_CLOSURE',json.dumps(summary),flush=True)
           refs=[(x['index'],j,z['reward']) for x in p for j,z in enumerate(x['steps']) if z['reward']!=-1]
-          print('STEP_REWARD_INDEX_DIAGNOSTIC',json.dumps(dict(refs=len(refs),in_item_namespace=sum(0<=r<len(ordered) for _,_,r in refs),example=[dict(progression=k,step=j,index=r,item_hash=ordered[r]['hash'] if 0<=r<len(ordered) else None) for k,j,r in refs[:8]],warning='index range compatibility is not a confirmed semantic relation')),flush=True)
+          assert all(0<=r<len(f) for _,_,r in refs)
+          print('RANK_FLAG_CLOSURE',json.dumps(dict(refs=len(refs),unique_flags=len(set(r for _,_,r in refs)),scopes=dict(C(f[r]['scope'] for _,_,r in refs)),progressions=len(set(k for k,_,_ in refs)),level_flags=[dict(step=j,flag=r,hash=f[r]['hash'],scope=f[r]['scope']) for k,j,r in refs if k==117],examples=[dict(progression=k,step=j,flag=r,hash=f[r]['hash'],scope=f[r]['scope'],slot=f[r]['slot']) for k,j,r in refs[:12]],policy_flags=[f[k] for k in (435,2211,2233,2585,2668,2867,4745,5005,5021,836,2838)])),flush=True)
+          # Re-label legacy output key "reward": native 28CEC0 writes these directly to merged flags, not item grants.
+          for x in p:
+              for z in x['steps']:
+                  z['derived_flag']=z.pop('reward')
+          print('LOCAL_DEFAULTS',json.dumps(dict(default_counts=dict(C(str(int.from_bytes(bytes.fromhex(z['raw'])[2:6],'little',signed=True)) for x in ordered for z in x['local_values'])),defaults_nonzero=[dict(item=x['index'],hash=x['hash'],values=[z for z in x['local_values'] if int.from_bytes(bytes.fromhex(z['raw'])[2:6],'little',signed=True)]) for x in ordered if any(int.from_bytes(bytes.fromhex(z['raw'])[2:6],'little',signed=True) for z in x['local_values'])][:8])),flush=True)
+          pathlib.Path('corrected-progression-flags.json').write_text(json.dumps(p,indent=2))
           # Explicit exact gate truth table for level policies only (all expressions are boolean).
           level=p[117]['policies'];keys=sorted(set(arg for z in level for op,arg in z['expression'] if op==1))
           def ev(e,state):
@@ -127,6 +134,7 @@ jobs:
           path: |
             joined-item-objectives.json
             expression-closure.json
+            corrected-progression-flags.json
       - name: Publish result
         if: always()
         run: |
