@@ -1,4 +1,4 @@
-name: D1 original incident conditional action rows
+name: D1 exact incident heat and timing resources
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,8 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "incident-join"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774],["018d","ps4_client_startup_globals_018d",5,"ba3019263a1e9941490b53cb734b8a4b83ed4d1f7931f28c2624ab8da3d4b411",1,2,110]]'
+          - group: "incident-heat"
+            rows: '[["0154","ps4_globals_0154",5,"05f94e8303974e5776f2fd0c4d544a940a9faa48b3b3dec99258e1aff5aa21bd",1,1,64],["0154","ps4_globals_0154",5,"05f94e8303974e5776f2fd0c4d544a940a9faa48b3b3dec99258e1aff5aa21bd",1,1,65]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -163,131 +163,12 @@ jobs:
           ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
           assert len(data)==(info>>28)&0x3fffffff
           print('INCIDENT_PAYLOAD',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',entry_b=f'{typ:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),header=data[:128].hex())),flush=True)
-          keys=[0xdd6d986f,0x04c8ae1d]
-          for key in keys:
-              pattern=struct.pack('<I',key);positions=[];o=0
-              while True:
-                  o=data.find(pattern,o)
-                  if o<0:break
-                  positions.append(o);o+=4
-              print('INCIDENT_HASH_HITS',f'{key:08x}',positions[:100],len(positions),flush=True)
-          if ref==0x80800659:
-              candidates=[]
-              for root in (0,8,16):
-                  count=Q(data,root+0x20);rel=L(data,root+0x28);base=root+0x38+rel
-                  if not (0<count<=100000 and base>=0 and base+count*32<=len(data)):continue
-                  hashes=[U(data,base+32*j) for j in range(count)]
-                  bad=sum(hashes[j]>=hashes[j+1] for j in range(count-1))
-                  cats=collections.Counter(data[base+32*j+0x18] for j in range(count))
-                  matches={}
-                  for key in keys:
-                      matches[f'{key:08x}']=[dict(index=j,raw=data[base+32*j:base+32*(j+1)].hex()) for j,h in enumerate(hashes) if h==key]
-                  related=[]
-                  for off in (0x8,0x10,0x20,0x30,0x40,0x48,0x50):
-                      if root+off+16>len(data):continue
-                      n=Q(data,root+off);r=L(data,root+off+8);p=root+off+8+r+16
-                      if 0<n<=100000 and 0<=p<len(data):related.append(dict(off=off,count=n,start=p,marker=f'{U(data,p-4):08x}' if p>=4 else None))
-                  candidates.append(dict(root=root,count=count,base=base,relative=rel,unsorted=bad,unique=len(set(hashes)),category_counts=dict(cats),matches=matches,first=[f'{h:08x}' for h in hashes[:5]],last=[f'{h:08x}' for h in hashes[-5:]],related=related))
-                  if bad==0:
-                      print('INCIDENT_INDEX_DIGEST',hashlib.sha256(b''.join(struct.pack('<I',h) for h in hashes)).hexdigest(),flush=True)
-              print('INCIDENT_CATALOGUE',json.dumps(candidates),flush=True)
-              assert any(x['unsorted']==0 and x['unique']==x['count'] for x in candidates)
-          if ref==0x80800659:
-              count=Q(data,0x20);base=0x38+L(data,0x28)
-              rows=[base+32*j for j in range(count)]
-              keys=[U(data,o) for o in rows]
-              keymap={v:i for i,v in enumerate(keys)}
-              assert count==3902 and len(keymap)==count and keys==sorted(keys)
-              assert hashlib.sha256(b''.join(struct.pack('<I',h) for h in keys)).hexdigest()=='fa530e89c0d926d547e28ca550145b9aaea4bcf087ee9808bb44e14930224ca9'
-              def lists(off):
-                  n=Q(data,off);base=off+8+L(data,off+8)+16
-                  assert 0<=base<=base+n*16<=len(data)
-                  result=[];bad=[];classes=collections.Counter()
-                  for j in range(n):
-                      r=base+16*j;c=Q(data,r);rel=L(data,r+8)
-                      p=r+8+rel+16
-                      if not (0<=c<=10000 and (not c or 0<=p<=p+4*c<=len(data))):
-                          bad.append((j,c,rel,p));result.append(None);continue
-                      if c and p>=8:classes[f'{U(data,p-4):08x}']+=1
-                      result.append([U(data,p+4*k) for k in range(c)])
-                  print('INCIDENT_LIST_ARRAY',json.dumps(dict(off=off,n=n,base=base,invalid=len(bad),first_invalid=bad[:4],total_members=sum(len(x) for x in result if x is not None),nonempty=sum(bool(x) for x in result),max_members=max((len(x) for x in result if x is not None),default=0),marker_counts=dict(classes))),flush=True)
-                  assert not bad
-                  return result
-              a=lists(0x40);b2=lists(0x50)
-              fields=[0x10,0x14,0x16];lookups=[a,b2,b2]
-              refs=[0]*3;invalid=[];missing=[];edges=[0]*3;ptrs=collections.Counter();ptr_bad=[];cat=collections.Counter();graphs=[[] for _ in range(3)];out=[]
-              for j,o in enumerate(rows):
-                  c=data[o+0x18];cat[c]+=1
-                  obj=dict(index=j,hash=f'{keys[j]:08x}',category=c)
-                  rel=L(data,o+8);p=o+8+rel
-                  if rel:
-                      if 0<=p<=len(data)-16:
-                          ptrs[f'{U(data,p-4):08x}' if p>=4 else 'boundary']+=1
-                          obj['metadata_resource_offset']=p
-                      else:ptr_bad.append((j,p))
-                  else:obj['metadata_resource_offset']=None
-                  for k,fo in enumerate(fields):
-                      ind=struct.unpack_from('<h',data,o+fo)[0]
-                      obj[f'list_{fo:02x}_index']=ind
-                      values=[]
-                      if ind!=-1:
-                          refs[k]+=1
-                          if not (0<=ind<len(lookups[k])):
-                              invalid.append((j,fo,ind));continue
-                          values=lookups[k][ind]
-                          edges[k]+=len(values)
-                          for v in values:
-                              if v not in keymap and v!=0x811c9dc5:missing.append((j,fo,f'{v:08x}'))
-                          graphs[k].append((j,ind,values))
-                      obj[f'list_{fo:02x}_hashes']=[f'{v:08x}' for v in values]
-                  out.append(obj)
-              normalized=[{k:v for k,v in obj.items() if k!='metadata_resource_offset'} for obj in out]
-              digest=hashlib.sha256(json.dumps(normalized,sort_keys=True,separators=(',',':')).encode()).hexdigest()
-              print('INCIDENT_GRAPH',json.dumps(dict(family=f'{family:04x}',rows=count,ref_counts=refs,edge_counts=edges,invalid_indices=len(invalid),first_invalid=invalid[:8],missing_child_hashes=len(missing),first_missing=missing[:8],nonnull_metadata=sum(ptrs.values()),metadata_marker_counts=dict(ptrs),bad_metadata_ptrs=len(ptr_bad),first_bad_ptrs=ptr_bad[:8],graph_digest=digest,category7=[x for x in out if x['category']==7],category255=[x for x in out if x['category']==255],first_examples=[out[g[0][0]] for g in graphs if g])),flush=True)
-              assert not invalid and not ptr_bad
-              pathlib.Path(f'incident-index-{family:04x}.json').write_text(json.dumps(dict(source_filehash=f'{0x80800000+family*8192+i:08x}',source_sha256=hashlib.sha256(data).hexdigest(),index_digest='fa530e89c0d926d547e28ca550145b9aaea4bcf087ee9808bb44e14930224ca9',graph_digest=digest,rows=out),indent=2))
-          if ref==0x80802468:
-              count=Q(data,0x38);rel=L(data,0x40);base=0x50+rel
-              assert 0<count<=10000 and 0<=base<=base+count*24<=len(data)
-              rows=[dict(index=i,hash=f'{U(data,base+i*24):08x}') for i in range(count)]
-              hashes=[x['hash'] for x in rows]
-              digest=hashlib.sha256(b''.join(bytes.fromhex(h)[::-1] for h in hashes)).hexdigest()
-              print('INCIDENT_COMPANION',json.dumps(dict(count=count,base=base,unique=len(set(hashes)),marker=f'{U(data,base-8):08x}',index_digest=digest,first=rows[:5],last=rows[-5:])),flush=True)
-              pathlib.Path('companion-index-018d.json').write_text(json.dumps(dict(source_filehash='80b1a06e',sha256=hashlib.sha256(data).hexdigest(),rows=rows),indent=2))
-          if ref==0x80800659:
-              for h in (0xdd6d986f,0x04c8ae1d):
-                  j=keymap[h];o=rows[j];p=o+8+L(data,o+8)
-                  print('CATEGORY7_RESOURCE',json.dumps(dict(hash=f'{h:08x}',index=j,offset=p,marker=f'{U(data,p-4):08x}',words=[f'{U(data,p+4*k):08x}' for k in range(12)])),flush=True)
-              q=0x30;num=Q(data,q);p=q+8+L(data,q+8)+16
-              print('INCIDENT_AUX_ARRAY',json.dumps(dict(count=num,base=p,marker=f'{U(data,p-8):08x}',first_words=[f'{U(data,p+4*k):08x}' for k in range(16)],candidate_stride=64,candidate_end=p+64*num,next_base=0x40+8+L(data,0x48)+16)),flush=True)
-          if ref==0x80802468:
-              n=Q(data,0x38);base=0x50+L(data,0x40)
-              keys=collections.Counter();markers=collections.Counter();errors=[];stats=collections.Counter();rulekeys=collections.defaultdict(list);rules=[]
-              for j in range(n):
-                  o=base+j*24;h=U(data,o);keys[h]+=1;c=Q(data,o+8);p=o+0x20+L(data,o+0x10)
-                  if not (0<=c<=10000 and (not c or 0<=p<=p+c*0x90<=len(data))):
-                      errors.append((j,c,p));continue
-                  if c:markers[f'{U(data,p-8):08x}']+=1
-                  for k in range(c):
-                      v=p+k*0x90
-                      req=U(data,v+0x44);nc=Q(data,v+0x48);np=v+0x60+L(data,v+0x50)
-                      if not(0<=nc<=10000 and (not nc or 0<=np<=np+4*nc<=len(data))):errors.append((j,k,nc,np));continue
-                      neg=[U(data,np+4*t) for t in range(nc)]
-                      dist=struct.unpack_from('<f',data,v+0x60)[0]
-                      row=dict(parent_index=j,rule_index=k,parent_hash=f'{h:08x}',required=f'{req:08x}',excluded=[f'{x:08x}' for x in neg],mode=data[v+0x40],action_08=f'{U(data,v+8):08x}',ref_18=f'{U(data,v+0x18):08x}',ref_20=f'{U(data,v+0x20):08x}',action_24=f'{U(data,v+0x24):08x}',ref_30=f'{U(data,v+0x30):08x}',action_38=f'{U(data,v+0x38):08x}',distance_selector=f'{U(data,v+0x5c):08x}',distance=dist if abs(dist)<1e30 else None,gate_70=f'{U(data,v+0x70):08x}')
-                      for fo in (8,0x24,0x38,0x44,0x5c,0x70):
-                          if U(data,v+fo)!=0x811c9dc5:stats[f'nonnull_{fo:02x}']+=1
-                      for fo in (0x18,0x20,0x30):
-                          if U(data,v+fo)!=0xffffffff:stats[f'valid_{fo:02x}']+=1
-                      stats['mode_'+str(data[v+0x40])]+=1
-                      stats['excluded_total']+=nc;stats['excluded_nonempty']+=bool(nc)
-                      stats['positive_distance']+=dist>0
-                      stats['multiple_action_hashes']+=sum(U(data,v+fo)!=0x811c9dc5 for fo in (8,0x24,0x38))>1
-                      rules.append(row)
-                      rulekeys[h].append(row)
-              assert not errors,errors[:10]
-              print('COMPANION_RULE_AUDIT',json.dumps(dict(groups=n,unique_groups=len(keys),rules=len(rules),max_per_group=max(map(len,rulekeys.values())),markers=dict(markers),stats=dict(stats),duplicates=[f'{h:08x}' for h,c in keys.items() if c>1],example=rules[:3])),flush=True)
-              pathlib.Path('companion-rules.json').write_text(json.dumps(rules,indent=2))
+          print('RESOURCE_WORDS',json.dumps(dict(tag=f'{0x80800000+family*8192+i:08x}',type=f'{ref:08x}',words=[f'{U(data,k):08x}' for k in range(0,len(data)//4*4,4)])),flush=True)
+          if i==64:
+              n=Q(data,8);p=0x20+L(data,0x10)
+              assert 0<=p<=p+12*n<=len(data)
+              rows=[dict(hash=f'{U(data,p+12*j):08x}',selector=f'{U(data,p+12*j+4):08x}',value=struct.unpack_from('<f',data,p+12*j+8)[0]) for j in range(n)]
+              print('INCIDENT_HEAT_ROWS',json.dumps(dict(n=n,base=p,rows=rows)),flush=True)
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
           python - <<'PY'
@@ -299,41 +180,6 @@ jobs:
               p=subprocess.run([sys.executable,'scan.py'],env=env)
               if p.returncode:failed.append(fam)
           print('GROUP_FAILURES',failed,flush=True)
-          if not failed:
-              import hashlib,collections
-              ir=json.load(open('incident-index-0131.json'))['rows']
-              cr=json.load(open('companion-index-018d.json'))['rows']
-              ids={v['hash'] for v in ir};comp={v['hash'] for v in cr}
-              counts={};missing={}
-              for fo in ('10','14','16'):
-                  vals=[h for row in ir for h in row[f'list_{fo}_hashes']]
-                  counts[fo]=dict(occurrences=len(vals),unique=len(set(vals)),in_incident=sum(h in ids for h in vals),in_companion=sum(h in comp for h in vals),in_both=sum(h in ids and h in comp for h in vals),neither=sum(h not in ids and h not in comp and h!='811c9dc5' for h in vals),self_edges=sum(h==row['hash'] for row in ir for h in row[f'list_{fo}_hashes']))
-                  missing[fo]=sorted(set(h for h in vals if h not in ids and h not in comp and h!='811c9dc5'))[:30]
-              incoming=collections.Counter(h for row in ir for h in row['list_10_hashes'])
-              print('INCIDENT_NAMESPACE_JOIN',json.dumps(dict(counts=counts,neither_sample=missing,companion_not_referenced=len(comp-set(incoming)),companion_unique=len(comp),incident_companion_intersection=len(ids&comp))),flush=True)
-              # Structural reachability, not execution: conditional list16 graph.
-              adj={row['hash']:[h for h in row['list_16_hashes'] if h in ids] for row in ir}
-              color={};back=[]
-              def dfs(h):
-                  color[h]=1
-                  for k in adj[h]:
-                      if color.get(k)==1:back.append((h,k))
-                      elif not color.get(k):dfs(k)
-                  color[h]=2
-              for h in adj:
-                  if not color.get(h):dfs(h)
-              print('INCIDENT_CONDITIONAL_DFS',json.dumps(dict(nodes=len(adj),edges=sum(map(len,adj.values())),back_edges=len(back),examples=back[:12])),flush=True)
-          if not failed:
-              rules=json.load(open('companion-rules.json'))
-              ir=json.load(open('incident-index-0131.json'))['rows']
-              rr=collections.defaultdict(list)
-              for r in rules:rr[r['parent_hash']].append(r)
-              cats=collections.Counter();matched=0;trigger=[]
-              for row in ir:
-                  for h in row['list_10_hashes']:
-                      if h in rr:matched+=1;cats[str(row['category'])]+=len(rr[h])
-                  if row['category']==7:trigger.append(dict(hash=row['hash'],links=row['list_10_hashes'],direct_companion_rules=rr[row['hash']]))
-              print('RULE_INCIDENT_JOIN',json.dumps(dict(matched_list10_occurrences=matched,rules_by_category=dict(cats),trigger=trigger,activity_completion_examples=[dict(hash=row['hash'],links=row['list_10_hashes'],rules=[r for h in row['list_10_hashes'] for r in rr[h]][:2]) for row in ir if row['category']==27 and row['list_10_hashes']][:3])),flush=True)
           sys.exit(bool(failed))
           PY
       - name: Publish incident research status (no raw data uploads)
@@ -342,13 +188,3 @@ jobs:
           state=success
           if [ "${{ job.status }}" != success ]; then state=failure; fi
           gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-incident-catalogue/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Incident catalogue extraction audit"
-      - name: Upload derived incident index (no original package bytes)
-        if: success() && matrix.group != '018d'
-        uses: actions/upload-artifact@v4
-        with:
-          name: d1-incident-index-${{ matrix.group }}
-          path: |
-            incident-index-*.json
-            companion-index-*.json
-            companion-rules.json
-          if-no-files-found: error
