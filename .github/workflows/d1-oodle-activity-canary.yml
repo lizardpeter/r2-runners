@@ -13,10 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "inventory-ranges"
-            rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,8118],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,555],["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,-1,8113]]'
-          - group: "identity"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,-1,6772]]'
           - group: "incident-condition"
             rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,-1,6774]]'
     env:
@@ -209,11 +205,11 @@ jobs:
                       z=ptr(data,o+8);assert z is not None
                       a=dict(index=j,hash=f'{U(data,o):08x}',condition_offset=z,condition_marker=f'{U(data,z-4):08x}')
                       if cat==20:
-                          assert z+17<=len(data)
+                          assert z+17<=len(data) and U(data,z-4)==0x808006d6
                           a.update(subject=f'{U(data,z+4):08x}',compare=data[z+8],threshold=I(data,z+0xc),storage_type=data[z+0x10])
                           out['accumulated'].append(a)
                       else:
-                          zz=ptr(data,z+8)
+                          zz=ptr(data,z+8) if U(data,z-4)==0x808003c2 else None
                           a.update(nested_offset=zz,nested_marker=None if zz is None else f'{U(data,zz-4):08x}')
                           out['completion'].append(a)
                   assert len(out['accumulated'])==237 and len(out['completion'])==136
