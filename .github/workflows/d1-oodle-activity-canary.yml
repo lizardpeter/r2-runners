@@ -1,4 +1,4 @@
-name: D1 five scenario exact geometry and tactical closure including set-only containers
+name: D1 exact squad state schema key join research
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,16 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "0447"
-            rows: '[["0447","ps4_moon_hive_raid1_activitie_0447",4,"012525f124c7a2c671f0f6f32ef4207bf07ae4a6496b4ae5897fe9b787395bf1",200,9]]'
           - group: "025c"
             rows: '[["025c","ps4_cosmo_activities_activity_025c",5,"c6424371d5e675263a949184f48a936328294ee51b9f15d17c78744b9ad79e05",336,17]]'
-          - group: "0538"
-            rows: '[["0538","ps4_hiveship_activities_activ_0538",4,"453763222619df768d6f304ecc1464f2ba582a75eb78d6da9439c0d21e91ce2e",302,23]]'
-          - group: "07cf"
-            rows: '[["07cf","ps4_cosmo_plaguelands_activit_07cf",3,"3864d97aece9e1b2576f3fde09da82fd5b0c398fb981d172ed476ca260e227a1",114,6]]'
-          - group: "03f0"
-            rows: '[["03f0","ps4_venus_activities_activity_03f0",5,"e25f2019f10f05dc1c550c89a4b23e98d703642cbc6a9af4e4cb2bf18aea03c3",366,19]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -251,6 +243,21 @@ jobs:
                           arr.append([o,count,start,f'{U(data,start-8):08x}' if start>=8 else None])
                   resolved.append(dict(tag=f'{h:08x}',ref=f'{ref:08x}',type=f'{typ&255}:{typ>>24}',size=len(data),occurrences=occ,sha256=hashlib.sha256(data).hexdigest(),r2_pinned=pinned,words=[f'{x:08x}' for x in words],array_candidates=arr,lua_magic=data.count(b'\x1bLua')))
               except Exception as ex:ref_errors.append([f'{h:08x}',occ,str(ex)])
+          # V18: original schema registry key mapping, independent of shape-only candidate selection.
+          schema_keys={0xefaf30e0:'squad_authority',0x096a20fc:'squad_sensor'}
+          schema_candidates=[0x8080071e,0x80800357,0x808004b1,0x808044cc,0x80805b79,0x80805ba9,0x808015e1,0x80804252,0x808042da,0x8080439f]
+          print('V18_SCHEMA_PACKAGE_PRESENCE',json.dumps({f'{p:04x}':[(x['name'],x['size']) for x in (index['package_families'].get(f'{p:04X}') or index['package_families'].get(f'{p:04x}') or [])] for p in {((x-0x80800000)>>13) for x in schema_candidates}},sort_keys=True),flush=True)
+          results18=[]; schema_errors=[]
+          for t in schema_candidates:
+              try:
+                  c,ty,d,pin=get_target(t)
+                  hits={nm:[i for i in range(0,len(d)-3,4) if U(d,i)==k] for k,nm in schema_keys.items()}
+                  results18.append(dict(tag=f'{t:08x}',entry_ref=f'{c:08x}',type=f'{ty&255}:{ty>>24}',size=len(d),hash_hits=hits,first_words=[f'{U(d,i):08x}' for i in range(0,min(128,len(d)-3),4)],sha256=hashlib.sha256(d).hexdigest()))
+              except Exception as ex:schema_errors.append([f'{t:08x}',str(ex)])
+          print('V18_SCHEMA_REGISTRY_JOIN',json.dumps(dict(results=results18,errors=schema_errors),sort_keys=True),flush=True)
+          # Probe only class IDs of candidate descriptors; no unsupported claims from arbitrary embedded words.
+          pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=len(targets),spawn_records=0,layout_errors=len(schema_errors))))
+          sys.exit(0)
           # Check exact scenario's authored location, phase and bubble hashes.
           root=int({'025c':'80cb800d','03f0':'80fe0103','0447':'8108e004','0538':'812700b9','07cf':'8179e00b'}[f'{family:04x}'],16)
           def arr(d,o,stride):
