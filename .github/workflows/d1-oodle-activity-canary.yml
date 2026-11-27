@@ -13,10 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "items-0131"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",4092,27,-1]]'
-          - group: "items-0132"
-            rows: '[["0132","ps4_investment_globals_0132",6,"6f978a6c98d57af7cbeab4d7a84fc2a0bbc7c98a6fab4832051fb1cffc2b1eea",4517,23,-1]]'
           - group: "activity-prerequisites"
             rows: '[["012f","ps4_investment_globals_012f",6,"64c3ca342bdb741e4672aa4593e2925466f8122e5ed7aba20b862af88d61bbb9",1,1,8112],["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,2,6771]]'
     env:
@@ -196,8 +192,8 @@ jobs:
                   print('GROUP_HEADER',json.dumps(dict(size=len(data),count=c,base=p,header=data[:96].hex(),first=data[p:p+40].hex())),flush=True)
                   for j in range(c):
                       o=p+40*j
-                      a,x=span(data,o+8,0,8,16);d,y=span(data,o+24,0,8,16)
-                      result.append(dict(hash=f'{U(data,o):08x}',first=[expr(data,x+k*16) for k in range(a)],second=[expr(data,y+k*16) for k in range(d)]))
+                      a,x=span(data,o,0,8,16);d,y=span(data,o+16,0,8,16)
+                      result.append(dict(hash=f'{U(data,o+32):08x}',first=[expr(data,x+k*16) for k in range(a)],second=[expr(data,y+k*16) for k in range(d)]))
               elif i==6771:
                   c,p=span(data,0,8,16,16)
                   for j in range(c):
