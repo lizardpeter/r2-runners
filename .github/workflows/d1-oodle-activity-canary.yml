@@ -1,4 +1,4 @@
-name: D1 exact squad state schema key join research
+name: D1 exact incident catalogue resource validation
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,8 +13,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "025c"
-            rows: '[["025c","ps4_cosmo_activities_activity_025c",5,"c6424371d5e675263a949184f48a936328294ee51b9f15d17c78744b9ad79e05",336,17]]'
+          - group: "018d"
+            rows: '[["018d","ps4_client_startup_globals_018d",5,"ba3019263a1e9941490b53cb734b8a4b83ed4d1f7931f28c2624ab8da3d4b411",1,2,110]]'
+          - group: "072b"
+            rows: '[["072b","ps4_globals_com01_072b",5,"37dfe6dab82e1edfad632252b324052ac12ccc59dc16e60c4ae31ff606fe6eff",1,4,1432]]'
+          - group: "0131"
+            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -131,7 +135,7 @@ jobs:
           for i in range(ec):
               s=list(spans(i))
               for k,o,n in s:used[k]=max(used[k],o+n)
-              if U(b,eo+i*16)==0x808012d9 and U(b,eo+i*16+4)&255==16 and s:
+              if i==int(os.environ['ENTRY']) and s:
                   targets.append((i,s));needed.update(k for k,o,n in s)
           print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
           def block(k):
@@ -157,726 +161,57 @@ jobs:
           print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
           assert len(targets)==int(os.environ['EXPECTED_TABLES'])
           assert len(needed)==int(os.environ['EXPECTED_BLOCKS'])
-          lua_blocks=sum(v.count(b'\x1bLua') for v in cache.values())
-          raw_bytes=sum(len(v) for v in cache.values())
-          pins=json.loads(os.environ['ALL_PINS'])
-          payload_cache={}
-          occupancies={}
-          def get_target(tag):
-              if tag in payload_cache:return payload_cache[tag]
-              p=(tag-0x80800000)>>13;idx=tag&8191
-              if p not in views:
-                  members=index['package_families'].get(f'{p:04X}') or index['package_families'].get(f'{p:04x}')
-                  assert members,('missing family',p)
-                  mm=max(members,key=lambda x:int(x['filename_generation']))
-                  head=readat(int(mm['data_offset']),0x140)
-                  assert H(head,4)==p and H(head,0)==24
-                  count,etoff,bcnt,btoff=U(head,0xb4),U(head,0xb8),U(head,0xd0),U(head,0xd4)
-                  et=readat(int(mm['data_offset'])+etoff,count*16)
-                  bt=readat(int(mm['data_offset'])+btoff,bcnt*32)
-                  assert hashlib.sha1(et).digest()==head[0xbc:0xd0]
-                  assert hashlib.sha1(bt).digest()==head[0xd8:0xec]
-                  # If a current R2 snapshot is among the 60 already pinned, also verify whole logical snapshot.
-                  key=f'{p:04x}'
-                  if key in pins:
-                      snap=readat(int(mm['data_offset']),int(mm['size']))
-                      assert hashlib.sha256(snap).hexdigest()==pins[key]
-                  views[p]=(members,et,bt,count)
-              members,et,bt,count=views[p]
-              assert idx<count
-              ref,typ,info=struct.unpack_from('<IIQ',et,16*idx)
-              length=(info>>28)&0x3fffffff
-              assert length>0
-              # Compute occupancy in the target package, use authenticated block ownership.
-              def iter_spans(inf):
-                  n=(inf>>28)&0x3fffffff; k=inf&0x3fff; off=((inf>>14)&0x3fff)*16
-                  while n:
-                      m=min(n,B-off);yield k,off,m;n-=m;k+=1;off=0
-              wanted=list(iter_spans(info)); need={x[0] for x in wanted}
-              if p not in occupancies:
-                  occupancy={}
-                  for ii in range(count):
-                      for k,o,n in iter_spans(Q(et,16*ii+8)):
-                          occupancy[k]=max(occupancy.get(k,0),o+n)
-                  occupancies[p]=occupancy
-              occupancy=occupancies[p]
-              result=[]
-              for k,o,n in wanted:
-                  if (p,k) not in target_cache:
-                      at=k*32
-                      physical,stored_size,owner,flags=struct.unpack_from('<IIHH',bt,at)
-                      mm=next(x for x in members if int(x['header_patch_id'])==owner)
-                      raw=readat(int(mm['data_offset'])+physical,stored_size)
-                      assert hashlib.sha1(raw).digest()==bt[at+12:at+32]
-                      if flags==0:data=raw
-                      elif flags==1:
-                          with tempfile.TemporaryDirectory() as d:
-                              a=pathlib.Path(d)/'stored';z=pathlib.Path(d)/'raw';a.write_bytes(raw)
-                              r=subprocess.run([sys.executable,__file__,'decode',str(a),str(z),str(occupancy[k])],capture_output=True,timeout=60)
-                              assert r.returncode==0 and z.exists(),('target block',p,k,r.returncode)
-                              data=z.read_bytes()
-                      else:raise ValueError(('flags',flags))
-                      assert len(data)>=occupancy[k]
-                      target_cache[p,k]=data
-                  result.append(target_cache[p,k][o:o+n])
-              data=b''.join(result);assert len(data)==length
-              payload_cache[tag]=(ref,typ,data,f'{p:04x}' in pins)
-              return payload_cache[tag]
-          views={};target_cache={};refs=collections.Counter();nulls=0;other=0;d912_word0c=collections.Counter()
-          for i,sp in targets:
-              if any(k not in cache for k,o,n in sp):continue
-              data=b''.join(cache[k][o:o+n] for k,o,n in sp)
-              v=U(data,0x10);d912_word0c[U(data,0x0c)]+=1
-              if v in (0,0xffffffff):nulls+=1
-              elif 0x80800000<=v<0x82000000:refs[v]+=1
-              else:other+=1
-          resolved=[];ref_errors=[]
-          for h,occ in sorted(refs.items()):
-              try:
-                  ref,typ,data,pinned=get_target(h)
-                  # Preserve evidence and classify structural candidates only. No payload publishing.
-                  words=[U(data,o) for o in range(0,min(len(data)//4*4,64),4)]
-                  arr=[]
-                  for o in range(8,min(len(data)-15,128),8):
-                      count=I(data,o);rel=L(data,o+8);start=o+8+rel+16
-                      if 0<count<=100000 and 0<=start<=len(data) and start+4*count<=len(data):
-                          arr.append([o,count,start,f'{U(data,start-8):08x}' if start>=8 else None])
-                  resolved.append(dict(tag=f'{h:08x}',ref=f'{ref:08x}',type=f'{typ&255}:{typ>>24}',size=len(data),occurrences=occ,sha256=hashlib.sha256(data).hexdigest(),r2_pinned=pinned,words=[f'{x:08x}' for x in words],array_candidates=arr,lua_magic=data.count(b'\x1bLua')))
-              except Exception as ex:ref_errors.append([f'{h:08x}',occ,str(ex)])
-          # V18: original schema registry key mapping, independent of shape-only candidate selection.
-          schema_keys={0xefaf30e0:'squad_authority',0x096a20fc:'squad_sensor'}
-          schema_candidates=[0x8080071e,0x80800357,0x808004b1,0x808044cc,0x80805b79,0x80805ba9,0x808015e1,0x80804252,0x808042da,0x8080439f]
-          print('V18_SCHEMA_PACKAGE_PRESENCE',json.dumps({f'{p:04x}':[(x['name'],x['size']) for x in (index['package_families'].get(f'{p:04X}') or index['package_families'].get(f'{p:04x}') or [])] for p in {((x-0x80800000)>>13) for x in schema_candidates}},sort_keys=True),flush=True)
-          results18=[]; schema_errors=[]
-          for t in schema_candidates:
-              try:
-                  c,ty,d,pin=get_target(t)
-                  hits={nm:[i for i in range(0,len(d)-3,4) if U(d,i)==k] for k,nm in schema_keys.items()}
-                  results18.append(dict(tag=f'{t:08x}',entry_ref=f'{c:08x}',type=f'{ty&255}:{ty>>24}',size=len(d),hash_hits=hits,first_words=[f'{U(d,i):08x}' for i in range(0,min(128,len(d)-3),4)],sha256=hashlib.sha256(d).hexdigest()))
-              except Exception as ex:schema_errors.append([f'{t:08x}',str(ex)])
-          print('V18_SCHEMA_REGISTRY_JOIN',json.dumps(dict(results=results18,errors=schema_errors),sort_keys=True),flush=True)
-          # Probe only class IDs of candidate descriptors; no unsupported claims from arbitrary embedded words.
-          pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=len(targets),spawn_records=0,layout_errors=len(schema_errors))))
-          sys.exit(0)
-          # Check exact scenario's authored location, phase and bubble hashes.
-          root=int({'025c':'80cb800d','03f0':'80fe0103','0447':'8108e004','0538':'812700b9','07cf':'8179e00b'}[f'{family:04x}'],16)
-          def arr(d,o,stride):
-              c=I(d,o); start=o+8+L(d,o+8)+16
-              assert c>=0 and (c==0 or 0<=start<=start+c*stride<=len(d))
-              return [start+i*stride for i in range(c)]
-          _,_,scenario,_=get_target(root)
-          locs=set();phases=set();bubbles=set();scenario_rows=[]
-          for o in arr(scenario,0x48,0x18):
-              loc=U(scenario,o);locs.add(loc)
-              for q in arr(scenario,o+8,0x3c):
-                  phase=U(scenario,q+4);bubble=U(scenario,q+0x30);parent=U(scenario,q+0x34)
-                  phases.add(phase);bubbles.add(bubble)
-                  scenario_rows.append([f'{x:08x}' for x in (loc,phase,bubble,parent)])
-          joins=[]
-          for h,occ in sorted(refs.items()):
-              ref,typ,data,pin=get_target(h); assert ref==0x808008b9
-              assert Q(data,0)==len(data)
-              count=Q(data,8);assert len(data)==48+count*12 and Q(data,32)==count and U(data,40)==0x80800978
-              rr=[struct.unpack_from('<IIf',data,48+i*12) for i in range(count)]
-              import math
-              assert all(math.isfinite(x[2]) for x in rr)
-              joins.append(dict(tag=f'{h:08x}',rows=count,first_unique=len(set(x[0] for x in rr)),second_unique=len(set(x[1] for x in rr)),first_matches=[sum(x[0] in y for x in rr) for y in (locs,phases,bubbles)],second_matches=[sum(x[1] in y for x in rr) for y in (locs,phases,bubbles)],float_values=sorted(set(x[2] for x in rr)),rows_data=[[f'{a:08x}',f'{b:08x}',c] for a,b,c in rr]))
-          def load(h,expected=None):
-              assert h not in (0,0xffffffff)
-              c,t,d,pin=get_target(h)
-              if expected is not None:assert c==expected,(hex(h),hex(c),hex(expected))
-              return d
-          def rp(d,o):
-              rel=L(d,o)
-              if not rel:return None,None
-              at=o+rel;assert 4<=at<=len(d),(o,at,len(d))
-              return at,U(d,at-4)
-          role_hist=collections.Counter();root_wrappers=set();root_d912=set();root_entities=set();root_refs=set();root_maps=set();root_s6=set();root_parents=set()
-          root_stages=0;root_edges=[];root_errors=[];d912_records={};wrapper_cache={};first_hits=collections.Counter();ref_null=0
-          def parse_wrapper(h):
-              if h in wrapper_cache:return wrapper_cache[h]
-              f=load(h,0x808003f6);er=U(f,0xc);d=load(er,0x80800861)
-              _,c=rp(d,0x10);t,p=rp(d,0x18)
-              result=(c,p,None)
-              if c==0x808007bc:
-                  assert p==0x808005a7 and t+0x6c<=len(d),(hex(h),hex(er),p,t)
-                  tag=U(d,t+0x68)
-                  result=(c,p,tag)
-              wrapper_cache[h]=result
-              return result
-          def parse_spawn(h):
-              if h in d912_records:return d912_records[h]
-              d=load(h,0x808012d9)
-              location=U(d,0xc);shared=U(d,0x10);machine=U(d,8)
-              ents=set();n=0;names=0;loc_count=len(arr(d,0x30,0x30))
-              for o in arr(d,0x20,0x38):
-                  for q in arr(d,o+8,0x10):
-                      t,c=rp(d,q)
-                      assert c==0x80800406 and t+0x90<=len(d)
-                      ents.add(U(d,t));n+=1
-                      _,dc=rp(d,t+0x88)
-                      names+=dc==0x80801333
-              match=False
-              if shared not in (0,0xffffffff):
-                  sh=load(shared,0x808008b9)
-                  ct=Q(sh,8);assert len(sh)==48+12*ct
-                  match=any(U(sh,48+i*12)==location for i in range(ct))
-              result=(n,loc_count,ents,names,location,shared,machine,match)
-              d912_records[h]=result
-              return result
-          for loc,phase,bubble,parent in [[int(x,16) for x in row] for row in scenario_rows]:
-              f603=set();maps=set();s6es=set();stage_count=0;spawns=set();phase_err=[]
-              try:
-                  pd=load(parent,0x808008f0);root_parents.add(parent)
-                  child=U(pd,0x1c);cd=load(child)
-                  for slot in (8,0x18,0x28):
-                      for a in arr(cd,slot,4):
-                          h=U(cd,a);sd=load(h,0x8080076e);s6es.add(h)
-                          for st in arr(sd,0x30,0x28):
-                              stage_count+=1
-                              m=U(sd,st+0x10)
-                              if m not in (0,0xffffffff):maps.add(m)
-                              for q in arr(sd,st+0x18,4):
-                                  w=U(sd,q)
-                                  if w not in (0,0xffffffff):f603.add(w)
-              except Exception as ex:phase_err.append(['graph',str(ex)])
-              for w in sorted(f603):
-                  try:
-                      c,p,h=parse_wrapper(w)
-                      if h is not None:spawns.add(h);parse_spawn(h)
-                  except Exception as ex:phase_err.append([f'{w:08x}',str(ex)])
-              root_wrappers.update(f603);root_maps.update(maps);root_s6.update(s6es);root_stages+=stage_count;root_d912.update(spawns)
-              errs=[x for x in spawns if x not in d912_records]
-              good=[d912_records[x] for x in spawns if x in d912_records]
-              root_edges.append(dict(location=f'{loc:08x}',phase=f'{phase:08x}',bubble=f'{bubble:08x}',parent=f'{parent:08x}',stage_records=stage_count,s6e=len(s6es),maps=len(maps),wrappers=len(f603),script_tables=len(spawns),spawn_records=sum(x[0] for x in good),authored_locations=sum(x[1] for x in good),script_location_matches=sum(x[4]==loc for x in good),shared_location_matches=sum(x[7] for x in good),errors=len(phase_err)))
-              root_errors.extend([[f'{phase:08x}',*x] for x in phase_err])
-          for w in root_wrappers:
-              if w not in wrapper_cache:continue
-              c,p,h=wrapper_cache[w];role_hist[f'{c:08x}' if c is not None else 'null']+=1
-          for h in root_d912:
-              if h not in d912_records:continue
-              n,locct,ents,names,l,shared,machine,match=d912_records[h]
-              root_entities.update(ents);root_refs.add(shared);first_hits['matched' if match else 'null_shared' if shared in (0,0xffffffff) else 'unmatched']+=1
-          print('ROOT_GRAPH',json.dumps(dict(root=f'{root:08x}',parents=len(root_parents),s6e=len(root_s6),stage_occurrences=root_stages,map_tables=len(root_maps),f603=len(root_wrappers),wrapper_roles=dict(role_hist),d912=len(root_d912),d912_parsed=len(d912_records),spawn_records=sum(x[0] for x in d912_records.values()),authored_locations=sum(x[1] for x in d912_records.values()),unique_entity_tags=len(root_entities),named_records=sum(x[3] for x in d912_records.values()),shared_tags=[f'{x:08x}' for x in sorted(root_refs)],d912_location_join=dict(first_hits),unique_payloads=len(payload_cache),cross_package_blocks=len(target_cache),errors=len(root_errors),error_sample=root_errors[:12],phases=root_edges),sort_keys=True),flush=True)
-          assert not root_errors,root_errors[:12]
-          # V13: original client blueprint set registration layout, independently traced
-          # in PS4 01.33 344F00 -> 345CC0 -> 106D60 -> 100D5E0.
-          bundle_rows=[]; bundle_errors=[]; kinds=collections.Counter(); machine_candidates=collections.Counter()
-          machines={v[6] for v in d912_records.values()}
-          for tag in sorted(root_s6):
-              try:
-                  sd=load(tag,0x8080076e)
-                  assert len(sd)>=0x48
-                  facet_count=struct.unpack_from('<h',sd,0x10)[0]
-                  group_key=U(sd,0x0c)
-                  rows=arr(sd,0x18,0x10)
-                  assert Q(sd,0x18)==len(rows)
-                  row_kinds=collections.Counter(sd[o] for o in rows)
-                  kinds.update(row_kinds)
-                  stage_rows=arr(sd,0x30,0x28)
-                  sensor_counts=[]; stage_flags=[]
-                  for st in stage_rows:
-                      stage_flags.append(U(sd,st))
-                      sensor_counts.append(len(arr(sd,st+0x18,4)))
-                  # Hash equality is a candidate join, not identity proof.
-                  machine_candidates['group_key_match']+=group_key in machines
-                  machine_candidates['word08_match']+=U(sd,8) in machines
-                  machine_candidates['word1c_match']+=U(sd,0x1c) in machines
-                  bundle_rows.append(dict(tag=f'{tag:08x}',key=f'{group_key:08x}',word08=f'{U(sd,8):08x}',facet_count=facet_count,reference_rows=len(rows),kind_counts=dict(sorted(row_kinds.items())),stage_count=len(stage_rows),sensor_ref_count=sum(sensor_counts),stage_flags=sorted(set(stage_flags)),sha256=hashlib.sha256(sd).hexdigest()))
-              except Exception as ex:bundle_errors.append([f'{tag:08x}',str(ex)])
-          print('BLUEPRINT_BINDING_AUDIT',json.dumps(dict(root=f'{root:08x}',bundles=len(root_s6),parsed=len(bundle_rows),distinct_group_keys=len(set(x['key'] for x in bundle_rows)),reference_rows=sum(x['reference_rows'] for x in bundle_rows),facet_rows=sum(x['facet_count'] for x in bundle_rows),kind_counts=dict(sorted(kinds.items())),machine_hash_candidates=dict(machine_candidates),errors=bundle_errors,rows=bundle_rows),sort_keys=True),flush=True)
-          assert not bundle_errors,bundle_errors[:12]
-          # Compare exact reference catalogs for variant bundles and typed owner candidates.
-          def fnv(raw,variant):
-              h=0x811c9dc5
-              for b in raw:
-                  h=(((h^b)*0x1000193)&0xffffffff) if variant=='1a' else (((h*0x1000193)&0xffffffff)^b)
-              return h
-          catalog={}; group_catalog=collections.defaultdict(list); name_stats=collections.Counter(); name_matches=collections.Counter(); name_examples=[]
-          for tag in sorted(root_s6):
-              sd=load(tag,0x8080076e); key=U(sd,0xc); rows=arr(sd,0x18,0x10); names=[]; hashes=collections.defaultdict(set)
-              for idx,o in enumerate(rows):
-                  rel=L(sd,o+8); kind=sd[o]; name=None
-                  if not rel:name_stats['null_pointer']+=1
-                  else:
-                      at=o+8+rel
-                      if not 0<=at<len(sd):name_stats['out_of_bounds']+=1
-                      else:
-                          end=sd.find(b'\x00',at,min(len(sd),at+512))
-                          if end<0:name_stats['unterminated']+=1
-                          else:
-                              raw=sd[at:end]
-                              if raw and all(32<=x<127 for x in raw):
-                                  name=raw.decode('ascii');name_stats['ascii']+=1
-                                  for v in ('1','1a'):
-                                      for case,val in [('exact',raw),('lower',raw.lower())]:
-                                          hv=fnv(val,v)
-                                          hashes[hv].add(idx)
-                                          if hv in machines:name_matches[v+'_'+case]+=1
-                                  if len(name_examples)<12:name_examples.append([f'{tag:08x}',f'{key:08x}',idx,kind,name])
-                              else:name_stats['empty_or_non_ascii']+=1
-                  names.append((kind,name))
-              sig=hashlib.sha256(json.dumps(names,separators=(',',':')).encode()).hexdigest()
-              group_catalog[key].append((tag,sig,len(rows),struct.unpack_from('<h',sd,0x10)[0]))
-              catalog[tag]=(key,rows,sd,names,hashes)
-          variants=[]; variant_different=[]
-          for key,ls in sorted(group_catalog.items()):
-              if len(ls)>1:
-                  row=dict(key=f'{key:08x}',variants=len(ls),distinct_signatures=len(set(x[1] for x in ls)),counts=sorted(set((x[2],x[3]) for x in ls)),tags=[f'{x[0]:08x}' for x in ls])
-                  variants.append(row)
-                  if row['distinct_signatures']>1:variant_different.append(row)
-          owner_tests=collections.Counter(); owner_examples=[]; hash_join=collections.Counter(); hash_examples=[]
-          seen=set()
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              for st in arr(sd,0x30,0x28):
-                  for q in arr(sd,st+0x18,4):
-                      w=U(sd,q)
-                      if w in (0,0xffffffff) or (tag,w) in seen:continue
-                      seen.add((tag,w))
-                      c,p,d912=parse_wrapper(w)
-                      if d912 is None:continue
-                      f=load(w,0x808003f6); er=U(f,0xc); d=load(er,0x80800861)
-                      a,_=rp(d,0x10); b,_=rp(d,0x18)
-                      machine=d912_records[d912][6]
-                      if machine in hashes:
-                          hash_join['candidate']+=1
-                          if len(hash_examples)<20:hash_examples.append([f'{tag:08x}',f'{w:08x}',f'{d912:08x}',f'{machine:08x}',[[i,names[i]] for i in sorted(hashes[machine])]])
-                      else:hash_join['none']+=1
-                      for label,base in [('discriminant',a),('parent',b)]:
-                          for off in (0x1c,0x40):
-                              k=label+f'_{off:02x}'
-                              if base is None or base+off+8>len(d):owner_tests[k+'_bounds']+=1;continue
-                              g=U(d,base+off);kind=d[base+off+4];idx=struct.unpack_from('<h',d,base+off+6)[0]
-                              owner_tests[k+'_tested']+=1
-                              if g==key:
-                                  owner_tests[k+'_group_match']+=1
-                                  if 0<=idx<len(rows) and names[idx][0]==kind:
-                                      owner_tests[k+'_typed_match']+=1
-                                      if len(owner_examples)<24:owner_examples.append([k,f'{tag:08x}',f'{w:08x}',f'{er:08x}',f'{d912:08x}',f'{g:08x}',kind,idx,names[idx][1]])
-          print('AUTHORED_REFERENCE_JOIN',json.dumps(dict(root=f'{root:08x}',name_stats=dict(name_stats),name_hash_matches=dict(name_matches),same_bundle_machine_join=dict(hash_join),hash_examples=hash_examples,variant_groups=len(variants),different_variant_catalogs=variant_different,variants=variants,owner_tuple_tests=dict(owner_tests),owner_examples=owner_examples,name_examples=name_examples),sort_keys=True),flush=True)
-          # Exact row-index name/hash check and typed reference closure beyond AI.
-          strict=collections.Counter(); strict_errors=[]; strict_rows=[]; other_roles=collections.Counter(); other_matches=collections.Counter(); role_kind=collections.Counter(); other_samples=[]; seen2=set()
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              for st in arr(sd,0x30,0x28):
-                  for q in arr(sd,st+0x18,4):
-                      w=U(sd,q)
-                      if w in (0,0xffffffff) or (tag,w) in seen2:continue
-                      seen2.add((tag,w))
-                      c,p,d912=parse_wrapper(w)
-                      f=load(w,0x808003f6); er=U(f,0xc); d=load(er,0x80800861)
-                      a,_=rp(d,0x10); b,_=rp(d,0x18)
-                      if d912 is not None:
-                          strict['tested']+=1
-                          g=U(d,b+0x40); kind=d[b+0x44]; idx=struct.unpack_from('<h',d,b+0x46)[0]
-                          machine=d912_records[d912][6]
-                          if g==key and 0<=idx<len(names) and names[idx][0]==kind and names[idx][1] is not None:
-                              name=names[idx][1]
-                              if fnv(name.encode('ascii'),'1')==machine:
-                                  strict['exact']+=1;strict[f'kind_{kind}']+=1
-                                  strict_rows.append([f'{tag:08x}',f'{w:08x}',f'{er:08x}',f'{d912:08x}',f'{g:08x}',kind,idx,name,f'{machine:08x}'])
-                              else:strict_errors.append([f'{d912:08x}','name_hash_mismatch',name,f'{machine:08x}'])
-                          else:strict_errors.append([f'{d912:08x}','reference_mismatch',f'{g:08x}',kind,idx])
-                      else:
-                          role=f'{c:08x}' if c is not None else 'null'
-                          other_roles[role]+=1
-                          if b is not None and b+0x48<=len(d):
-                              g=U(d,b+0x40);kind=d[b+0x44];idx=struct.unpack_from('<h',d,b+0x46)[0]
-                              if g==key and 0<=idx<len(names) and names[idx][0]==kind:
-                                  other_matches[role]+=1;role_kind[role+f':{kind}']+=1
-                                  if len(other_samples)<40:other_samples.append([f'{tag:08x}',f'{w:08x}',role,f'{p:08x}',f'{g:08x}',kind,idx,names[idx][1]])
-          print('STRICT_REFERENCE_CLOSURE',json.dumps(dict(root=f'{root:08x}',counts=dict(strict),errors=strict_errors,other_role_tested=dict(other_roles),other_role_typed_matches=dict(other_matches),other_role_kind=dict(role_kind),other_examples=other_samples),sort_keys=True),flush=True)
-          for i in range(0,len(strict_rows),40):print('SQUAD_REFERENCE_CATALOG',json.dumps(dict(root=f'{root:08x}',offset=i,rows=strict_rows[i:i+40]),separators=(',',':')),flush=True)
-          # V14 grouped-reference arrays: verify repeated count, class, stride and exact local reference identities.
-          grouped={0x80800548:(0x80800633,41,0x88),0x80800937:(0x8080067a,58,0x88),0x80800962:(0x808007cf,45,0x70),0x808008bc:(0x808008b0,44,0x70)}
-          group_kind_hist=collections.Counter(); group_payloads=collections.Counter(); group_payload_examples=[]; group_diagnostics=[]; containers=collections.Counter(); layouts=collections.Counter(); group_errors=[]; group_results=[]; seen4=set(); root_ids=set(); exact_entries=collections.Counter()
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              for st in arr(sd,0x30,0x28):
-                  for q in arr(sd,st+0x18,4):
-                      w=U(sd,q)
-                      if w in (0,0xffffffff) or (tag,w) in seen4:continue
-                      seen4.add((tag,w)); c,p,_=parse_wrapper(w)
-                      if c not in grouped:continue
-                      cs=f'{c:08x}'; parentclass,k,first=grouped[c]; containers[cs]+=1
-                      try:
-                          assert p==parentclass
-                          er=U(load(w,0x808003f6),0xc); d=load(er,0x80800861); a,_=rp(d,0x10); b,_=rp(d,0x18); assert b is not None
-                          # The leading tuple is the first member; grouped table follows a dynamic-array header.
-                          def ref_at(o):
-                              if o+8>len(d):return None
-                              gg=U(d,o); kk=d[o+4]; ii=struct.unpack_from('<h',d,o+6)[0]
-                              if gg==key and 0<=ii<len(names) and names[ii][0]==kk:return (gg,kk,ii,names[ii][1])
-                              return None
-                          lead=ref_at(b+0x1c)
-                          allowed_kinds=(41,42) if c==0x80800548 else (k,)
-                          assert lead is not None and lead[1] in allowed_kinds,('lead',hex(w),hex(key))
-                          candidates=[]
-                          for off in range(0,first-7,4):
-                              at=b+off; count=I(d,at); rel=L(d,at+8); start=at+8+rel+16
-                              if not 0<count<=4096 or not b<=start<=b+first or start+24*count>len(d):continue
-                              member=b+first-start
-                              if member not in range(0,17,4):continue
-                              marker=U(d,start-8)
-                              if I(d,start-16)!=count or not 0x80800000<=marker<0x80810000:continue
-                              rr=[ref_at(start+member+24*i) for i in range(count)]
-                              if any(x is None or x[1] not in allowed_kinds for x in rr) or rr[0]!=lead:continue
-                              candidates.append((off,count,marker,rr,member))
-                          assert len(candidates)==1,('grouped_array_candidates',len(candidates),hex(w),hex(b),[f'{U(d,b+i):08x}' for i in range(0,first+24,4)])
-                          off,count,clsid,rr,member=candidates[0]
-                          layouts[f'{cs}:{off:x}:{first-member:x}:{member:x}:{clsid:08x}']+=1
-                          for i,(gg,kk,ii,nn) in enumerate(rr):
-                              o=b+first-member+i*24
-                              group_kind_hist[f'{cs}:{kk}']+=1
-                              rel=L(d,o); target=o+rel
-                              v=U(d,o+16)
-                              if rel and 0<=target<len(d):
-                                  end=d.find(b'\x00',target,min(len(d),target+512))
-                                  raw=d[target:end] if end>=target else b''
-                                  if raw and all(32<=u<127 for u in raw):
-                                      desc='ascii_exact' if raw.decode('ascii')==nn else 'ascii_different'
-                                  else:desc='non_ascii'
-                                  group_payloads[f'{cs}:{desc}']+=1
-                                  if len(group_payload_examples)<24:group_payload_examples.append([cs,nn,hex(v),target,desc,raw[:120].decode('ascii','replace') if desc.startswith('ascii') else None])
-                              else:group_payloads[f'{cs}:null_or_oob']+=1
-                          exact_entries[cs]+=count
-                          root_ids.update((gg,kk,ii) for gg,kk,ii,n in rr)
-                          group_results.append(dict(blueprint=f'{tag:08x}',wrapper=f'{w:08x}',er=f'{er:08x}',role=cs,parent=f'{p:08x}',key=f'{key:08x}',descriptor_offset=off,array_offset=first,row_class=f'{clsid:08x}',count=count,refs=[[f'{gg:08x}',kk,ii,n] for gg,kk,ii,n in rr],raw_first_row_words=[f'{U(d,b+first+i):08x}' for i in range(0,24,4)]))
-                      except Exception as ex:
-                          group_errors.append([cs,f'{w:08x}',str(ex)])
-                          if len(group_diagnostics)<8:
-                              st=b+first-8;n=I(d,b+0x30)
-                              diag=[]
-                              for i in range(min(n,4096)):
-                                  o=st+24*i
-                                  if o+24>len(d):break
-                                  gg=U(d,o+8);kk=d[o+12];ii=struct.unpack_from('<h',d,o+14)[0]
-                                  diag.append([i,f'{gg:08x}',kk,ii,names[ii] if 0<=ii<len(names) else None,U(d,o+16)])
-                              group_diagnostics.append([cs,f'{w:08x}',n,diag[:160]])
-
-          print('GROUPED_REFERENCE_ARRAYS',json.dumps(dict(root=f'{root:08x}',containers=dict(containers),layout_matches=dict(layouts),entry_occurrences=dict(exact_entries),unique_tuples=len(root_ids),parsed=len(group_results),errors=group_errors[:40],error_count=len(group_errors),kind_hist=dict(group_kind_hist),payload_hist=dict(group_payloads),payload_examples=group_payload_examples,diagnostics=group_diagnostics),sort_keys=True),flush=True)
-          for i in range(0,len(group_results),10):print('GROUPED_REFERENCE_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=group_results[i:i+10]),separators=(',',':')),flush=True)
-          # Audit is exploratory: do not fail the existing source tests if a different grouped layout is present.
-          # V15 geometry-side arrays: distinguish reference catalog rows from shape and point data.
-          geo_stats=collections.Counter(); geo_shapes=collections.Counter(); geo_fields=collections.Counter(); geo_examples=[]; geo_seen=set(); geo_errors=[]
-          for gr in group_results:
-              er=gr['er']; cs=gr['role']
-              if er in geo_seen:continue
-              geo_seen.add(er); d=load(int(er,16),0x80800861); a,_=rp(d,0x10); b,_=rp(d,0x18)
-              geo_stats[cs+':unique']+=1
-              # Descriptor start and marker were independently verified by the exact name/tuple audit.
-              start=b+gr['array_offset']-8; refcount=gr['count']; types=collections.Counter(x[1] for x in gr['refs'])
-              assert I(d,start-16)==refcount and U(d,start-8)==0x808003e0
-              # Enumerate plausible dynamic array headers only when the repeated count and typed marker agree.
+          assert not fail
+          i,sp=targets[0]
+          data=b''.join(cache[k][o:o+n] for k,o,n in sp)
+          ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
+          assert len(data)==(info>>28)&0x3fffffff
+          print('INCIDENT_PAYLOAD',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',entry_b=f'{typ:08x}',size=len(data),sha256=hashlib.sha256(data).hexdigest(),header=data[:128].hex())),flush=True)
+          keys=[0xdd6d986f,0x04c8ae1d]
+          for key in keys:
+              pattern=struct.pack('<I',key);positions=[];o=0
+              while True:
+                  o=data.find(pattern,o)
+                  if o<0:break
+                  positions.append(o);o+=4
+              print('INCIDENT_HASH_HITS',f'{key:08x}',positions[:100],len(positions),flush=True)
+          if ref==0x80800659:
               candidates=[]
-              for off in range(0x38,min(gr['array_offset']-16,0xb0),8):
-                  o=b+off
-                  if o+16>len(d):continue
-                  n=I(d,o); st=o+8+L(d,o+8)+16
-                  if not 0<n<=65536 or not 16<=st<=len(d) or I(d,st-16)!=n:continue
-                  m=U(d,st-8)
-                  if not 0x80800000<=m<0x80810000:continue
-                  candidates.append((off,n,st,m))
-              # Rows store a signed index-like word at +16. Retain -1 and test range against each actual table.
-              vals=[I(d,start+24*i+16) for i in range(refcount)]
-              for off,n,st,m in candidates:
-                  lab=f'{cs}:{off:x}:{m:08x}'
-                  geo_shapes[lab]+=1; geo_fields[lab+':count_sum']+=n
-                  geo_fields[lab+':row_null']+=sum(v==-1 for v in vals)
-                  geo_fields[lab+':row_in_range']+=sum(0<=v<n for v in vals)
-                  geo_fields[lab+':row_out_of_range']+=sum(v<-1 or v>=n for v in vals)
-                  # Recover bounded per-type row index histograms; do not call the word a shape index yet.
-                  for k in types:
-                      vs=[vals[i] for i,x in enumerate(gr['refs']) if x[1]==k]
-                      geo_fields[lab+f':kind{k}_count']+=len(vs)
-                      geo_fields[lab+f':kind{k}_nonnegative_in_range']+=sum(0<=v<n for v in vs)
-                  # Only report a small metadata sample, and candidate distances to next array header.
-                  after=sorted(t for _,_,t,_ in candidates if t>st)
-                  next_header=(after[0]-16) if after else len(d)
-                  words=[f'{U(d,st+i):08x}' for i in range(0,min(96,len(d)-st-3),4)]
-                  if len(geo_examples)<40:geo_examples.append(dict(role=cs,er=er,offset=off,count=n,marker=f'{m:08x}',start=st-b,span_to_next_header=next_header-st,first_words=words,ref_kind_counts=dict(types),ref_values=vals[:32]))
-              if not candidates:geo_errors.append([cs,er,'no secondary typed arrays'])
-          print('GROUPED_GEOMETRY_CANDIDATES',json.dumps(dict(root=f'{root:08x}',stats=dict(geo_stats),arrays=dict(geo_shapes),fields=dict(geo_fields),examples=geo_examples,errors=geo_errors),sort_keys=True),flush=True)
-          secondary={ '80800548':[(0x40,0x8080148c,41),(0x50,0x80801330,42)], '808008bc':[(0x40,0x808005da,44)], '80800937':[(0x40,0x8080082a,58)], '80800962':[(0x40,0x808013aa,45)] }
-          import math
-          def vec4(d,o):return struct.unpack_from('<ffff',d,o)
-          # V17: verify triangulation and source tactical objective dependencies.
-          area_by_group=collections.defaultdict(set)
-          for gr in group_results:
-              for g,k,i,nm in gr['refs']:
-                  if k in (41,42):area_by_group[(int(g,16),k)].add(i)
-          tacthist=collections.Counter(); tacterrors=[]; tactdetails=[]; tactseen=set()
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              for stage in arr(sd,0x30,0x28):
-                  for q in arr(sd,stage+0x18,4):
-                      w=U(sd,q)
-                      if w in (0,0xffffffff) or (tag,w) in tactseen:continue
-                      tactseen.add((tag,w)); c,p,_=parse_wrapper(w)
-                      if c!=0x80800560:continue
-                      er=U(load(w,0x808003f6),0xc);d=load(er,0x80800861);a,_=rp(d,0x10);b,_=rp(d,0x18)
-                      try:
-                          g=U(d,b+0x40);k=d[b+0x44];ix=struct.unpack_from('<h',d,b+0x46)[0]
-                          assert g==key and k==3 and 0<=ix<len(names) and names[ix][0]==3
-                          tacthist['owner_exact']+=1
-                          name=names[ix][1]
-                          rr=[]; shape=[]
-                          # Original runtime definition pointer may point at discriminator or parent; test both against exact class headers.
-                          for base,which in ((b,'parent'),):
-                              if base+0x88>len(d):continue
-                              n=I(d,base+0x78); st=base+0x80+L(d,base+0x80)+16
-                              if not 0<=n<=4096 or (n and (st<16 or st+n*0x28>len(d) or I(d,st-16)!=n)):continue
-                              marker=U(d,st-8) if n else 0
-                              if n and not 0x80800000<=marker<0x80810000:continue
-                              opts=[]; ok=True
-                              for i in range(n):
-                                  row=st+0x28*i;cnt=I(d,row+0x10);pos=row+0x18+L(d,row+0x18)+16
-                                  if not 0<=cnt<=4096 or (cnt and (pos<16 or pos+0x24*cnt>len(d) or I(d,pos-16)!=cnt)):ok=False;break
-                                  tm=U(d,pos-8) if cnt else 0
-                                  operands=[]
-                                  for j in range(cnt):
-                                      oo=pos+j*0x24; gg=U(d,oo+0x1c);kk=d[oo+0x20];ii=struct.unpack_from('<h',d,oo+0x22)[0]
-                                      if gg!=key or not 0<=ii<len(names) or names[ii][0]!=kk:ok=False;break
-                                      operands.append([kk,ii,names[ii][1],I(d,oo+8),[I(d,oo+0xc),I(d,oo+0x10),I(d,oo+0x14)],U(d,oo),U(d,oo+4),U(d,oo+0x18)])
-                                  if not ok:break
-                                  opts.append([i,cnt,f'{tm:08x}',operands])
-                              if ok:
-                                  shape.append([which,n,f'{marker:08x}',opts])
-                          for which,n,marker,opts in shape:
-                              tacthist[f'{which}:arrays']+=1;tacthist[f'{which}:task_count']+=n
-                              for _,cnt,tm,ops in opts:
-                                  tacthist[f'{which}:nested_marker:{tm}']+=1
-                                  for kk,ii,nn,_,_,_,_,_ in ops:
-                                      tacthist[f'{which}:operand_kind:{kk}']+=1
-                                      if ii in area_by_group[(key,kk)]:tacthist[f'{which}:operand_geometry_match']+=1
-                          if not shape:tacterrors.append([f'{er:08x}',name,[f'{U(d,b+j):08x}' for j in range(0,min(0xa0,len(d)-b-3),4)]])
-                          tactdetails.append(dict(er=f'{er:08x}',name=name,key=f'{key:08x}',owner=ix,parent=f'{p:08x}',shape=shape))
-                      except Exception as ex:tacterrors.append([f'{er:08x}',str(ex)])
-          print('V17_TACTICAL_OBJECTIVES',json.dumps(dict(root=f'{root:08x}',stats=dict(tacthist),errors=tacterrors[:30],error_count=len(tacterrors)),sort_keys=True),flush=True)
-          for i in range(0,len(tactdetails),10):print('V17_TACTICAL_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=tactdetails[i:i+10]),separators=(',',':')),flush=True)
-          # V17 executable-confirmed packed 3-byte triangle and 8-byte influence member records.
-          geo17=collections.Counter(); geo17err=[]; geo17samples=[]; geo17seen=set()
-          for gr in group_results:
-              er=gr['er']; cs=gr['role']
-              if er in geo17seen:continue
-              geo17seen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
-              fa_indices=[]
-              if cs=='80800548':
-                  fa_rows=arr(d,b+0x40,0x80)
-                  fa_indices=[I(d,o+8) for o in fa_rows]
-              for off,mc,kind in secondary[cs]:
-                  if kind not in (41,42,58):continue
-                  stride={41:0x80,42:0x20,58:0x120}[kind]
-                  for j,o in enumerate(arr(d,b+off,stride)):
-                      try:
-                          if kind in (41,58):
-                              ao=0x30 if kind==41 else 0xd0
-                              nv=I(d,o+ao); vv=o+ao+8+L(d,o+ao+8)+16
-                              nt=I(d,o+ao+0x10);tt=o+ao+0x18+L(d,o+ao+0x18)+16
-                              assert U(d,vv-8)==0x80800094 and U(d,tt-8)==0x80800903
-                              assert 3<=nv<=128 and 1<=nt<=65536 and tt+3*nt<=len(d)
-                              verts=[vec4(d,vv+i*16) for i in range(nv)]
-                              tri=[list(d[tt+i*3:tt+i*3+3]) for i in range(nt)]
-                              assert all(max(t)<nv and len(set(t))==3 for t in tri),('triangle',nv,nt,tri[:4])
-                              geo17[f'{kind}:valid']+=1;geo17[f'{kind}:triangles']+=nt
-                              geo17[f'{kind}:n_minus_2']+=nt==nv-2
-                              geo17[f'{kind}:all_vertices']+=set(i for t in tri for i in t)==set(range(nv))
-                              shoelace=abs(sum(verts[i][0]*verts[(i+1)%nv][1]-verts[(i+1)%nv][0]*verts[i][1] for i in range(nv)))/2
-                              area=sum(abs((verts[y][0]-verts[x][0])*(verts[z][1]-verts[x][1])-(verts[y][0]-verts[x][0])*(verts[y][1]-verts[x][1]))/2 for x,y,z in []) if False else sum(abs((verts[y][0]-verts[x][0])*(verts[z][1]-verts[x][1])-(verts[z][0]-verts[x][0])*(verts[y][1]-verts[x][1]))/2 for x,y,z in tri)
-                              geo17[f'{kind}:area_match']+=abs(shoelace-area)<=max(0.02,shoelace*0.001)
-                              geo17[f'{kind}:degenerate_xy']+=shoelace<1e-6
-                              if len(geo17samples)<12:geo17samples.append([kind,er,j,nv,nt,tri[:8],shoelace,area])
-                          else:
-                              cnt=I(d,o+0x10);p=o+0x18+L(d,o+0x18)+16
-                              geo17['42:sets']+=1
-                              if not cnt:geo17['42:empty']+=1;continue
-                              assert I(d,p-16)==cnt and U(d,p-8)==0x8080138c and p+cnt*8<=len(d)
-                              vals=[struct.unpack_from('<Ii',d,p+i*8) for i in range(cnt)]
-                              assert all(0<=idx<len(fa_indices) for _,idx in vals),('member_local_ordinal',len(fa_indices),vals[:4])
-                              geo17['42:nonempty_valid']+=1;geo17['42:members']+=cnt
-                              geo17['42:distinct_members']+=len(set(idx for _,idx in vals))==cnt
-                              for val,idx in vals:
-                                  geo17[f'42:word0:{val:08x}']+=1
-                              if len(geo17samples)<30:geo17samples.append([42,er,j,cnt,[[f'{v:08x}',i,fa_indices[i]] for v,i in vals[:12]]])
-                      except Exception as ex:geo17err.append([kind,er,j,str(ex)])
-          print('V17_NATIVE_GEOMETRY',json.dumps(dict(root=f'{root:08x}',stats=dict(geo17),error_count=len(geo17err),errors=geo17err[:50],samples=geo17samples),sort_keys=True),flush=True)
-          # V17 targeted exact tactical/squad link census; preserve source typed group scope.
-          links=collections.Counter(); fields17=collections.Counter(); links_examples=[]; squad_links=[]; tact_links=[]; scope_links=[]; inv_sets=collections.defaultdict(set); seen_squads=set()
-          for gr in group_results:
-              for g,k,i,nm in gr['refs']:
-                  if k==42:inv_sets[int(g,16)].add(i)
-          namesbygroup={}
-          for _,(key,rows,sd,names,hashes) in catalog.items():
-              if key in namesbygroup:assert namesbygroup[key]==names
-              else:namesbygroup[key]=names
-          objective_operands=collections.defaultdict(set)
-          for x in tactdetails:
-              key=int(x['key'],16); er=int(x['er'],16); d=load(er,0x80800861); b,_=rp(d,0x18); a,_=rp(d,0x10)
-              tasks=arr(d,b+0x78,0x28)
-              assert U(d,tasks[0]-8)==0x8080050b if tasks else True
-              links['tactical_objects']+=1; links['task_rows']+=len(tasks)
-              tx=[]
-              for ti,o in enumerate(tasks):
-                  task_flags=U(d,o); weight0=struct.unpack_from('<f',d,o+4)[0]; weight1=struct.unpack_from('<f',d,o+8)[0]
-                  fields17[f'task_flags:{task_flags:08x}']+=1
-                  if math.isfinite(weight0):fields17['weight0_finite']+=1
-                  if math.isfinite(weight1):fields17['weight1_finite']+=1
-                  nested=arr(d,o+0x10,0x24)
-                  if nested:assert U(d,nested[0]-8)==0x8080057d
-                  nr=[]
-                  for oo in nested:
-                      maxcount=I(d,oo+8); threshold=I(d,oo+0xc); mincount=I(d,oo+0x10); margin=I(d,oo+0x14)
-                      k=d[oo+0x20];ix=struct.unpack_from('<h',d,oo+0x22)[0];g=U(d,oo+0x1c)
-                      assert k==42 and g==key and ix in inv_sets[key]
-                      objective_operands[key].add(ix)
-                      for f,v in [('max',maxcount),('threshold',threshold),('min',mincount),('margin',margin),('word0',U(d,oo)),('word4',U(d,oo+4)),('word18',U(d,oo+0x18))]:fields17[f'{f}:{v}']+=1
-                      links['task_operand_rows']+=1;links['min_valid']+=mincount>=0;links['max_valid']+=maxcount==-1 or maxcount>=mincount
-                      nr.append([ix,maxcount,threshold,mincount,margin])
-                  tx.append([ti,task_flags,weight0 if math.isfinite(weight0) else None,weight1 if math.isfinite(weight1) else None,nr])
-              tact_links.append([x['key'],x['owner'],x['name'],x['er'],tx])
-          for key,ss in inv_sets.items():
-              links['unique_group_sets']+=len(ss);links['group_sets_referenced']+=len(ss & objective_operands[key])
-          # Every squad's serialized resource, typed owner and nonself references; exact keys and kinds, not string-name heuristics.
-          for stag,w,er,dt,g,k,ix,name,machine in strict_rows:
-              key=int(g,16); d=load(int(er,16),0x80800861);a,_=rp(d,0x10);b,_=rp(d,0x18); names=namesbygroup[key]
-              if (key,er) in seen_squads:continue
-              seen_squads.add((key,er));links['unique_squads']+=1
-              ee=[]
-              for o in range(0,len(d)-7,4):
-                  if U(d,o)!=key:continue
-                  kk=d[o+4];ii=struct.unpack_from('<h',d,o+6)[0]
-                  if not 0<=ii<len(names) or names[ii][0]!=kk or (kk==1 and ii==ix):continue
-                  links[f'squad_operand_kind:{kk}']+=1;fields17[f'squad_kind{kk}_parent_relative:{o-b:+x}']+=1
-                  ee.append([o-b,kk,ii,names[ii][1]])
-              if any(e[1]==3 for e in ee):links['squads_with_objective_ref']+=1
-              if ee:squad_links.append([g,ix,name,er,dt,ee])
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              for stage in arr(sd,0x30,0x28):
-                  stagek=U(sd,stage); relevant=collections.Counter()
-                  for q in arr(sd,stage+0x18,4):
-                      w=U(sd,q)
-                      if w in (0,0xffffffff):continue
-                      c,p,_=parse_wrapper(w)
-                      if c==0x80800560:relevant['tactical']+=1
-                      if c==0x808007bc:relevant['squad']+=1
-                      if c==0x80800548:relevant['firing_container']+=1
-                      if c==0x80800937:relevant['trigger_container']+=1
-                  links['stages']+=1
-                  if relevant['squad'] and relevant['tactical']:links['stages_with_squads_and_tactical']+=1
-                  if relevant['squad'] and not relevant['tactical']:links['stages_squad_without_tactical']+=1
-                  if relevant['tactical'] and not relevant['squad']:links['stages_tactical_without_squad']+=1
-                  if relevant:scope_links.append([f'{tag:08x}',f'{key:08x}',f'{stagek:08x}',dict(relevant)])
-          print('V17_DIRECTED_AI_LINKS',json.dumps(dict(root=f'{root:08x}',stats=dict(links),fields=dict(fields17),squad_examples=squad_links[:20],stage_examples=scope_links[:20]),sort_keys=True),flush=True)
-          for i in range(0,len(tact_links),10):print('V17_TACTICAL_FIELDS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=tact_links[i:i+10]),separators=(',',':')),flush=True)
-          for i in range(0,len(squad_links),20):print('V17_SQUAD_TYPED_LINKS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=squad_links[i:i+20]),separators=(',',':')),flush=True)
-          # Final per-class identity verification, including set-only source containers and pose rows.
-          closure=collections.Counter(); closureerrors=[]; closureseen=set()
-          for gr in group_results:
-              er=gr['er']; cs=gr['role']
-              if er in closureseen:continue
-              closureseen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
-              for off,mc,kind in secondary[cs]:
-                  stride={41:0x80,42:0x20,44:0x30,45:0x50,58:0x120}[kind]
-                  byidx={i:nm for g,k,i,nm in gr['refs'] if k==kind}; found=set(); rr=arr(d,b+off,stride)
-                  try:
-                      assert len(rr)==len(byidx)
-                      if rr:assert U(d,rr[0]-8)==mc
-                      if not rr and kind==41:closure['set_only_containers']+=1
-                      for o in rr:
-                          ix=struct.unpack_from('<h',d,o+0x12)[0] if kind==58 else I(d,o+(4 if kind in (44,45) else 8))
-                          assert ix in byidx and ix not in found
-                          nm=byidx[ix];found.add(ix)
-                          if kind in (41,42,58):
-                              p=o+L(d,o); e=d.index(b'\x00',p);assert d[p:e].decode('ascii')==nm
-                          else:
-                              hv=0x811c9dc5
-                              for ch in nm.encode('ascii'):hv=((hv*0x01000193)&0xffffffff)^ch
-                              assert U(d,o)==hv
-                          closure[f'{kind}:identities']+=1
-                          if kind==44:
-                              q=vec4(d,o+0x10);p=vec4(d,o+0x20);assert all(math.isfinite(v) for v in (*q,*p))
-                              assert abs(sum(v*v for v in q)-1)<0.002
-                              closure['44:finite_unit_poses']+=1
-                          if kind in (41,58):
-                              ao=0x10 if kind==41 else 0xb0
-                              lo=vec4(d,o+ao);hi=vec4(d,o+ao+0x10)
-                              assert all(math.isfinite(v) for v in (*lo,*hi)) and all(lo[i]<=hi[i] for i in range(3)) and lo[3]==hi[3]==1
-                              verts=arr(d,o+ao+0x20,16)
-                              assert verts and all(lo[i]-0.02<=vec4(d,vo)[i]<=hi[i]+0.02 for vo in verts for i in range(3))
-                              closure[f'{kind}:vertices']+=len(verts);closure[f'{kind}:bounds']+=1
-                      assert found==set(byidx)
-                  except Exception as ex:closureerrors.append([er,kind,str(ex)])
-          print('V17_FULL_IDENTITY_CLOSURE',json.dumps(dict(root=f'{root:08x}',stats=dict(closure),errors=closureerrors,group_errors=group_errors),sort_keys=True),flush=True)
-          assert not closureerrors and not group_errors and not geo17err and not tacterrors,(closureerrors,group_errors,geo17err,tacterrors)
-          # One reference catalog per proven identical group-signature, but retain variants separately.
-          unique_catalog={}
-          for tag,(key,rows,sd,names,hashes) in catalog.items():
-              sig=hashlib.sha256(json.dumps(names,separators=(',',':')).encode()).hexdigest()
-              unique_catalog.setdefault((key,sig),names)
-          if family==0x025c:
-              for (key,sig),names in sorted(unique_catalog.items()):
-                  for i in range(0,len(names),60):print('PROLOGUE_NAMED_REFS',json.dumps(dict(group=f'{key:08x}',signature=sig,offset=i,rows=names[i:i+60]),separators=(',',':')),flush=True)
-          assert not strict_errors and strict['exact']==len(root_d912),(strict,strict_errors[:8])
-
-          print('SCENARIO_JOIN',json.dumps(dict(root=f'{root:08x}',size=len(scenario),locations=len(locs),phases=len(phases),bubbles=len(bubbles),scenario_rows=scenario_rows,joins=joins)),flush=True)
-          print('REF10_CLOSURE',json.dumps(dict(family=f'{family:04x}',nulls=nulls,other=other,occurrences=sum(refs.values()),unique=len(refs),resolved=resolved,errors=ref_errors,unique_word0c=len(d912_word0c),word0c_null=sum(v for k,v in d912_word0c.items() if k in (0,0xffffffff))),sort_keys=True),flush=True)
-
-          def dyn(data,o,stride):
-              assert o+16<=len(data)
-              count=I(data,o);start=o+8+L(data,o+8)+16
-              assert count>=0 and (count==0 or 0<=start<=start+count*stride<=len(data))
-              return count,start
-          def ptr(data,o):
-              assert o+8<=len(data)
-              rel=L(data,o)
-              if not rel:return None,None
-              t=o+rel;assert 4<=t<=len(data)
-              return t,U(data,t-4)
-          done=valid=records=locations=lua=group_total=worldid_null=names_count=0;errors=[];families=set();group_types=set();script_families=set();other_classes=collections.Counter();ref10=collections.Counter()
-          digest=hashlib.sha256()
-          for i,s in targets:
-              if any(k not in cache for k,o,n in s):continue
-              data=b''.join(cache[k][o:o+n] for k,o,n in s);done+=1
-              digest.update(struct.pack('<I',i));digest.update(hashlib.sha256(data).digest())
-              lua+=data.count(b'\x1bLua')
-              try:
-                  assert len(data)>=0x40
-                  groups,g=dyn(data,0x20,0x38);loc,_=dyn(data,0x30,0x30)
-                  rec=0;ent=[];worldid=nm=0;types=set();other=collections.Counter()
-                  sf=U(data,8);r10=U(data,0x10)
-                  refkey='null' if r10 in (0,0xffffffff) else 'filehash_range' if 0x80800000<=r10<0x82000000 else 'other'
-                  for j in range(groups):
-                      types.add(U(data,g+j*0x38))
-                      num,a=dyn(data,g+j*0x38+8,0x10)
-                      for x in range(num):
-                          t,c=ptr(data,a+x*0x10)
-                          assert c==0x80800406 and t+0x90<=len(data)
-                          ent.append(U(data,t));rec+=1
-                          if Q(data,t+0x80)==0xffffffffffffffff:worldid+=1
-                          dr,dc=ptr(data,t+0x88)
-                          if dc==0x80801333:
-                              assert dr+0x24<=len(data)
-                              nm+=1
-                          elif dc is not None:other[f'{dc:08x}']+=1
-                  valid+=1;records+=rec;locations+=loc;families.update(ent);group_total+=groups;worldid_null+=worldid;names_count+=nm;group_types.update(types);script_families.add(sf);other_classes.update(other);ref10[refkey]+=1
-              except (AssertionError,struct.error) as e:errors.append((i,str(e)))
-          result=dict(family=f'{family:04x}',target_tables=len(targets),blocks=len(needed),decoded_blocks=len(cache),failed_blocks=len(fail),decoded_tables=done,structurally_valid_tables=valid,spawn_records=records,location_rows=locations,entity_families=len(families),lua_magic_hits=lua,lua_magic_hits_in_full_blocks=lua_blocks,decoded_block_bytes=raw_bytes,groups=group_total,unique_group_type_hashes=len(group_types),unique_script_family_hashes=len(script_families),worldid_null_records=worldid_null,records_with_name_data=names_count,other_dataresource_classes=dict(other_classes),unknown_ref10_classification=dict(ref10),layout_errors=len(errors),first_errors=errors[:10],entry_digest=digest.hexdigest())
-          print('RESULT',json.dumps(result,sort_keys=True),flush=True)
-          pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(result))
-          assert done==len(targets) and valid==done and not fail and not ref_errors,result
+              for root in (0,8,16):
+                  count=Q(data,root+0x20);rel=L(data,root+0x28);base=root+0x38+rel
+                  if not (0<count<=100000 and base>=0 and base+count*32<=len(data)):continue
+                  hashes=[U(data,base+32*j) for j in range(count)]
+                  bad=sum(hashes[j]>=hashes[j+1] for j in range(count-1))
+                  cats=collections.Counter(data[base+32*j+0x18] for j in range(count))
+                  matches={}
+                  for key in keys:
+                      matches[f'{key:08x}']=[dict(index=j,raw=data[base+32*j:base+32*(j+1)].hex()) for j,h in enumerate(hashes) if h==key]
+                  related=[]
+                  for off in (0x8,0x10,0x20,0x30,0x40,0x48,0x50):
+                      if root+off+16>len(data):continue
+                      n=Q(data,root+off);r=L(data,root+off+8);p=root+off+8+r+16
+                      if 0<n<=100000 and 0<=p<len(data):related.append(dict(off=off,count=n,start=p,marker=f'{U(data,p-4):08x}' if p>=4 else None))
+                  candidates.append(dict(root=root,count=count,base=base,relative=rel,unsorted=bad,unique=len(set(hashes)),category_counts=dict(cats),matches=matches,first=[f'{h:08x}' for h in hashes[:5]],last=[f'{h:08x}' for h in hashes[-5:]],related=related))
+                  if bad==0:
+                      print('INCIDENT_INDEX_DIGEST',hashlib.sha256(b''.join(struct.pack('<I',h) for h in hashes)).hexdigest(),flush=True)
+              print('INCIDENT_CATALOGUE',json.dumps(candidates),flush=True)
+              assert any(x['unsorted']==0 and x['unique']==x['count'] for x in candidates)
+          pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
           python - <<'PY'
           import json,os,subprocess,sys
           rows=json.loads(os.environ['GROUP_ROWS'])
           failed=[]
-          for fam,stem,patch,pin,n,k in rows:
-              env=os.environ|{'FAMILY':fam,'STEM':stem,'PATCH':str(patch),'PIN':pin,'EXPECTED_TABLES':str(n),'EXPECTED_BLOCKS':str(k)}
+          for fam,stem,patch,pin,n,k,entry in rows:
+              env=os.environ|{'FAMILY':fam,'STEM':stem,'PATCH':str(patch),'PIN':pin,'EXPECTED_TABLES':str(n),'EXPECTED_BLOCKS':str(k),'ENTRY':str(entry)}
               p=subprocess.run([sys.executable,'scan.py'],env=env)
               if p.returncode:failed.append(fam)
           print('GROUP_FAILURES',failed,flush=True)
           sys.exit(bool(failed))
           PY
-      - name: Publish research status (no raw package uploads)
+      - name: Publish incident research status (no raw data uploads)
         if: always()
         run: |
           state=success
           if [ "${{ job.status }}" != success ]; then state=failure; fi
-          desc=$(python -c 'import glob,json; a=[json.load(open(x)) for x in glob.glob("result_*.json")]; print("{} tables; {} records; {} layout errors".format(sum(x["decoded_tables"] for x in a),sum(x["spawn_records"] for x in a),sum(x["layout_errors"] for x in a)))')
-          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-full-oodle/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="$desc"
+          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-incident-catalogue/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Incident catalogue extraction audit"
