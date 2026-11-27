@@ -1,4 +1,4 @@
-name: D1 targeted original progression gate producer extraction
+name: D1 original activity derived flag projections
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -196,15 +196,36 @@ jobs:
                   n,p=span(data,0,8,16,16)
                   for j in range(n):
                       v=ptr(data,p+j*16+8);ident=dict(index=j,hash=f'{U(data,v):08x}')
+                      row=dict(**ident,checkpoints=[],direct=[],conditional=[],stage=[],gate=H(data,v+0xa0))
                       z=ptr(data,v+0x50)
                       if z is not None:
                           c,b2=span(data,z,0,8,8)
-                          rows=[dict(hash=f'{U(data,b2+k*8):08x}',flag=H(data,b2+k*8+4),terminal=H(data,b2+k*8+6)) for k in range(c)]
-                          hits('checkpoint_primary_flag',ident,[r['flag'] for r in rows])
-                          hits('checkpoint_terminal_flag',ident,[r['terminal'] for r in rows])
-                          result.append(dict(**ident,checkpoints=rows))
-                      if j==164:
-                          print('PROLOGUE_DEFINITION_WORDS',json.dumps(dict(index=j,hash=ident['hash'],words=[f'{U(data,v+4*k):08x}' for k in range(43)],checkpoints=rows if z is not None else [])),flush=True)
+                          row['checkpoints']=[dict(hash=f'{U(data,b2+k*8):08x}',flag=H(data,b2+k*8+4),terminal=H(data,b2+k*8+6)) for k in range(c)]
+                      def ops(o,co,ro):
+                          n,p=span(data,o,co,ro,4)
+                          return [dict(flag=H(data,p+4*k),value=data[p+4*k+2]) for k in range(n)]
+                      row['direct']=ops(v,0x68,0x70)
+                      hits('activity_projection_direct',ident,[x['flag'] for x in row['direct']])
+                      c,b2=span(data,v,0x78,0x80,40)
+                      for k in range(c):
+                          w=b2+k*40
+                          q,p2=span(data,w,0,8,8)
+                          exp=[[data[p2+l*8],I(data,p2+l*8+4)] for l in range(q)]
+                          os2=ops(w,0x18,0x20)
+                          row['conditional'].append(dict(expression=exp,ops=os2))
+                          hits('activity_projection_conditional',dict(**ident,selector=k,expression=exp),[x['flag'] for x in os2])
+                      z=ptr(data,v+0x18)
+                      if z is not None:
+                          # stage container z+8 count, z+10 relative, native pre-row address z+10+rel
+                          c,b2=span(data,z,8,0x10,56)
+                          for k in range(c):
+                              w=b2+k*56
+                              os2=ops(w,0x28,0x30)
+                              row['stage'].append(dict(index=k,ops=os2))
+                              hits('activity_projection_stage',dict(**ident,stage=k),[x['flag'] for x in os2])
+                      result.append(row)
+                      if j==164 or any(x['flag'] in wanted for x in row['direct']):
+                          print('ACTIVITY_PROJECTION_EXAMPLE',json.dumps(row),flush=True)
               elif i==8127:
                   n,p=span(data,0,8,16,64)
                   for j in range(n):
@@ -235,7 +256,7 @@ jobs:
                   # Distinguish untyped aligned candidate hits from structurally proven producers.
                   words=[dict(offset=k,value=H(data,k)) for k in range(0,len(data)-1,2) if H(data,k) in wanted]
                   print('GLOBAL_RAW_GATE_CANDIDATES',json.dumps(dict(entry=i,tag=identity,header=data[:96].hex(),hits=words[:80],total=len(words))),flush=True)
-          print('GATE_PRODUCER_AUDIT',json.dumps(dict(family=f'{family:04x}',entry=int(os.environ['ENTRY']),totals=dict(totals),sources=sources,collection_item_count=len(result),checkpoint_count=sum(len(r.get('checkpoints',[])) for r in result),checkpoint_activities=sum(bool(r.get('checkpoints')) for r in result))),flush=True)
+          print('GATE_PRODUCER_AUDIT',json.dumps(dict(family=f'{family:04x}',entry=int(os.environ['ENTRY']),totals=dict(totals),sources=sources,collection_item_count=len(result),checkpoint_count=sum(len(r.get('checkpoints',[])) for r in result),checkpoint_activities=sum(bool(r.get('checkpoints')) for r in result),projection_counts={k:sum(len(r.get(k,[])) for r in result) for k in ('direct','conditional','stage')})),flush=True)
           pathlib.Path(f'gate-sources-{family:04x}-{os.environ["ENTRY"]}.json').write_text(json.dumps(dict(sources=sources,collection_refs=result)))
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(dict(decoded_tables=1,spawn_records=0,layout_errors=0)))
           PY
