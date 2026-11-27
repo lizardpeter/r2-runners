@@ -1,0 +1,174 @@
+name: D1 Oodle activity research canary
+on:
+  push:
+    branches: [research/d1-oodle-activity-canary-20261127]
+permissions:
+  contents: read
+  statuses: write
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {family: "025c", stem: "ps4_cosmo_activities_activity_025c", patch: 5}
+          - {family: "0261", stem: "ps4_cosmo_activities_activity_0261", patch: 5}
+          - {family: "02a6", stem: "ps4_moon_activities_activityo_02a6", patch: 5}
+          - {family: "03f0", stem: "ps4_venus_activities_activity_03f0", patch: 5}
+          - {family: "0447", stem: "ps4_moon_hive_raid1_activitie_0447", patch: 4}
+          - {family: "0538", stem: "ps4_hiveship_activities_activ_0538", patch: 4}
+          - {family: "07cf", stem: "ps4_cosmo_plaguelands_activit_07cf", patch: 3}
+    env:
+      GH_TOKEN: ${{ github.token }}
+      FAMILY: ${{ matrix.family }}
+      STEM: ${{ matrix.stem }}
+      PATCH: ${{ matrix.patch }}
+      LINOODLE_SKIP_DLLMAIN: "1"
+    steps:
+      - name: Mark canary running
+        run: |
+          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state=pending -f context="d1-oodle/$FAMILY" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Authenticating original blocks and decoding D912"
+      - name: Install previously verified Oodle 3 bridge
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 https://raw.githubusercontent.com/Crauzer/OodleSharp/master/OodleSharp/oo2core_3_win64.dll -o oo2core_3_win64.dll
+          curl -fsSL --retry 3 https://raw.githubusercontent.com/v4nguard/tiger-pkg/657f41c0851001b2d371592b2f7a5cb9c686ddb4/liblinoodle3.so -o liblinoodle3.so
+          echo '682c0aad216fae443e0f9561876cfabfddaeffcd48e5990613ad2cf47c49fa62  oo2core_3_win64.dll' | sha256sum -c
+          echo '0167cfd2b31623ce15afd129c3ad568776d63af223824ab085254b7ea0730e35  liblinoodle3.so' | sha256sum -c
+      - name: Decompress exact source activity blocks and validate tables
+        run: |
+          set -euo pipefail
+          export LD_LIBRARY_PATH="$PWD"
+          export OODLE_DLL="$PWD/oo2core_3_win64.dll"
+          cat > scan.py <<'PY'
+          import os,sys,ctypes,struct,hashlib,urllib.request,time,json,subprocess,tempfile,pathlib,collections
+          from concurrent.futures import ThreadPoolExecutor
+          B=0x40000
+          U=lambda b,o:struct.unpack_from('<I',b,o)[0]
+          Q=lambda b,o:struct.unpack_from('<Q',b,o)[0]
+          H=lambda b,o:struct.unpack_from('<H',b,o)[0]
+          I=lambda b,o:struct.unpack_from('<i',b,o)[0]
+          L=lambda b,o:struct.unpack_from('<q',b,o)[0]
+          if len(sys.argv)>1 and sys.argv[1]=='decode':
+              source=pathlib.Path(sys.argv[2]).read_bytes()
+              dest=pathlib.Path(sys.argv[3])
+              used=int(sys.argv[4])
+              dll=ctypes.CDLL(os.path.abspath('liblinoodle3.so'))
+              fn=dll.OodleLZ_Decompress
+              fn.restype=ctypes.c_int64
+              fn.argtypes=[ctypes.c_void_p,ctypes.c_int64,ctypes.c_void_p,ctypes.c_int64,ctypes.c_int,ctypes.c_int,ctypes.c_int]+[ctypes.c_void_p]*6+[ctypes.c_int]
+              src=ctypes.create_string_buffer(source)
+              start=max(0x4000,(used+0x3fff)&~0x3fff)
+              sizes=list(dict.fromkeys([B,start]+list(range(start,B+1,0x4000))))
+              for size in sizes:
+                  if size<used or size>B:continue
+                  for fuzz,verb in [(1,0),(0,0),(1,1)]:
+                      dst=ctypes.create_string_buffer(size)
+                      n=fn(src,len(source),dst,size,fuzz,0,verb,None,None,None,None,None,None,3)
+                      if n==size:
+                          dest.write_bytes(dst.raw[:n]);print('DECODE',n);sys.exit(0)
+              sys.exit(2)
+          stem=os.environ['STEM'];patch=int(os.environ['PATCH']);family=int(os.environ['FAMILY'],16)
+          origin='https://r2.houseofkublai.com/destiny/CUSA00219_01.33/packages/'
+          def get(p,off=None,n=None):
+              url=origin+stem+'_'+str(p)+'.pkg'
+              for attempt in range(3):
+                  try:
+                      req=urllib.request.Request(url,headers={'Range':f'bytes={off}-{off+n-1}'} if off is not None else {})
+                      with urllib.request.urlopen(req,timeout=60) as r:
+                          if off is not None:
+                              assert r.status==206,(r.status,'expected range response')
+                              assert r.headers['Content-Range'].startswith(f'bytes {off}-{off+n-1}/')
+                          v=r.read()
+                      if n is not None:assert len(v)==n
+                      return v
+                  except Exception:
+                      if attempt==2:raise
+                      time.sleep(1)
+          b=get(patch)
+          assert H(b,0)==24 and H(b,4)==family and H(b,0x20)==patch
+          ec,eo,bc,bo=U(b,0xb4),U(b,0xb8),U(b,0xd0),U(b,0xd4)
+          assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
+          assert hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0xbc:0xd0]
+          assert hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0xd8:0xec]
+          used=[0]*bc;targets=[];needed=set()
+          def spans(i):
+              p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
+              while sz:
+                  assert k<bc
+                  n=min(sz,B-o);yield k,o,n;sz-=n;k+=1;o=0
+          for i in range(ec):
+              s=list(spans(i))
+              for k,o,n in s:used[k]=max(used[k],o+n)
+              if U(b,eo+i*16)==0x808012d9 and U(b,eo+i*16+4)&255==16 and s:
+                  targets.append((i,s));needed.update(k for k,o,n in s)
+          print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
+          def block(k):
+              p=bo+k*32;off,n,owner,flags=struct.unpack_from('<IIHH',b,p)
+              raw=get(owner,off,n) if owner!=patch else b[off:off+n]
+              assert hashlib.sha1(raw).digest()==b[p+12:p+32],('SHA1',k)
+              if flags==0:
+                  assert len(raw)>=used[k]
+                  return k,raw,None
+              if flags!=1:return k,None,('flags',flags)
+              with tempfile.TemporaryDirectory() as d:
+                  a=pathlib.Path(d)/'stored';z=pathlib.Path(d)/'raw';a.write_bytes(raw)
+                  r=subprocess.run([sys.executable,__file__,'decode',str(a),str(z),str(used[k])],capture_output=True,timeout=60)
+                  if r.returncode or not z.exists():return k,None,('decode',r.returncode)
+                  data=z.read_bytes()
+                  assert used[k]<=len(data)<=B
+                  return k,data,None
+          cache={};fail={}
+          with ThreadPoolExecutor(max_workers=4) as ex:
+              for k,data,error in ex.map(block,sorted(needed)):
+                  if error:fail[k]=error
+                  else:cache[k]=data
+          print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
+          def dyn(data,o,stride):
+              assert o+16<=len(data)
+              count=I(data,o);start=o+8+L(data,o+8)+16
+              assert count>=0 and (count==0 or 0<=start<=start+count*stride<=len(data))
+              return count,start
+          def ptr(data,o):
+              assert o+8<=len(data)
+              rel=L(data,o)
+              if not rel:return None,None
+              t=o+rel;assert 4<=t<=len(data)
+              return t,U(data,t-4)
+          done=valid=records=locations=lua=0;errors=[];families=set()
+          digest=hashlib.sha256()
+          for i,s in targets:
+              if any(k not in cache for k,o,n in s):continue
+              data=b''.join(cache[k][o:o+n] for k,o,n in s);done+=1
+              digest.update(struct.pack('<I',i));digest.update(hashlib.sha256(data).digest())
+              lua+=data.count(b'\x1bLua')
+              try:
+                  assert len(data)>=0x40
+                  groups,g=dyn(data,0x20,0x38);loc,_=dyn(data,0x30,0x30)
+                  rec=0;ent=[]
+                  for j in range(groups):
+                      num,a=dyn(data,g+j*0x38+8,0x10)
+                      for x in range(num):
+                          t,c=ptr(data,a+x*0x10)
+                          assert c==0x80800406 and t+0x90<=len(data)
+                          ent.append(U(data,t));rec+=1
+                  valid+=1;records+=rec;locations+=loc;families.update(ent)
+              except (AssertionError,struct.error) as e:errors.append((i,str(e)))
+          result=dict(family=f'{family:04x}',target_tables=len(targets),blocks=len(needed),decoded_blocks=len(cache),failed_blocks=len(fail),decoded_tables=done,structurally_valid_tables=valid,spawn_records=records,location_rows=locations,entity_families=len(families),lua_magic_hits=lua,layout_errors=len(errors),first_errors=errors[:10],entry_digest=digest.hexdigest())
+          print('RESULT',json.dumps(result,sort_keys=True),flush=True)
+          pathlib.Path('result.json').write_text(json.dumps(result))
+          assert done==len(targets) and valid==done and not fail,result
+          PY
+          python scan.py
+      - name: Publish research status (no raw package uploads)
+        if: always()
+        run: |
+          state=success
+          if [ "${{ job.status }}" != success ]; then state=failure; fi
+          desc="Research run did not complete"
+          if [ -f result.json ]; then
+            desc=$(python -c 'import json; d=json.load(open("result.json")); print(f"{d[chr(100)+chr(101)+chr(99)+chr(111)+chr(100)+chr(101)+chr(100)+chr(95)+chr(116)+chr(97)+chr(98)+chr(108)+chr(101)+chr(115)]}/{d[chr(116)+chr(97)+chr(114)+chr(103)+chr(101)+chr(116)+chr(95)+chr(116)+chr(97)+chr(98)+chr(108)+chr(101)+chr(115)]} decoded; {d[chr(115)+chr(112)+chr(97)+chr(119)+chr(110)+chr(95)+chr(114)+chr(101)+chr(99)+chr(111)+chr(114)+chr(100)+chr(115)]} spawn records; {d[chr(108)+chr(97)+chr(121)+chr(111)+chr(117)+chr(116)+chr(95)+chr(101)+chr(114)+chr(114)+chr(111)+chr(114)+chr(115)]} layout errors")')
+          fi
+          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-oodle/$FAMILY" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="$desc"
