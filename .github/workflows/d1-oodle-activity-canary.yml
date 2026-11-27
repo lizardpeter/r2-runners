@@ -1,4 +1,4 @@
-name: D1 exact original activity completion specialization conditions
+name: D1 original kill specialization predicates and event schema census
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,8 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "investment-incident"
-            rows: '[["0131","ps4_investment_globals_0131",6,"47bdd13ca9b0186318077ef6ea0b1b0fa38dce2f406658253857af6503de9ecc",1,3,6774]]'
+          - group: "world-incident"
+            rows: '[["072b","ps4_globals_com01_072b",5,"37dfe6dab82e1edfad632252b324052ac12ccc59dc16e60c4ae31ff606fe6eff",1,4,1432]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -170,35 +170,37 @@ jobs:
               p=o+r
               assert 0<=p<len(data),(o,r,p,len(data))
               return p
+          sizes={0x808021a3:1024,0x80800779:52,0x808008e5:36,0x808005a2:28,0x80802389:104,0x8080076a:12,0x80800619:28,0x8080035f:32,0x80802234:40,0x80800666:20,0x8080055e:12,0x80802584:60,0x80802489:28,0x808003f7:12,0x80802b66:4,0x808002f1:12,0x808002ec:32,0x80802af5:72,0x808029f1:12,0x80800d7b:12,0x80800f42:20,0x808025dd:84}
           for i,sp in targets:
               data=b''.join(cache[k][o:o+n] for k,o,n in sp)
-              ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
-              assert len(data)==(info>>28)&0x3fffffff and ref==0x80800659
-              assert hashlib.sha256(data).hexdigest()==({0x131:'3fb5e71876d70d98f798f0b194dac4f090d5d688bb81106866ab0a2a9f1968a4',0x72b:'2262854f7af6a194cd4e3b936150b9f17db54944f046c52c61a43ce4d91c5466'}[family])
+              assert hashlib.sha256(data).hexdigest()=='2262854f7af6a194cd4e3b936150b9f17db54944f046c52c61a43ce4d91c5466'
               n,p=span(data,0,0x20,0x28,32)
               assert n==3902
-              out=dict(family=f'{family:04x}',sha256=hashlib.sha256(data).hexdigest(),completion=[],specializations=[])
+              out=dict(sha256=hashlib.sha256(data).hexdigest(),kills=[],specializations=[])
               for j in range(n):
                   o=p+32*j
                   z=ptr(data,o+8)
                   cat=data[o+0x18]
                   marker=U(data,z-4)
-                  if cat==27:
-                      row=dict(index=j,key=f'{U(data,o):08x}',marker=f'{marker:08x}',offset=z,raw=data[z:z+({0x808003c2:16,0x808008c3:1,0x808003bc:1}[marker])].hex())
-                      if marker==0x808003c2:
-                          q=ptr(data,z+8)
-                          assert q is not None and U(data,q-4)==0x80800619
-                          row['nested']=dict(marker='80800619',offset=q,raw=data[q:q+28].hex(),words=[f'{U(data,q+4*k):08x}' for k in range(7)])
-                      out['completion'].append(row)
-                  if marker==0x808003c2:
-                      q=ptr(data,z+8)
-                      if q is not None:
-                          out['specializations'].append(dict(index=j,key=f'{U(data,o):08x}',category=cat,nested_marker=f'{U(data,q-4):08x}',outer=data[z:z+8].hex()))
-              assert len(out['completion'])==136
-              assert sum('nested' in x for x in out['completion'])==77
-              assert len(out['specializations'])<=2069
-              pathlib.Path(f'completion-{family:04x}.json').write_text(json.dumps(out))
-              print('COMPLETION_TABLE',json.dumps(dict(family=family,completion=len(out['completion']),specializations=len(out['specializations']),nested_counts=dict(collections.Counter(x['nested_marker'] for x in out['specializations'])))),flush=True)
+                  if marker!=0x808003c2:continue
+                  q=ptr(data,z+8)
+                  assert q is not None
+                  m=U(data,q-4)
+                  sz=sizes[m]
+                  assert q+sz<=len(data)
+                  row=dict(index=j,key=f'{U(data,o):08x}',category=cat,marker=f'{m:08x}',size=sz,sha256=hashlib.sha256(data[q:q+sz]).hexdigest())
+                  out['specializations'].append(row)
+                  if cat!=1:continue
+                  assert m==0x808021a3
+                  def subject(o):
+                      return dict(require_subject=data[o],require_byte=data[o+1],keys=[f'{U(data,o+k):08x}' for k in (4,8,12,16)],minmax=list(struct.unpack_from('<bb',data,o+0x14)),selector=data[o+0x16],selector2=struct.unpack_from('<b',data,o+0x17)[0],selector3=struct.unpack_from('<b',data,o+0x18)[0])
+                  def bitset(o):
+                      return dict(words=[f'{U(data,o+k*4):08x}' for k in range(32)],bypass=list(data[o+0x80:o+0x84]))
+                  row=dict(index=j,key=row['key'],sha256=row['sha256'],subjects=[subject(q),subject(q+0x1c)],require38=data[q+0x38],require39=data[q+0x39],key3c=f'{U(data,q+0x3c):08x}',masks80=[f'{U(data,q+0x80):08x}',f'{U(data,q+0x84):08x}'],masks80_words=[f'{U(data,q+0x88+k*4):08x}' for k in range(16)],masks80_bypass=list(data[q+0xc8:q+0xcc]),bitsets={f'{o:x}':bitset(q+o) for o in (0x120,0x1f8,0x318)},mask2c0=[f'{U(data,q+0x2c0):08x}',f'{U(data,q+0x2c4):08x}'],mask3e0=[f'{U(data,q+0x3e0):08x}',f'{U(data,q+0x3e4):08x}'],time_compare=data[q+0x3f8],time_threshold_bits=f'{U(data,q+0x3fc):08x}')
+                  out['kills'].append(row)
+              assert len(out['specializations'])==2069 and len(out['kills'])==524
+              pathlib.Path('kill-specializations.json').write_text(json.dumps(out))
+              print('KILL_SPECIALIZATIONS',json.dumps(dict(kills=len(out['kills']),specializations=len(out['specializations']),time_compares=dict(collections.Counter(x['time_compare'] for x in out['kills'])))),flush=True)
           PY
           python - <<'PY'
           import json,os,subprocess,sys
@@ -221,5 +223,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: d1-v35-completion-${{ matrix.group }}
-          path: completion-*.json
+          name: d1-v35-kill-specializations
+          path: kill-specializations.json
