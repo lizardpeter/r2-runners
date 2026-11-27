@@ -1,4 +1,4 @@
-name: D1 unique orchestration resources and exceptional reference analysis
+name: D1 grouped trigger firing area and placement reference arrays
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -623,6 +623,46 @@ jobs:
                           unknown_hits[cs]+=1
                           if len(unknown_examples)<35:unknown_examples.append([cs,f'{w:08x}',f'{p:08x}',f'{er:08x}',hits[:8]])
           print('ORCHESTRATION_DEDUP',json.dumps(dict(root=f'{root:08x}',unique=len(unique),stats=dict(substats),nested=dict(nested),dialogue_target_occurrences=dict(target_roles),unique_dialogue_targets=len(seen_obj),other_edges=graph_edges,examples=sub_examples,unknown_roles=dict(unknown_roles),unknown_hits=dict(unknown_hits),unknown_examples=unknown_examples),sort_keys=True),flush=True)
+          # V14 grouped-reference arrays: verify repeated count, class, stride and exact local reference identities.
+          grouped={0x80800548:(0x80800633,41,0x88),0x80800937:(0x8080067a,58,0x88),0x80800962:(0x808007cf,45,0x70),0x808008bc:(0x808008b0,44,0x70)}
+          containers=collections.Counter(); layouts=collections.Counter(); group_errors=[]; group_results=[]; seen4=set(); root_ids=set(); exact_entries=collections.Counter()
+          for tag,(key,rows,sd,names,hashes) in catalog.items():
+              for st in arr(sd,0x30,0x28):
+                  for q in arr(sd,st+0x18,4):
+                      w=U(sd,q)
+                      if w in (0,0xffffffff) or (tag,w) in seen4:continue
+                      seen4.add((tag,w)); c,p,_=parse_wrapper(w)
+                      if c not in grouped:continue
+                      cs=f'{c:08x}'; parentclass,k,first=grouped[c]; containers[cs]+=1
+                      try:
+                          assert p==parentclass
+                          er=U(load(w,0x808003f6),0xc); d=load(er,0x80800861); a,_=rp(d,0x10); b,_=rp(d,0x18); assert b is not None
+                          # The leading tuple is the first member; grouped table follows a dynamic-array header.
+                          def ref_at(o):
+                              if o+8>len(d):return None
+                              gg=U(d,o); kk=d[o+4]; ii=struct.unpack_from('<h',d,o+6)[0]
+                              if gg==key and kk==k and 0<=ii<len(names) and names[ii][0]==kk:return (gg,kk,ii,names[ii][1])
+                              return None
+                          lead=ref_at(b+0x1c)
+                          assert lead is not None,('lead',hex(w),hex(key))
+                          candidates=[]
+                          for off in range(8,first-15,8):
+                              at=b+off; count=Q(d,at); rel=L(d,at+8); start=at+8+rel+16
+                              if start!=b+first or not 0<count<=4096 or start+24*count>len(d):continue
+                              if Q(d,start-16)!=count:continue
+                              rr=[ref_at(start+24*i) for i in range(count)]
+                              if any(x is None for x in rr):continue
+                              candidates.append((off,count,U(d,start-8),rr))
+                          assert len(candidates)==1,('grouped_array_candidates',len(candidates),hex(w),hex(b))
+                          off,count,clsid,rr=candidates[0];assert rr[0]==lead
+                          layouts[f'{cs}:{off:x}:{first:x}:{clsid:08x}']+=1
+                          exact_entries[cs]+=count
+                          root_ids.update((gg,kk,ii) for gg,kk,ii,n in rr)
+                          group_results.append(dict(blueprint=f'{tag:08x}',wrapper=f'{w:08x}',er=f'{er:08x}',role=cs,parent=f'{p:08x}',key=f'{key:08x}',descriptor_offset=off,array_offset=first,row_class=f'{clsid:08x}',count=count,refs=[[f'{gg:08x}',kk,ii,n] for gg,kk,ii,n in rr],raw_first_row_words=[f'{U(d,b+first+i):08x}' for i in range(0,24,4)]))
+                      except Exception as ex:group_errors.append([cs,f'{w:08x}',str(ex)])
+          print('GROUPED_REFERENCE_ARRAYS',json.dumps(dict(root=f'{root:08x}',containers=dict(containers),layout_matches=dict(layouts),entry_occurrences=dict(exact_entries),unique_tuples=len(root_ids),parsed=len(group_results),errors=group_errors[:40],error_count=len(group_errors)),sort_keys=True),flush=True)
+          for i in range(0,len(group_results),10):print('GROUPED_REFERENCE_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=group_results[i:i+10]),separators=(',',':')),flush=True)
+          # Audit is exploratory: do not fail the existing source tests if a different grouped layout is present.
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
