@@ -1,4 +1,4 @@
-name: D1 triangulation and original AI tactical objective operand census
+name: D1 executable-confirmed three-byte triangles and eight-byte firing-area set members
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -1016,6 +1016,52 @@ jobs:
           print('V17_TRIANGULATION',json.dumps(dict(root=f'{root:08x}',stats=dict(v17hist),errors=v17errors[:40],error_count=len(v17errors),samples=v17samples),sort_keys=True),flush=True)
           print('V17_TACTICAL_OBJECTIVES',json.dumps(dict(root=f'{root:08x}',stats=dict(tacthist),errors=tacterrors[:30],error_count=len(tacterrors)),sort_keys=True),flush=True)
           for i in range(0,len(tactdetails),10):print('V17_TACTICAL_DETAILS',json.dumps(dict(root=f'{root:08x}',offset=i,rows=tactdetails[i:i+10]),separators=(',',':')),flush=True)
+          # V17 executable-confirmed packed 3-byte triangle and 8-byte influence member records.
+          geo17=collections.Counter(); geo17err=[]; geo17samples=[]; geo17seen=set()
+          for gr in group_results:
+              er=gr['er']; cs=gr['role']
+              if er in geo17seen:continue
+              geo17seen.add(er); d=load(int(er,16),0x80800861); b,_=rp(d,0x18)
+              fa_indices=[]
+              if cs=='80800548':
+                  fa_rows=arr(d,b+0x40,0x80)
+                  fa_indices=[I(d,o+8) for o in fa_rows]
+              for off,mc,kind in secondary[cs]:
+                  if kind not in (41,42,58):continue
+                  stride={41:0x80,42:0x20,58:0x120}[kind]
+                  for j,o in enumerate(arr(d,b+off,stride)):
+                      try:
+                          if kind in (41,58):
+                              ao=0x30 if kind==41 else 0xd0
+                              nv=I(d,o+ao); vv=o+ao+8+L(d,o+ao+8)+16
+                              nt=I(d,o+ao+0x10);tt=o+ao+0x18+L(d,o+ao+0x18)+16
+                              assert U(d,vv-8)==0x80800094 and U(d,tt-8)==0x80800903
+                              assert 3<=nv<=128 and 1<=nt<=65536 and tt+3*nt<=len(d)
+                              verts=[vec4(d,vv+i*16) for i in range(nv)]
+                              tri=[list(d[tt+i*3:tt+i*3+3]) for i in range(nt)]
+                              assert all(max(t)<nv and len(set(t))==3 for t in tri),('triangle',nv,nt,tri[:4])
+                              geo17[f'{kind}:valid']+=1;geo17[f'{kind}:triangles']+=nt
+                              geo17[f'{kind}:n_minus_2']+=nt==nv-2
+                              geo17[f'{kind}:all_vertices']+=set(i for t in tri for i in t)==set(range(nv))
+                              shoelace=abs(sum(verts[i][0]*verts[(i+1)%nv][1]-verts[(i+1)%nv][0]*verts[i][1] for i in range(nv)))/2
+                              area=sum(abs((verts[y][0]-verts[x][0])*(verts[z][1]-verts[x][1])-(verts[y][0]-verts[x][0])*(verts[y][1]-verts[x][1]))/2 for x,y,z in []) if False else sum(abs((verts[y][0]-verts[x][0])*(verts[z][1]-verts[x][1])-(verts[z][0]-verts[x][0])*(verts[y][1]-verts[x][1]))/2 for x,y,z in tri)
+                              geo17[f'{kind}:area_match']+=abs(shoelace-area)<=max(0.02,shoelace*0.001)
+                              geo17[f'{kind}:degenerate_xy']+=shoelace<1e-6
+                              if len(geo17samples)<12:geo17samples.append([kind,er,j,nv,nt,tri[:8],shoelace,area])
+                          else:
+                              cnt=I(d,o+0x10);p=o+0x18+L(d,o+0x18)+16
+                              geo17['42:sets']+=1
+                              if not cnt:geo17['42:empty']+=1;continue
+                              assert I(d,p-16)==cnt and U(d,p-8)==0x8080138c and p+cnt*8<=len(d)
+                              vals=[struct.unpack_from('<Ii',d,p+i*8) for i in range(cnt)]
+                              assert all(0<=idx<len(fa_indices) for _,idx in vals),('member_local_ordinal',len(fa_indices),vals[:4])
+                              geo17['42:nonempty_valid']+=1;geo17['42:members']+=cnt
+                              geo17['42:distinct_members']+=len(set(idx for _,idx in vals))==cnt
+                              for val,idx in vals:
+                                  geo17[f'42:word0:{val:08x}']+=1
+                              if len(geo17samples)<30:geo17samples.append([42,er,j,cnt,[[f'{v:08x}',i,fa_indices[i]] for v,i in vals[:12]]])
+                      except Exception as ex:geo17err.append([kind,er,j,str(ex)])
+          print('V17_NATIVE_GEOMETRY',json.dumps(dict(root=f'{root:08x}',stats=dict(geo17),error_count=len(geo17err),errors=geo17err[:50],samples=geo17samples),sort_keys=True),flush=True)
           # One reference catalog per proven identical group-signature, but retain variants separately.
           unique_catalog={}
           for tag,(key,rows,sd,names,hashes) in catalog.items():
