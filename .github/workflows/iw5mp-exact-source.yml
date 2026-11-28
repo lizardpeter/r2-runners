@@ -1,0 +1,35 @@
+name: IW5 Store exact executable source handoff
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/iw5mp-exact-source.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Retrieve exact pinned original from existing public R2 origin
+        shell: bash
+        run: |
+          set -euo pipefail
+          dst="$RUNNER_TEMP/iw5-source/mw3/DUMP"
+          mkdir -p "$dst"
+          curl --fail --location --retry 3 --output "$dst/iw5mp_ship.exe" \
+            https://r2.houseofkublai.com/mw3/DUMP/iw5mp_ship.exe
+          cd "$dst"
+          printf '%s  %s\n' '62ed2611dc422b9c0667d5ed390a79ee3d0e79fb88ee6a7ffa6bf638aa352a95' 'iw5mp_ship.exe' > SHA256SUMS
+          sha256sum --check SHA256SUMS
+      - name: Publish exact verified source for the current analysis session
+        uses: actions/upload-artifact@v4
+        with:
+          name: iw5mp-ship-exact-source
+          path: ${{ runner.temp }}/iw5-source/
+          if-no-files-found: error
+          retention-days: 1
