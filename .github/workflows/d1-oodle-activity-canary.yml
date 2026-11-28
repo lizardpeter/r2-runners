@@ -1,4 +1,4 @@
-name: D1 research orphan prototypes in three newly located script residues
+name: D1 research instruction-level semantics of original mission initialization
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -13,12 +13,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - group: "0260"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",1,-1,[[5946,5946]]]]'
-          - group: "0261"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",5,"2ac1b8471c355d4a79ba18671934428f31916715d5947ca603dc57d9081e8590",1,-1,[[6149,6149]]]]'
-          - group: "0262"
-            rows: '[["0262","ps4_cosmo_activities_activity_0262",5,"1310a07cc31f2615ad999976feb66b6b132c6329b56aa63a1e1decd61dbd7b62",1,-1,[[7197,7197]]]]'
+          - group: "texture-intermediate"
+            rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",1,-1,[[5941,5941]]]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -170,12 +166,11 @@ jobs:
               data=b''.join(cache[k][o:o+n] for k,o,n in sp)
               ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
               assert len(data)==(info>>28)&0x3fffffff
-              print('RESIDUE_ENTRY',json.dumps(dict(family=f'{family:04x}',entry=i,ref=f'{ref:08x}',sha256=hashlib.sha256(data).hexdigest(),size=len(data),spans=sp,owners=[H(b,bo+k*32+8) for k,o,n in sp])),flush=True)
+              assert hashlib.sha256(data).hexdigest()=='641e1ef4363c1d5020896709e6ea58cf540c4837e43948a1f844d064d083c378'
               import re
-              chunk=data
-              print('RESIDUE_IDENTIFIERS',json.dumps([[m.start(),m.group().decode('ascii','replace')] for m in re.finditer(rb'(?i)(?:[A-Za-z0-9_\\\\/.@-]{8,150}\.(?:lua|esp)|[A-Za-z_][A-Za-z_0-9]{2,100}_d_execute_impl|decl_name|upvalue_provider)',data)]),flush=True)
+              chunk=data[80144:89520]
               class Bad(Exception):pass
-              def parse_at(start,root=False,alignment=0):
+              def parse_at(start,root=False):
                   o=start
                   def take(n):
                       nonlocal o
@@ -199,18 +194,22 @@ jobs:
                       if unknown not in (0,1):raise Bad()
                       up=count(64);params=count(64);var=take(1)[0];ic=count(2048)
                   if var not in (1,2,3,4) or not ic:raise Bad()
-                  take((alignment-o)%4)
-                  ops=[be()>>25 for j in range(ic)]
+                  take((-o)%4)
+                  words=[be() for j in range(ic)]
+                  ops=[w>>25 for w in words]
                   if any(v>91 for v in ops):raise Bad()
-                  nc=count(512);strings=[]
+                  nc=count(512);strings=[];consts=[]
                   for j in range(nc):
                       typ=take(1)[0]
-                      if typ==0:pass
+                      if typ==0:consts.append([typ,None])
                       elif typ==1:
-                          if take(1)[0]>1:raise Bad()
-                      elif typ in (2,11):take(8)
-                      elif typ==3:take(4)
-                      elif typ==4:strings.append([j,st()])
+                          v=take(1)[0]
+                          if v>1:raise Bad()
+                          consts.append([typ,v])
+                      elif typ in (2,11):consts.append([typ,take(8).hex()])
+                      elif typ==3:consts.append([typ,struct.unpack('>f',take(4))[0]])
+                      elif typ==4:
+                          s=st();strings.append([j,s]);consts.append([typ,s if re.fullmatch(r'[A-Za-z_][A-Za-z_0-9./\\\\: -]{0,95}',s) else '<nonidentifier>'])
                       else:raise Bad()
                   if be()!=1:raise Bad()
                   lc=count(2048);locals=count(128);ups=count(64);line1=count(100000);line2=count(100000)
@@ -225,15 +224,11 @@ jobs:
                       loc.append(nm)
                   ups_names=[st() for j in range(ups)]
                   kids=count(128)
-                  return dict(start=start,end=o,root=root,alignment=alignment,up=up,params=params,var=var,instructions=ic,constants=nc,opcodes=dict(collections.Counter(ops)),debug_path=path,debug_name=name,line_range=[line1,line2],locals=loc,upvalue_names=ups_names,children=kids,identifiers=[[i,s] for i,s in strings if re.fullmatch(r'[A-Za-z_][A-Za-z_0-9./\\: -]{0,95}',s)])
+                  return dict(start=start,end=o,root=root,words=[f'{w:08x}' for w in words],consts=consts,lines=lines,up=up,params=params,var=var,instructions=ic,constants=nc,opcodes=dict(collections.Counter(ops)),debug_path=path,debug_name=name,line_range=[line1,line2],locals=loc,upvalue_names=ups_names,children=kids,identifiers=[[i,s] for i,s in strings if re.fullmatch(r'[A-Za-z_][A-Za-z_0-9./\\: -]{0,95}',s)])
               candidates=[]
-              for root in (False,True):
-                  for start in range(0,len(chunk)-24):
-                      if chunk[start:start+3]!=b'\x00\x00\x00':continue
-                      for alignment in range(4):
-                          try:candidates.append(parse_at(start,root,alignment))
-                          except (Bad,UnicodeError):pass
-              print('ORPHAN_PROTOTYPES',json.dumps(dict(chunk_start=0,chunk_bytes=len(chunk),candidates=candidates)),flush=True)
+              for start,root in [(238,True),(1215,False)]:
+                  candidates.append(parse_at(start,root))
+              print('ORPHAN_PROTOTYPES',json.dumps(dict(chunk_start=80144,chunk_bytes=len(chunk),candidates=candidates)),flush=True)
           PY
           python - <<'PY'
           import json,os,subprocess,sys
