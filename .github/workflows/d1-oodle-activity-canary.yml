@@ -1,4 +1,4 @@
-name: D1 independent internal alpha hostonly package script census
+name: D1 research alpha archive public download canary
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -78,7 +78,8 @@ jobs:
                   except Exception:
                       if attempt==2:raise
                       time.sleep(1)
-          listing=urllib.request.urlopen(url.rsplit('/',1)[0]+'/packages.txt',timeout=60).read()
+          listing=subprocess.check_output(['curl','-fsSL','--retry','2',url.rsplit('/',1)[0]+'/packages.txt'])
+          print('ALPHA_MANIFEST_OK',len(listing),hashlib.sha256(listing).hexdigest(),flush=True)
           names=set(listing.decode().splitlines())
           assert len(names)==133
           # Tar header-only census; each valid header verifies its own checksum.
