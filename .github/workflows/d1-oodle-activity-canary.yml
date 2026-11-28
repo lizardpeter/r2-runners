@@ -1,4 +1,4 @@
-name: D1 research remaining activity texture-residue census
+name: D1 independent internal alpha hostonly package script census
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -8,100 +8,13 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     strategy:
       fail-fast: false
-      max-parallel: 12
       matrix:
         include:
-          - group: "0244"
-            rows: '[["0244","ps4_city_tower_ambient_activi_0244",5,"1537bc62b74f19065c7e1416e3a7eb2b49429f6458024f716ecb255e871f93bf",49,6]]'
-          - group: "04ca"
-            rows: '[["04ca","ps4_reef_activities_activityo_04ca",4,"110843c874fd79c38752d9ac6c4482aa0b6ec5d40057e877c9be8f306d57abce",152,3]]'
-          - group: "065b"
-            rows: '[["065b","ps4_marathon_titan_activities_065b",4,"38da94e9d8e0584e7eb60f8642851bb486827219224cab9368f6721b4ef2173e",19,1]]'
-          - group: "053f"
-            rows: '[["053f","ps4_hiveship_ambient_activity_053f",4,"d397779f363786364e3e3a61e250e0c24ac03c0b0b109ec0b74bf46985d8a97e",417,15]]'
-          - group: "07d5"
-            rows: '[["07d5","ps4_cosmo_plaguelands_activit_07d5",3,"f7671ae60c471d05c34f8ea94ca0d1b8ef8731b36276fcd35509ae5136683715",142,8]]'
-          - group: "0268"
-            rows: '[["0268","ps4_cosmo_ambient_activityonl_0268",5,"4479b7565e52e4d6ff723c500dac0f8d2afc4531972d5c88e273a410c3804ec6",74,4]]'
-          - group: "0809"
-            rows: '[["0809","ps4_observatory_iron_activiti_0809",3,"3b132b3dd4aa1d99394ab0477833bbd0b5da99b1f43887f3eb92a2760a4197dd",19,2]]'
-          - group: "067a"
-            rows: '[["067a","ps4_hiveship_activities_activ_067a",4,"b9a687a08da461ea8a10d637ad3d048adfaf2d02bee03d6c4cab54e5244e2daa",42,1]]'
-          - group: "0285"
-            rows: '[["0285","ps4_mars_activities_activityo_0285",5,"6acd380360780efef94d64bf69d459466e6d0e5625b06dd651ff2e03ca949729",771,30]]'
-          - group: "0265"
-            rows: '[["0265","ps4_cosmo_ambient_activityonl_0265",5,"f7c9dfa3cd3c6ffb49ae94fd8af6240783c020731d1464185dbc0ffe235fbf74",295,15]]'
-          - group: "03fd"
-            rows: '[["03fd","ps4_venus_ambient_activityonl_03fd",5,"6a484699c51894ae8fd186e5a604295806fff696200874fe3cc382725bbb0656",86,4]]'
-          - group: "081d"
-            rows: '[["081d","ps4_fenrir_research_activitie_081d",3,"c8548555253b72a43fb140f4f18d91182fdee223fc79c270da845affde6c5ff6",47,2]]'
-          - group: "06f9"
-            rows: '[["06f9","ps4_marathon_warlock_activiti_06f9",4,"4a10289b167381e389971f0778bda852d4eaf4d8535e060987b1879f58a2b950",53,1]]'
-          - group: "07d2"
-            rows: '[["07d2","ps4_cosmo_plaguelands_activit_07d2",3,"59e0025c206a36cd612fc6edf5134eba268aee79cec7fd6161c77bf1445af8a4",331,9]]'
-          - group: "0286"
-            rows: '[["0286","ps4_mars_activities_activityo_0286",5,"35079c75f21885714469719cd8cfb584a33e498496614a1ac46b826fea594cd2",11,3]]'
-          - group: "0542"
-            rows: '[["0542","ps4_hiveship_ambient_activity_0542",4,"51e2c4b52d393a1d81b534255b157d8ef5b0f98d8fafe31197de81f523f849ab",93,3]]'
-          - group: "0797"
-            rows: '[["0797","ps4_pvp_tomb_activities_activ_0797",3,"27d5f37cbd83fedbeea7a956db2e59090e835bcfe0336c7510e0839fb1bdfdf0",1,1]]'
-          - group: "07de"
-            rows: '[["07de","ps4_cosmo_plaguelands_ambient_07de",3,"5f8ea30a40d754c2e23fe1cfae0a0eefd6e8d04486ba9dc63aa481dfb3262a7e",482,17]]'
-          - group: "028d"
-            rows: '[["028d","ps4_mars_ambient_activityonly_028d",5,"c4381ae64593a66006ee34d544b7b98a0a06fe89b5c53fe600ca8c35b2df0d83",203,8]]'
-          - group: "07e1"
-            rows: '[["07e1","ps4_cosmo_plaguelands_ambient_07e1",3,"2b052bceaff03321ea92f4cbcc240599a64e7badd615e907ebd9553e9573f00d",133,5]]'
-          - group: "082f"
-            rows: '[["082f","ps4_fenrir_fireworks_activiti_082f",3,"0da4a9b116536ffb31245fb8d03760694e125d0c6329aabe42f0fd58f7cdd4b9",73,2]]'
-          - group: "0843"
-            rows: '[["0843","ps4_pvp_srl_mercury01_activit_0843",1,"3f84dcf1e4e7f8d124a28d3853fb5df080ed48a86f59a19c8f2e378fe2f5d2fe",24,1]]'
-          - group: "0284"
-            rows: '[["0284","ps4_mars_activities_activityo_0284",5,"24a30e4980038c06d72bb81d037a85c34918d75a15be59738d468a0982803cbb",457,25]]'
-          - group: "02af"
-            rows: '[["02af","ps4_moon_ambient_activityonly_02af",5,"67cc91cb88b60c739d3158553960d11ff59d8d5090863774186c5b5c1c29ee21",229,9]]'
-          - group: "02ac"
-            rows: '[["02ac","ps4_moon_activities_activityo_02ac",5,"0d460d2947b9190bf8c043b6e157aa79d44d9268aaa6afe3f9a9ca2b8ac969e6",154,6]]'
-          - group: "08b2"
-            rows: '[["08b2","ps4_pvp_srl_mars01_activities_08b2",3,"732a07298c6bb4200c5774f49ed5c6537ad9115be581edd7d95ee300334878a2",26,2]]'
-          - group: "053d"
-            rows: '[["053d","ps4_hiveship_activities_activ_053d",4,"a81268ae79622465a9f41aeb14597dec4469bd5c2e14210747c9f5eafcbbe6b9",201,11]]'
-          - group: "04ce"
-            rows: '[["04ce","ps4_reef_activities_activityo_04ce",4,"dded056f354c2df1476cee935da0fd18189e80278eb085f5b785334ab5f06f12",141,2]]'
-          - group: "0896"
-            rows: '[["0896","ps4_pvp_srl_venus01_activitie_0896",3,"70a2308a3ce4435a6c8d88ac494f2c8755055c5a17dcb96ebce5460829b3d1ff",22,2]]'
-          - group: "03f6"
-            rows: '[["03f6","ps4_venus_activities_activity_03f6",5,"a716343340f5c24a2efbdaf4ffe8193d26645c989f552d0ced4b7304dacb68ab",369,22]]'
-          - group: "03fa"
-            rows: '[["03fa","ps4_venus_ambient_activityonl_03fa",5,"7f0c3353dea7f79bcc745086e6e7134f3a89317c111e88efadb67d07dd5c8460",226,18]]'
-          - group: "0289"
-            rows: '[["0289","ps4_mars_ambient_activityonly_0289",5,"cf0fb09c358af1982a6ad59e9fc71315428b609396b824d773c35de7165f0e6b",182,11]]'
-          - group: "04cf"
-            rows: '[["04cf","ps4_reef_activities_activityo_04cf",4,"5be9e3a9439206c9fa3512c0f7fbe0df0650307686ac50e4bdb631e6b5a89cd2",239,2]]'
-          - group: "02e2"
-            rows: '[["02e2","ps4_pvp_cabal_camp_activities_02e2",5,"4dd69a09795d409f5867370b996e16107037de5f03887be60fd90723164468fa",1,1]]'
-          - group: "0854"
-            rows: '[["0854","ps4_pvp_srl_cosmo01_activitie_0854",1,"b8a5202f9d7df32acaec69a71e9ff013b19e9bea1f3bd6e6555c4b82f7193ee5",19,1]]'
-          - group: "03f0"
-            rows: '[["03f0","ps4_venus_activities_activity_03f0",5,"e25f2019f10f05dc1c550c89a4b23e98d703642cbc6a9af4e4cb2bf18aea03c3",366,19]]'
-          - group: "023d"
-            rows: '[["023d","ps4_city_tower_activities_act_023d",5,"de0a2e4052602d26184d9f739678a0805b8cb8272f3758204700e1687cb55695",85,11]]'
-          - group: "02ad"
-            rows: '[["02ad","ps4_moon_activities_activityo_02ad",5,"8595fa84089fc6cb8a4faf28c2ec4d2961d3d609291c2eb61d461f5148c4a0b5",186,7]]'
-          - group: "06dd"
-            rows: '[["06dd","ps4_marathon_hunter_activitie_06dd",4,"cfe9224f7f58f46b8bd9455e0016ad455c5e6fb8ec68c691312c4bebe51eb72e",36,2]]'
-          - group: "0333"
-            rows: '[["0333","ps4_pvp_factory_activities_ac_0333",6,"28399e5706d6a9f509d9ac239ea63f0403553129530c38e744626c7f809097ca",1,1]]'
-          - group: "0280"
-            rows: '[["0280","ps4_mars_activities_activityo_0280",5,"665b688337d272fa2926681092fe7df40b2ceb404643b3f813c8675cad5e658b",373,19]]'
-          - group: "0553"
-            rows: '[["0553","ps4_impactsite_activities_act_0553",4,"c4e907612b03569c7ba10014fc3ecb25b407c1d712464c739268c14888d186c2",103,7]]'
-          - group: "0805"
-            rows: '[["0805","ps4_observatory_iron_activiti_0805",3,"47b34c760c4f1f7792e4046575a8323eb82a5a52a6055e06071dfc592520f088",65,2]]'
-          - group: "04d4"
-            rows: '[["04d4","ps4_reef_ambient_activityonly_04d4",4,"685f194f9a36151d9af806e395e09b322c5928bd481a9cfc6f8a01cbcd5ae8f6",11,1]]'
+          - group: "alpha-hostonly"
+            rows: '[]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -118,10 +31,6 @@ jobs:
           curl -fsSL --retry 3 https://raw.githubusercontent.com/v4nguard/tiger-pkg/657f41c0851001b2d371592b2f7a5cb9c686ddb4/liblinoodle3.so -o liblinoodle3.so
           echo '682c0aad216fae443e0f9561876cfabfddaeffcd48e5990613ad2cf47c49fa62  oo2core_3_win64.dll' | sha256sum -c
           echo '0167cfd2b31623ce15afd129c3ad568776d63af223824ab085254b7ea0730e35  liblinoodle3.so' | sha256sum -c
-      - name: Recover archive index once per worker
-        run: |
-          curl -fsSL --retry 3 https://github.com/lizardpeter/destiny-1/releases/download/d1-global-activity-index-r1/D1_CURRENT_ACTIVITY_INDEX.json -o activity-index.json
-          curl -fsSL --retry 3 https://crypt.cohae.dev/destiny/ps4/packages/latest/packages.txt -o packages.txt
       - name: Decompress exact source activity blocks and validate tables
         run: |
           set -euo pipefail
@@ -155,134 +64,98 @@ jobs:
                       if n==size:
                           dest.write_bytes(dst.raw[:n]);print('DECODE',n);sys.exit(0)
               sys.exit(2)
-          stem=os.environ['STEM'];patch=int(os.environ['PATCH']);family=int(os.environ['FAMILY'],16)
-          import bisect,re
-          base='https://crypt.cohae.dev/destiny/ps4/packages/latest'
-          def http(url,off=None,n=None):
+          import re, tarfile
+          url='https://crypt.cohae.dev/destiny/360_internal_alpha/packages.tar'
+          def readat(o,n):
               for attempt in range(3):
                   try:
-                      headers={'User-Agent':'d1-package-research/1.0'}
-                      if off is not None:headers['Range']=f'bytes={off}-{off+n-1}'
-                      with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=60) as r:
-                          if off is not None:
-                              assert r.status==206,(r.status,'expected range response')
-                              assert r.headers['Content-Range'].startswith(f'bytes {off}-{off+n-1}/')
-                          v=r.read()
-                      if n is not None:assert len(v)==n
+                      req=urllib.request.Request(url,headers={'Range':f'bytes={o}-{o+n-1}','User-Agent':'d1-package-research/1.0'})
+                      with urllib.request.urlopen(req,timeout=90) as res:
+                          assert res.status==206 and res.headers['Content-Range'].startswith(f'bytes {o}-{o+n-1}/')
+                          v=res.read()
+                      assert len(v)==n
                       return v
                   except Exception:
                       if attempt==2:raise
                       time.sleep(1)
-          index=json.loads(pathlib.Path('activity-index.json').read_bytes())
-          assert index['status']=='D1_REMOTE_ACTIVITY_INDEX_COMPLETE'
-          source=index['source']
-          sizes=list(map(int,source['part_sizes']))
-          starts=[0]
-          for n in sizes:starts.append(starts[-1]+n)
-          assert hashlib.sha256(pathlib.Path('packages.txt').read_bytes()).hexdigest()==source['package_list_sha256']
-          fam=index['package_families']
-          members=fam.get(f'{family:04X}') or fam.get(f'{family:04x}')
-          assert members
-          byname={pathlib.Path(x['name']).name:x for x in members}
-          def readat(off,n):
-              chunks=[]
-              while n:
-                  part=bisect.bisect_right(starts,off)-1
-                  assert 0<=part<len(sizes)
-                  local=off-starts[part];take=min(n,sizes[part]-local)
-                  chunks.append(http(f'{base}/packages.tar.{part+1:03d}',local,take))
-                  off+=take;n-=take
-              return b''.join(chunks)
-          def get(p,off=None,n=None):
-              name=stem+'_'+str(p)+'.pkg'
-              row=byname[name];start=int(row['data_offset']);size=int(row['size'])
-              if off is None:off=0;n=size
-              assert 0<=off<=off+n<=size
-              return readat(start+off,n)
-          b=get(patch)
-          pin=os.environ['PIN']
-          assert hashlib.sha256(b).hexdigest()==pin,('R2 logical snapshot mismatch',hashlib.sha256(b).hexdigest())
-          print('R2_LOGICAL_SNAPSHOT_MATCH',hashlib.sha256(b).hexdigest(),flush=True)
-          assert H(b,0)==24 and H(b,4)==family and H(b,0x20)==patch
-          ec,eo,bc,bo=U(b,0xb4),U(b,0xb8),U(b,0xd0),U(b,0xd4)
-          assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
-          assert hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0xbc:0xd0]
-          assert hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0xd8:0xec]
-          used=[0]*bc;targets=[];needed=set();d912=[];all_entries=[]
-          def spans(i):
-              p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
-              while sz:
-                  assert k<bc
-                  n=min(sz,B-o);yield k,o,n;sz-=n;k+=1;o=0
-          for i in range(ec):
-              s=list(spans(i))
-              for k,o,n in s:used[k]=max(used[k],o+n)
-              ref,typ=struct.unpack_from('<II',b,eo+i*16)
-              all_entries.append((i,s,ref,typ))
-              if ref==0x808012d9 and typ&255==16 and s:d912.append((i,s))
-              if s and typ&255==65:
-                  targets.append((i,s));needed.update(k for k,o,n in s)
-          print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
-          def block(k):
-              p=bo+k*32;off,n,owner,flags=struct.unpack_from('<IIHH',b,p)
-              raw=get(owner,off,n) if owner!=patch else b[off:off+n]
-              assert hashlib.sha1(raw).digest()==b[p+12:p+32],('SHA1',k)
-              if flags==0:
-                  assert len(raw)>=used[k]
-                  return k,raw,None
-              if flags!=1:return k,None,('flags',flags)
-              with tempfile.TemporaryDirectory() as d:
-                  a=pathlib.Path(d)/'stored';z=pathlib.Path(d)/'raw';a.write_bytes(raw)
-                  r=subprocess.run([sys.executable,__file__,'decode',str(a),str(z),str(used[k])],capture_output=True,timeout=60)
-                  if r.returncode or not z.exists():return k,None,('decode',r.returncode)
-                  data=z.read_bytes()
-                  assert used[k]<=len(data)<=B
-                  return k,data,None
-          cache={};fail={}
-          with ThreadPoolExecutor(max_workers=4) as ex:
-              for k,data,error in ex.map(block,sorted(needed)):
-                  if error:fail[k]=error
-                  else:cache[k]=data
-          print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
-          assert len(d912)==int(os.environ['EXPECTED_TABLES'])
-          owners=collections.defaultdict(list)
-          for i,s,ref,typ in all_entries:
-              for k,o,n in s:owners[k].append((o,o+n,i,ref,typ))
-          patterns={'magic':rb'\x1bLua','path':rb'(?i)(?:@?es[\\/][A-Za-z0-9_\\/.@-]{3,140}\.esp|[A-Za-z0-9_\\/.@-]{8,140}\.lua\b)','symbol':rb'(?:[A-Za-z_][A-Za-z_0-9]{2,100}_d_execute_impl|decl_name|upvalue_provider)'}
-          matches=collections.Counter();types=collections.Counter();records=[];paths=set();blocks_with=set();magic=[]
-          for k,data in cache.items():
-              for kind,pat in patterns.items():
-                  for m in re.finditer(pat,data):
-                      pos=m.start()
-                      hits=[dict(tag=f'{0x80800000+(family<<13)+i:08x}',type=f'{t&255}:{t>>24}',ref=f'{r:08x}',in_entry=pos-lo,available=hi-pos) for lo,hi,i,r,t in owners[k] if lo<=pos<hi]
-                      matches[kind]+=1;blocks_with.add(k)
-                      types[(kind,hits[0]['type'] if hits else 'unowned')]+=1
-                      value=m.group().decode('ascii','replace') if kind!='magic' else None
-                      if kind=='path':paths.add(value)
-                      rec=dict(kind=kind,block=k,offset=pos,value=value,owners=hits)
-                      if kind=='magic':
-                          rec['header']=data[pos:pos+24].hex()
-                          rec['sha256']=hashlib.sha256(data).hexdigest()
-                          rec['physical_owner']=H(b,bo+k*32+8)
-                          magic.append(rec)
-                      if kind=='path' or kind=='magic' or len(records)<100:records.append(rec)
-          result=dict(family=f'{family:04x}',target_tables=len(targets),decoded_tables=sum(all(k in cache for k,o,n in s) for i,s in targets),decoded_blocks=len(cache),total_blocks=bc,failed_blocks=len(fail),entry_bytes=sum(sum(n for k,o,n in s) for i,s in targets),decoded_block_bytes=sum(len(d) for d in cache.values()),counts=matches,owner_types={':'.join(k):v for k,v in types.items()},blocks_with_hits=len(blocks_with),unique_paths=len(paths),magic=magic,records=records[:200])
-          result['scope']='all blocks overlapping type65 resources; includes neighbors and padding'
-          print('FULL_BLOCK_RESULT',json.dumps(result,sort_keys=True),flush=True)
-          pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(result))
-          assert not fail and result['decoded_tables']==result['target_tables']
+          listing=urllib.request.urlopen(url.rsplit('/',1)[0]+'/packages.txt',timeout=60).read()
+          names=set(listing.decode().splitlines())
+          assert len(names)==133
+          # Tar header-only census; each valid header verifies its own checksum.
+          members={};o=0
+          while o<1904760832:
+              h=readat(o,512)
+              if h==bytes(512):break
+              t=tarfile.TarInfo.frombuf(h,'utf-8','strict')
+              if t.isfile():members[pathlib.PurePosixPath(t.name).name]=(o+512,t.size)
+              o+=512+((t.size+511)//512)*512
+          assert set(members)==names,(len(members),len(names),list(names-set(members))[:10])
+          print('ALPHA_INDEX',json.dumps(dict(entries=len(members),archive_bytes=1904760832,manifest_sha256=hashlib.sha256(listing).hexdigest(),headers_end=o,hostonly=[n for n in members if 'hostonly' in n])),flush=True)
+          be16=lambda b,o:struct.unpack_from('>H',b,o)[0]
+          be32=lambda b,o:struct.unpack_from('>I',b,o)[0]
+          be64=lambda b,o:struct.unpack_from('>Q',b,o)[0]
+          targets=[n for n in members if 'hostonly' in n or 'cosmo_activities' in n or 'venus_activities' in n or 'investment_globals' in n]
+          for name in targets:
+              off,size=members[name]
+              b=readat(off,size)
+              ver=be16(b,0);fam=be16(b,4);patch=be16(b,6)
+              if ver!=11:
+                  print('ALPHA_UNSUPPORTED',name,ver,flush=True);continue
+              ec,eo,bc,bo=be32(b,0x100),be32(b,0x104),be32(b,0x11c),be32(b,0x120)
+              assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
+              etok=hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0x108:0x11c]
+              btok=hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0x124:0x138]
+              used=[0]*bc;owners=collections.defaultdict(list)
+              for i in range(ec):
+                  ref,typ,info=struct.unpack_from('>IIQ',b,eo+i*16);s=(info>>28)&0x3fffffff;k=info&0x3fff;z=((info>>14)&0x3fff)*16
+                  while s:
+                      assert k<bc
+                      n=min(s,B-z);used[k]=max(used[k],z+n);owners[k].append((z,z+n,i,ref,typ));s-=n;k+=1;z=0
+              def block(k):
+                  p=bo+k*32;ofs,n,flags,owner=struct.unpack_from('>IIHH',b,p)
+                  raw=b[ofs:ofs+n]
+                  if len(raw)!=n:return k,None,'short',False
+                  ok=hashlib.sha1(raw).digest()==b[p+12:p+32]
+                  if not flags&1:return k,raw,None,ok
+                  with tempfile.TemporaryDirectory() as d:
+                      a=pathlib.Path(d)/'in';z=pathlib.Path(d)/'out';a.write_bytes(raw)
+                      r=subprocess.run([sys.executable,__file__,'decode',str(a),str(z),str(used[k])],capture_output=True,timeout=60)
+                      if r.returncode or not z.exists():return k,None,'decode',ok
+                      return k,z.read_bytes(),None,ok
+              hits=[];paths=set();cnt=collections.Counter();fail=[];hash_ok=0;total=0
+              with ThreadPoolExecutor(max_workers=4) as ex:
+                  for k,data,error,ok in ex.map(block,range(bc)):
+                      hash_ok+=ok
+                      if error:fail.append([k,error]);continue
+                      total+=len(data)
+                      for m in re.finditer(rb'\x1bLua',data):
+                          p=m.start();hdr=data[p:p+14];cnt['magic']+=1
+                          own=[[i,f'{r:08x}',f'{(t>>18)&255}:{t&255}',p-lo,hi-p] for lo,hi,i,r,t in owners[k] if lo<=p<hi]
+                          v=dict(block=k,offset=p,header=hdr.hex(),owners=own,sha256=hashlib.sha256(data).hexdigest(),valid_header=hdr[:6]==b'\x1bLua\x51\x0e')
+                          if v['valid_header']:
+                              cnt['custom_header']+=1
+                              # Verify the full type dictionary independently before counting a script candidate.
+                              try:
+                                  o=p+14
+                                  n=int.from_bytes(data[o:o+4],'big');o+=4
+                                  assert n==13
+                                  types=[]
+                                  for j in range(n):
+                                      typ,length=struct.unpack_from('>II',data,o);o+=8
+                                      assert typ==j and 1<=length<=32 and o+length<=len(data)
+                                      s=data[o:o+length];o+=length
+                                      assert s.endswith(b'\x00') and re.fullmatch(rb'T[A-Z0-9_]+\x00',s)
+                                      types.append(s[:-1].decode())
+                                  v['types']=types;v['type_table_end']=o-p;cnt['type_table_valid']+=1
+                              except (AssertionError,struct.error,UnicodeError):pass
+                          if len(hits)<100:hits.append(v)
+                      for m in re.finditer(rb'(?i)(?:@?es[\\/][A-Za-z0-9_\\/.@-]{3,140}\.esp|[A-Za-z0-9_\\/.@-]{8,140}\.lua\b)',data):
+                          cnt['path']+=1;paths.add(m.group().decode('ascii','replace'))
+              result=dict(name=name,family=f'{fam:04x}',patch=patch,sha256=hashlib.sha256(b).hexdigest(),entries=ec,blocks=bc,entry_table_sha1=etok,block_table_sha1=btok,stored_hash_ok=hash_ok,decoded_bytes=total,failed=fail[:30],failed_count=len(fail),counts=cnt,paths=sorted(paths)[:100],unique_paths=len(paths),magic=hits)
+              print('ALPHA_PACKAGE',json.dumps(result),flush=True)
+          print('ALPHA_COMPLETE',len(targets),flush=True)
           PY
-          python - <<'PY'
-          import json,os,subprocess,sys
-          rows=json.loads(os.environ['GROUP_ROWS'])
-          failed=[]
-          for fam,stem,patch,pin,n,k in rows:
-              env=os.environ|{'FAMILY':fam,'STEM':stem,'PATCH':str(patch),'PIN':pin,'EXPECTED_TABLES':str(n),'EXPECTED_BLOCKS':str(k)}
-              p=subprocess.run([sys.executable,'scan.py'],env=env)
-              if p.returncode:failed.append(fam)
-          print('GROUP_FAILURES',failed,flush=True)
-          sys.exit(bool(failed))
-          PY
+          python scan.py
       - name: Publish research status (no raw package uploads)
         if: always()
         run: |
