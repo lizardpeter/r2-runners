@@ -1,4 +1,4 @@
-name: D1 research historical physical block lineage and script signatures
+name: D1 research full opaque raid and story package block search
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -11,33 +11,33 @@ jobs:
     timeout-minutes: 20
     strategy:
       fail-fast: false
-      max-parallel: 8
+      max-parallel: 6
       matrix:
         include:
-          - group: "0260-p0"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",0,"",-1,-1]]'
-          - group: "0260-p1"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",1,"",-1,-1]]'
-          - group: "0260-p2"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",2,"",-1,-1]]'
-          - group: "0260-p3"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",3,"",-1,-1]]'
-          - group: "0260-p4"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",4,"",-1,-1]]'
-          - group: "0260-p5"
-            rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",-1,-1]]'
-          - group: "0261-p0"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",0,"",-1,-1]]'
-          - group: "0261-p1"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",1,"",-1,-1]]'
-          - group: "0261-p2"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",2,"",-1,-1]]'
-          - group: "0261-p3"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",3,"",-1,-1]]'
-          - group: "0261-p4"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",4,"",-1,-1]]'
-          - group: "0261-p5"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",5,"2ac1b8471c355d4a79ba18671934428f31916715d5947ca603dc57d9081e8590",-1,-1]]'
+          - group: "03f5"
+            rows: '[["03f5","ps4_venus_activities_activity_03f5",5,"9167edb065154d2afc39ed15190dae8ac0213a6b525db2e6436d532c023bd396",581,37]]'
+          - group: "07d4"
+            rows: '[["07d4","ps4_cosmo_plaguelands_activit_07d4",3,"0361e089b8301d4951124b40e80b467fa7ead21031728ac7f66f1ea07819fc09",242,14]]'
+          - group: "0447"
+            rows: '[["0447","ps4_moon_hive_raid1_activitie_0447",4,"012525f124c7a2c671f0f6f32ef4207bf07ae4a6496b4ae5897fe9b787395bf1",200,9]]'
+          - group: "03f3"
+            rows: '[["03f3","ps4_venus_activities_activity_03f3",6,"9ef75ca71d152210a290f888b78e8561af8da2ede857519a0c8d79cb0cccb3eb",326,29]]'
+          - group: "053e"
+            rows: '[["053e","ps4_hiveship_activities_activ_053e",4,"670400eac2033d78b4d632330cc6e8ccdbd1f1691b1c088a1adb89fb6fbcb2f2",291,16]]'
+          - group: "044b"
+            rows: '[["044b","ps4_moon_hive_raid1_activitie_044b",4,"0998dc5aefe35eea2f5b1c6637103acd6e20dbc13fec544e26eb8cbfff3eab43",49,2]]'
+          - group: "0538"
+            rows: '[["0538","ps4_hiveship_activities_activ_0538",4,"453763222619df768d6f304ecc1464f2ba582a75eb78d6da9439c0d21e91ce2e",302,23]]'
+          - group: "053b"
+            rows: '[["053b","ps4_hiveship_activities_activ_053b",4,"82fd87417244d42c0bd8c519fa4594e9ae1fd102375125b6bc2dc1c6a49cce6d",368,18]]'
+          - group: "02a6"
+            rows: '[["02a6","ps4_moon_activities_activityo_02a6",5,"f344538a2d68d7787494aa725467d3c5f7443209b29ac38517e8fa27c1c52493",124,5]]'
+          - group: "07cf"
+            rows: '[["07cf","ps4_cosmo_plaguelands_activit_07cf",3,"3864d97aece9e1b2576f3fde09da82fd5b0c398fb981d172ed476ca260e227a1",114,6]]'
+          - group: "02ab"
+            rows: '[["02ab","ps4_moon_activities_activityo_02ab",5,"8bdd14086cdfb8e08fe59b48541625218e3efa732ccd9d3dce4c4dec404bc21c",621,20]]'
+          - group: "02aa"
+            rows: '[["02aa","ps4_moon_activities_activityo_02aa",5,"8e6530fea66858b61e0b1cc794b172ae0f2c7a80c55df22a553f14d72d09d591",382,19]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -135,11 +135,9 @@ jobs:
               if off is None:off=0;n=size
               assert 0<=off<=off+n<=size
               return readat(start+off,n)
-          if stem+'_'+str(patch)+'.pkg' not in byname:
-              print('ABSENT_PATCH',family,patch,flush=True);sys.exit(0)
           b=get(patch)
           pin=os.environ['PIN']
-          assert not pin or hashlib.sha256(b).hexdigest()==pin,('R2 logical snapshot mismatch',hashlib.sha256(b).hexdigest())
+          assert hashlib.sha256(b).hexdigest()==pin,('R2 logical snapshot mismatch',hashlib.sha256(b).hexdigest())
           print('R2_LOGICAL_SNAPSHOT_MATCH',hashlib.sha256(b).hexdigest(),flush=True)
           assert H(b,0)==24 and H(b,4)==family and H(b,0x20)==patch
           ec,eo,bc,bo=U(b,0xb4),U(b,0xb8),U(b,0xd0),U(b,0xd4)
@@ -160,9 +158,7 @@ jobs:
               if ref==0x808012d9 and typ&255==16 and s:d912.append((i,s))
               if s:
                   targets.append((i,s));needed.update(k for k,o,n in s)
-          # Physical-owner scan: all declared blocks resident in this revision, even if unused.
-          needed={k for k in range(bc) if H(b,bo+k*32+8)==patch}
-          print('TARGETS',len(targets),'PHYSICAL_BLOCKS',len(needed),flush=True)
+          print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
           def block(k):
               p=bo+k*32;off,n,owner,flags=struct.unpack_from('<IIHH',b,p)
               raw=get(owner,off,n) if owner!=patch else b[off:off+n]
@@ -184,7 +180,7 @@ jobs:
                   if error:fail[k]=error
                   else:cache[k]=data
           print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
-          assert not fail
+          assert len(d912)==int(os.environ['EXPECTED_TABLES'])
           owners=collections.defaultdict(list)
           for i,s,ref,typ in all_entries:
               for k,o,n in s:owners[k].append((o,o+n,i,ref,typ))
@@ -203,15 +199,12 @@ jobs:
                       if kind=='magic':
                           rec['header']=data[pos:pos+24].hex()
                           rec['sha256']=hashlib.sha256(data).hexdigest()
-                          rec['stored_sha1']=b[bo+k*32+12:bo+k*32+32].hex()
-                          rec['physical_owner']=H(b,bo+k*32+8)
-                          rec['candidate_prefix_sha256']=hashlib.sha256(data[pos:pos+1513]).hexdigest()
                           magic.append(rec)
                       if kind=='path' or kind=='magic' or len(records)<100:records.append(rec)
-          result=dict(family=f'{family:04x}',patch=patch,package_sha256=hashlib.sha256(b).hexdigest(),physical_blocks=len(needed),target_tables=len(targets),decoded_tables=sum(all(k in cache for k,o,n in s) for i,s in targets),decoded_blocks=len(cache),total_blocks=bc,failed_blocks=len(fail),entry_bytes=sum(sum(n for k,o,n in s) for i,s in targets),decoded_block_bytes=sum(len(d) for d in cache.values()),counts=matches,owner_types={':'.join(k):v for k,v in types.items()},blocks_with_hits=len(blocks_with),unique_paths=len(paths),magic=magic,records=records[:200])
+          result=dict(family=f'{family:04x}',target_tables=len(targets),decoded_tables=sum(all(k in cache for k,o,n in s) for i,s in targets),decoded_blocks=len(cache),total_blocks=bc,failed_blocks=len(fail),entry_bytes=sum(sum(n for k,o,n in s) for i,s in targets),decoded_block_bytes=sum(len(d) for d in cache.values()),counts=matches,owner_types={':'.join(k):v for k,v in types.items()},blocks_with_hits=len(blocks_with),unique_paths=len(paths),magic=magic,records=records[:200])
           print('FULL_BLOCK_RESULT',json.dumps(result,sort_keys=True),flush=True)
           pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(result))
-          assert not fail and len(cache)==len(needed)
+          assert not fail and result['decoded_tables']==result['target_tables']
           PY
           python - <<'PY'
           import json,os,subprocess,sys
