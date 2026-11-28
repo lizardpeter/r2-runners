@@ -1,4 +1,4 @@
-name: D1 research Lua prototype boundary and debug-name inspection
+name: D1 research recover complete mission script fragments from logical block
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -168,6 +168,17 @@ jobs:
               assert len(data)==(info>>28)&0x3fffffff
               assert hashlib.sha256(data).hexdigest()=='641e1ef4363c1d5020896709e6ea58cf540c4837e43948a1f844d064d083c378'
               import re
+              assert len(sp)==1 and sp[0][0]==731
+              k,entry_start,entry_len=sp[0]
+              print('BLOCK_CONTEXT',json.dumps(dict(block=k,entry_start=entry_start,entry_size=entry_len,logical_block_len=len(cache[k]),sha256=hashlib.sha256(cache[k]).hexdigest())),flush=True)
+              data=cache[k]
+              print('SCRIPT_IDENTITIES_IN_BLOCK',json.dumps([[m.start(),m.group().decode('ascii','replace')[:180]] for m in re.finditer(rb'[A-Za-z0-9_\\\\./@-]{8,160}\.(?:esp|lua)',data,re.I)]),flush=True)
+              hits=[m.start() for m in re.finditer(b'\x1bLua',data)]
+              if len(hits)==2:
+                  p,q=hits
+                  eq=0
+                  while q+eq<len(data) and data[p+eq]==data[q+eq]:eq+=1
+                  print('COPY_COMMON_PREFIX',eq,flush=True)
               for m in re.finditer(b'\x1bLua',data):
                   pos=m.start()
                   print('CANDIDATE',json.dumps(dict(offset=pos,remaining=len(data)-pos,header=data[pos:pos+24].hex(),candidate_sha256=hashlib.sha256(data[pos:]).hexdigest())),flush=True)
