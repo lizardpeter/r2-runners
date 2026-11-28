@@ -1,4 +1,4 @@
-name: D1 research expanded activity script signature census
+name: D1 research bounded Lua candidate parsing and texture residue classification
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -8,121 +8,19 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 15
     strategy:
       fail-fast: false
-      max-parallel: 12
       matrix:
         include:
-          - group: "03f5"
-            rows: '[["03f5","ps4_venus_activities_activity_03f5",5,"9167edb065154d2afc39ed15190dae8ac0213a6b525db2e6436d532c023bd396",581,37]]'
-          - group: "07d4"
-            rows: '[["07d4","ps4_cosmo_plaguelands_activit_07d4",3,"0361e089b8301d4951124b40e80b467fa7ead21031728ac7f66f1ea07819fc09",242,14]]'
-          - group: "0244"
-            rows: '[["0244","ps4_city_tower_ambient_activi_0244",5,"1537bc62b74f19065c7e1416e3a7eb2b49429f6458024f716ecb255e871f93bf",49,6]]'
-          - group: "04ca"
-            rows: '[["04ca","ps4_reef_activities_activityo_04ca",4,"110843c874fd79c38752d9ac6c4482aa0b6ec5d40057e877c9be8f306d57abce",152,3]]'
-          - group: "065b"
-            rows: '[["065b","ps4_marathon_titan_activities_065b",4,"38da94e9d8e0584e7eb60f8642851bb486827219224cab9368f6721b4ef2173e",19,1]]'
-          - group: "053f"
-            rows: '[["053f","ps4_hiveship_ambient_activity_053f",4,"d397779f363786364e3e3a61e250e0c24ac03c0b0b109ec0b74bf46985d8a97e",417,15]]'
-          - group: "07d5"
-            rows: '[["07d5","ps4_cosmo_plaguelands_activit_07d5",3,"f7671ae60c471d05c34f8ea94ca0d1b8ef8731b36276fcd35509ae5136683715",142,8]]'
-          - group: "0809"
-            rows: '[["0809","ps4_observatory_iron_activiti_0809",3,"3b132b3dd4aa1d99394ab0477833bbd0b5da99b1f43887f3eb92a2760a4197dd",19,2]]'
-          - group: "067a"
-            rows: '[["067a","ps4_hiveship_activities_activ_067a",4,"b9a687a08da461ea8a10d637ad3d048adfaf2d02bee03d6c4cab54e5244e2daa",42,1]]'
-          - group: "0285"
-            rows: '[["0285","ps4_mars_activities_activityo_0285",5,"6acd380360780efef94d64bf69d459466e6d0e5625b06dd651ff2e03ca949729",771,30]]'
-          - group: "0265"
-            rows: '[["0265","ps4_cosmo_ambient_activityonl_0265",5,"f7c9dfa3cd3c6ffb49ae94fd8af6240783c020731d1464185dbc0ffe235fbf74",295,15]]'
-          - group: "03fd"
-            rows: '[["03fd","ps4_venus_ambient_activityonl_03fd",5,"6a484699c51894ae8fd186e5a604295806fff696200874fe3cc382725bbb0656",86,4]]'
-          - group: "081d"
-            rows: '[["081d","ps4_fenrir_research_activitie_081d",3,"c8548555253b72a43fb140f4f18d91182fdee223fc79c270da845affde6c5ff6",47,2]]'
-          - group: "06f9"
-            rows: '[["06f9","ps4_marathon_warlock_activiti_06f9",4,"4a10289b167381e389971f0778bda852d4eaf4d8535e060987b1879f58a2b950",53,1]]'
-          - group: "053e"
-            rows: '[["053e","ps4_hiveship_activities_activ_053e",4,"670400eac2033d78b4d632330cc6e8ccdbd1f1691b1c088a1adb89fb6fbcb2f2",291,16]]'
-          - group: "07d2"
-            rows: '[["07d2","ps4_cosmo_plaguelands_activit_07d2",3,"59e0025c206a36cd612fc6edf5134eba268aee79cec7fd6161c77bf1445af8a4",331,9]]'
-          - group: "0286"
-            rows: '[["0286","ps4_mars_activities_activityo_0286",5,"35079c75f21885714469719cd8cfb584a33e498496614a1ac46b826fea594cd2",11,3]]'
-          - group: "0542"
-            rows: '[["0542","ps4_hiveship_ambient_activity_0542",4,"51e2c4b52d393a1d81b534255b157d8ef5b0f98d8fafe31197de81f523f849ab",93,3]]'
-          - group: "0797"
-            rows: '[["0797","ps4_pvp_tomb_activities_activ_0797",3,"27d5f37cbd83fedbeea7a956db2e59090e835bcfe0336c7510e0839fb1bdfdf0",1,1]]'
-          - group: "0261"
-            rows: '[["0261","ps4_cosmo_activities_activity_0261",5,"2ac1b8471c355d4a79ba18671934428f31916715d5947ca603dc57d9081e8590",345,28]]'
-          - group: "07de"
-            rows: '[["07de","ps4_cosmo_plaguelands_ambient_07de",3,"5f8ea30a40d754c2e23fe1cfae0a0eefd6e8d04486ba9dc63aa481dfb3262a7e",482,17]]'
-          - group: "028d"
-            rows: '[["028d","ps4_mars_ambient_activityonly_028d",5,"c4381ae64593a66006ee34d544b7b98a0a06fe89b5c53fe600ca8c35b2df0d83",203,8]]'
-          - group: "07e1"
-            rows: '[["07e1","ps4_cosmo_plaguelands_ambient_07e1",3,"2b052bceaff03321ea92f4cbcc240599a64e7badd615e907ebd9553e9573f00d",133,5]]'
-          - group: "082f"
-            rows: '[["082f","ps4_fenrir_fireworks_activiti_082f",3,"0da4a9b116536ffb31245fb8d03760694e125d0c6329aabe42f0fd58f7cdd4b9",73,2]]'
-          - group: "0843"
-            rows: '[["0843","ps4_pvp_srl_mercury01_activit_0843",1,"3f84dcf1e4e7f8d124a28d3853fb5df080ed48a86f59a19c8f2e378fe2f5d2fe",24,1]]'
-          - group: "0284"
-            rows: '[["0284","ps4_mars_activities_activityo_0284",5,"24a30e4980038c06d72bb81d037a85c34918d75a15be59738d468a0982803cbb",457,25]]'
-          - group: "02af"
-            rows: '[["02af","ps4_moon_ambient_activityonly_02af",5,"67cc91cb88b60c739d3158553960d11ff59d8d5090863774186c5b5c1c29ee21",229,9]]'
-          - group: "02ac"
-            rows: '[["02ac","ps4_moon_activities_activityo_02ac",5,"0d460d2947b9190bf8c043b6e157aa79d44d9268aaa6afe3f9a9ca2b8ac969e6",154,6]]'
-          - group: "044b"
-            rows: '[["044b","ps4_moon_hive_raid1_activitie_044b",4,"0998dc5aefe35eea2f5b1c6637103acd6e20dbc13fec544e26eb8cbfff3eab43",49,2]]'
-          - group: "08b2"
-            rows: '[["08b2","ps4_pvp_srl_mars01_activities_08b2",3,"732a07298c6bb4200c5774f49ed5c6537ad9115be581edd7d95ee300334878a2",26,2]]'
-          - group: "0538"
-            rows: '[["0538","ps4_hiveship_activities_activ_0538",4,"453763222619df768d6f304ecc1464f2ba582a75eb78d6da9439c0d21e91ce2e",302,23]]'
-          - group: "053d"
-            rows: '[["053d","ps4_hiveship_activities_activ_053d",4,"a81268ae79622465a9f41aeb14597dec4469bd5c2e14210747c9f5eafcbbe6b9",201,11]]'
-          - group: "02a6"
-            rows: '[["02a6","ps4_moon_activities_activityo_02a6",5,"f344538a2d68d7787494aa725467d3c5f7443209b29ac38517e8fa27c1c52493",124,5]]'
-          - group: "04ce"
-            rows: '[["04ce","ps4_reef_activities_activityo_04ce",4,"dded056f354c2df1476cee935da0fd18189e80278eb085f5b785334ab5f06f12",141,2]]'
-          - group: "0896"
-            rows: '[["0896","ps4_pvp_srl_venus01_activitie_0896",3,"70a2308a3ce4435a6c8d88ac494f2c8755055c5a17dcb96ebce5460829b3d1ff",22,2]]'
-          - group: "03f6"
-            rows: '[["03f6","ps4_venus_activities_activity_03f6",5,"a716343340f5c24a2efbdaf4ffe8193d26645c989f552d0ced4b7304dacb68ab",369,22]]'
-          - group: "03fa"
-            rows: '[["03fa","ps4_venus_ambient_activityonl_03fa",5,"7f0c3353dea7f79bcc745086e6e7134f3a89317c111e88efadb67d07dd5c8460",226,18]]'
-          - group: "0289"
-            rows: '[["0289","ps4_mars_ambient_activityonly_0289",5,"cf0fb09c358af1982a6ad59e9fc71315428b609396b824d773c35de7165f0e6b",182,11]]'
-          - group: "04cf"
-            rows: '[["04cf","ps4_reef_activities_activityo_04cf",4,"5be9e3a9439206c9fa3512c0f7fbe0df0650307686ac50e4bdb631e6b5a89cd2",239,2]]'
-          - group: "02e2"
-            rows: '[["02e2","ps4_pvp_cabal_camp_activities_02e2",5,"4dd69a09795d409f5867370b996e16107037de5f03887be60fd90723164468fa",1,1]]'
-          - group: "0854"
-            rows: '[["0854","ps4_pvp_srl_cosmo01_activitie_0854",1,"b8a5202f9d7df32acaec69a71e9ff013b19e9bea1f3bd6e6555c4b82f7193ee5",19,1]]'
-          - group: "02ab"
-            rows: '[["02ab","ps4_moon_activities_activityo_02ab",5,"8bdd14086cdfb8e08fe59b48541625218e3efa732ccd9d3dce4c4dec404bc21c",621,20]]'
-          - group: "03f0"
-            rows: '[["03f0","ps4_venus_activities_activity_03f0",5,"e25f2019f10f05dc1c550c89a4b23e98d703642cbc6a9af4e4cb2bf18aea03c3",366,19]]'
-          - group: "023d"
-            rows: '[["023d","ps4_city_tower_activities_act_023d",5,"de0a2e4052602d26184d9f739678a0805b8cb8272f3758204700e1687cb55695",85,11]]'
-          - group: "02ad"
-            rows: '[["02ad","ps4_moon_activities_activityo_02ad",5,"8595fa84089fc6cb8a4faf28c2ec4d2961d3d609291c2eb61d461f5148c4a0b5",186,7]]'
-          - group: "06dd"
-            rows: '[["06dd","ps4_marathon_hunter_activitie_06dd",4,"cfe9224f7f58f46b8bd9455e0016ad455c5e6fb8ec68c691312c4bebe51eb72e",36,2]]'
-          - group: "0333"
-            rows: '[["0333","ps4_pvp_factory_activities_ac_0333",6,"28399e5706d6a9f509d9ac239ea63f0403553129530c38e744626c7f809097ca",1,1]]'
-          - group: "0280"
-            rows: '[["0280","ps4_mars_activities_activityo_0280",5,"665b688337d272fa2926681092fe7df40b2ceb404643b3f813c8675cad5e658b",373,19]]'
-          - group: "02aa"
-            rows: '[["02aa","ps4_moon_activities_activityo_02aa",5,"8e6530fea66858b61e0b1cc794b172ae0f2c7a80c55df22a553f14d72d09d591",382,19]]'
-          - group: "0553"
-            rows: '[["0553","ps4_impactsite_activities_act_0553",4,"c4e907612b03569c7ba10014fc3ecb25b407c1d712464c739268c14888d186c2",103,7]]'
-          - group: "0805"
-            rows: '[["0805","ps4_observatory_iron_activiti_0805",3,"47b34c760c4f1f7792e4046575a8323eb82a5a52a6055e06071dfc592520f088",65,2]]'
-          - group: "04d4"
-            rows: '[["04d4","ps4_reef_ambient_activityonly_04d4",4,"685f194f9a36151d9af806e395e09b322c5928bd481a9cfc6f8a01cbcd5ae8f6",11,1]]'
+          - group: "texture-intermediate"
+            rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",1,-1,[[5941,5941]]]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
       GROUP_ROWS: ${{ matrix.rows }}
       LINOODLE_SKIP_DLLMAIN: "1"
+      ALL_PINS: '{"03f5":"9167edb065154d2afc39ed15190dae8ac0213a6b525db2e6436d532c023bd396","07d4":"0361e089b8301d4951124b40e80b467fa7ead21031728ac7f66f1ea07819fc09","0244":"1537bc62b74f19065c7e1416e3a7eb2b49429f6458024f716ecb255e871f93bf","04ca":"110843c874fd79c38752d9ac6c4482aa0b6ec5d40057e877c9be8f306d57abce","065b":"38da94e9d8e0584e7eb60f8642851bb486827219224cab9368f6721b4ef2173e","0260":"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529","053f":"d397779f363786364e3e3a61e250e0c24ac03c0b0b109ec0b74bf46985d8a97e","07d5":"f7671ae60c471d05c34f8ea94ca0d1b8ef8731b36276fcd35509ae5136683715","0268":"4479b7565e52e4d6ff723c500dac0f8d2afc4531972d5c88e273a410c3804ec6","0809":"3b132b3dd4aa1d99394ab0477833bbd0b5da99b1f43887f3eb92a2760a4197dd","067a":"b9a687a08da461ea8a10d637ad3d048adfaf2d02bee03d6c4cab54e5244e2daa","0285":"6acd380360780efef94d64bf69d459466e6d0e5625b06dd651ff2e03ca949729","0265":"f7c9dfa3cd3c6ffb49ae94fd8af6240783c020731d1464185dbc0ffe235fbf74","0447":"012525f124c7a2c671f0f6f32ef4207bf07ae4a6496b4ae5897fe9b787395bf1","03fd":"6a484699c51894ae8fd186e5a604295806fff696200874fe3cc382725bbb0656","081d":"c8548555253b72a43fb140f4f18d91182fdee223fc79c270da845affde6c5ff6","06f9":"4a10289b167381e389971f0778bda852d4eaf4d8535e060987b1879f58a2b950","03f3":"9ef75ca71d152210a290f888b78e8561af8da2ede857519a0c8d79cb0cccb3eb","053e":"670400eac2033d78b4d632330cc6e8ccdbd1f1691b1c088a1adb89fb6fbcb2f2","07d2":"59e0025c206a36cd612fc6edf5134eba268aee79cec7fd6161c77bf1445af8a4","0286":"35079c75f21885714469719cd8cfb584a33e498496614a1ac46b826fea594cd2","0542":"51e2c4b52d393a1d81b534255b157d8ef5b0f98d8fafe31197de81f523f849ab","0797":"27d5f37cbd83fedbeea7a956db2e59090e835bcfe0336c7510e0839fb1bdfdf0","0261":"2ac1b8471c355d4a79ba18671934428f31916715d5947ca603dc57d9081e8590","07de":"5f8ea30a40d754c2e23fe1cfae0a0eefd6e8d04486ba9dc63aa481dfb3262a7e","028d":"c4381ae64593a66006ee34d544b7b98a0a06fe89b5c53fe600ca8c35b2df0d83","07e1":"2b052bceaff03321ea92f4cbcc240599a64e7badd615e907ebd9553e9573f00d","082f":"0da4a9b116536ffb31245fb8d03760694e125d0c6329aabe42f0fd58f7cdd4b9","0843":"3f84dcf1e4e7f8d124a28d3853fb5df080ed48a86f59a19c8f2e378fe2f5d2fe","0284":"24a30e4980038c06d72bb81d037a85c34918d75a15be59738d468a0982803cbb","025c":"c6424371d5e675263a949184f48a936328294ee51b9f15d17c78744b9ad79e05","02af":"67cc91cb88b60c739d3158553960d11ff59d8d5090863774186c5b5c1c29ee21","02ac":"0d460d2947b9190bf8c043b6e157aa79d44d9268aaa6afe3f9a9ca2b8ac969e6","044b":"0998dc5aefe35eea2f5b1c6637103acd6e20dbc13fec544e26eb8cbfff3eab43","08b2":"732a07298c6bb4200c5774f49ed5c6537ad9115be581edd7d95ee300334878a2","0538":"453763222619df768d6f304ecc1464f2ba582a75eb78d6da9439c0d21e91ce2e","053b":"82fd87417244d42c0bd8c519fa4594e9ae1fd102375125b6bc2dc1c6a49cce6d","053d":"a81268ae79622465a9f41aeb14597dec4469bd5c2e14210747c9f5eafcbbe6b9","02a6":"f344538a2d68d7787494aa725467d3c5f7443209b29ac38517e8fa27c1c52493","04ce":"dded056f354c2df1476cee935da0fd18189e80278eb085f5b785334ab5f06f12","0896":"70a2308a3ce4435a6c8d88ac494f2c8755055c5a17dcb96ebce5460829b3d1ff","03f6":"a716343340f5c24a2efbdaf4ffe8193d26645c989f552d0ced4b7304dacb68ab","03fa":"7f0c3353dea7f79bcc745086e6e7134f3a89317c111e88efadb67d07dd5c8460","0289":"cf0fb09c358af1982a6ad59e9fc71315428b609396b824d773c35de7165f0e6b","07cf":"3864d97aece9e1b2576f3fde09da82fd5b0c398fb981d172ed476ca260e227a1","04cf":"5be9e3a9439206c9fa3512c0f7fbe0df0650307686ac50e4bdb631e6b5a89cd2","02e2":"4dd69a09795d409f5867370b996e16107037de5f03887be60fd90723164468fa","0854":"b8a5202f9d7df32acaec69a71e9ff013b19e9bea1f3bd6e6555c4b82f7193ee5","02ab":"8bdd14086cdfb8e08fe59b48541625218e3efa732ccd9d3dce4c4dec404bc21c","03f0":"e25f2019f10f05dc1c550c89a4b23e98d703642cbc6a9af4e4cb2bf18aea03c3","023d":"de0a2e4052602d26184d9f739678a0805b8cb8272f3758204700e1687cb55695","02ad":"8595fa84089fc6cb8a4faf28c2ec4d2961d3d609291c2eb61d461f5148c4a0b5","06dd":"cfe9224f7f58f46b8bd9455e0016ad455c5e6fb8ec68c691312c4bebe51eb72e","0333":"28399e5706d6a9f509d9ac239ea63f0403553129530c38e744626c7f809097ca","0280":"665b688337d272fa2926681092fe7df40b2ceb404643b3f813c8675cad5e658b","02aa":"8e6530fea66858b61e0b1cc794b172ae0f2c7a80c55df22a553f14d72d09d591","0262":"1310a07cc31f2615ad999976feb66b6b132c6329b56aa63a1e1decd61dbd7b62","0553":"c4e907612b03569c7ba10014fc3ecb25b407c1d712464c739268c14888d186c2","0805":"47b34c760c4f1f7792e4046575a8323eb82a5a52a6055e06071dfc592520f088","04d4":"685f194f9a36151d9af806e395e09b322c5928bd481a9cfc6f8a01cbcd5ae8f6"}'
     steps:
       - name: Mark canary running
         run: |
@@ -215,28 +113,29 @@ jobs:
               if off is None:off=0;n=size
               assert 0<=off<=off+n<=size
               return readat(start+off,n)
+          if stem+'_'+str(patch)+'.pkg' not in byname:
+              print('HISTORICAL_PATCH_ABSENT',patch,flush=True);sys.exit(0)
           b=get(patch)
           pin=os.environ['PIN']
-          assert hashlib.sha256(b).hexdigest()==pin,('R2 logical snapshot mismatch',hashlib.sha256(b).hexdigest())
-          print('R2_LOGICAL_SNAPSHOT_MATCH',hashlib.sha256(b).hexdigest(),flush=True)
+          assert not pin or hashlib.sha256(b).hexdigest()==pin,('R2 logical snapshot mismatch',hashlib.sha256(b).hexdigest())
+          print('PACKAGE_SHA256',hashlib.sha256(b).hexdigest(),flush=True)
           assert H(b,0)==24 and H(b,4)==family and H(b,0x20)==patch
           ec,eo,bc,bo=U(b,0xb4),U(b,0xb8),U(b,0xd0),U(b,0xd4)
           assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
           assert hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0xbc:0xd0]
           assert hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0xd8:0xec]
-          used=[0]*bc;targets=[];needed=set();d912=[];all_entries=[]
+          used=[0]*bc;targets=[];needed=set()
           def spans(i):
               p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
               while sz:
                   assert k<bc
                   n=min(sz,B-o);yield k,o,n;sz-=n;k+=1;o=0
+          wanted={i for lo,hi in json.loads(os.environ['ENTRY']) for i in range(lo,hi+1)}
+          assert len(wanted)==int(os.environ['EXPECTED_TABLES'])
           for i in range(ec):
               s=list(spans(i))
               for k,o,n in s:used[k]=max(used[k],o+n)
-              ref,typ=struct.unpack_from('<II',b,eo+i*16)
-              all_entries.append((i,s,ref,typ))
-              if ref==0x808012d9 and typ&255==16 and s:d912.append((i,s))
-              if s and ((typ&255) in (0,16,128) or (sum(n for k,o,n in s)<=65536 and (typ&255) not in (32,65,5))):
+              if i in wanted and s:
                   targets.append((i,s));needed.update(k for k,o,n in s)
           print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
           def block(k):
@@ -260,90 +159,90 @@ jobs:
                   if error:fail[k]=error
                   else:cache[k]=data
           print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
-          assert len(d912)==int(os.environ['EXPECTED_TABLES'])
-          lua_blocks=sum(v.count(b'\x1bLua') for v in cache.values())
-          raw_bytes=sum(len(v) for v in cache.values())
-          def dyn(data,o,stride):
-              assert o+16<=len(data)
-              count=I(data,o);start=o+8+L(data,o+8)+16
-              assert count>=0 and (count==0 or 0<=start<=start+count*stride<=len(data))
-              return count,start
-          def ptr(data,o):
-              assert o+8<=len(data)
-              rel=L(data,o)
-              if not rel:return None,None
-              t=o+rel;assert 4<=t<=len(data)
-              return t,U(data,t-4)
-          def payload(sp):
-              if any(k not in cache for k,o,n in sp):return None
-              return b''.join(cache[k][o:o+n] for k,o,n in sp)
-          import re
-          class_counts=collections.Counter();magic_hits=[];text_hits=[];ref10=collections.Counter();ref_targets={};missing=0
-          tables={}
-          def resolve_meta(tag):
-              famid=(tag-0x80800000)>>13;idx=tag&8191
-              if famid<0:return ('invalid',None,None)
-              if famid==family: bb=b; ee=eo; cc=ec
-              else:
-                  if famid not in tables:
-                      fam=index['package_families'].get(f'{famid:04X}') or index['package_families'].get(f'{famid:04x}')
-                      if not fam:tables[famid]=None
-                      else:
-                          m=max(fam,key=lambda x:int(x['filename_generation']))
-                          start=int(m['data_offset']); head=readat(start,0x140)
-                          assert H(head,4)==famid and H(head,0)==24
-                          cc,ee=U(head,0xb4),U(head,0xb8)
-                          raw=readat(start+ee,cc*16)
-                          assert hashlib.sha1(raw).digest()==head[0xbc:0xd0]
-                          tables[famid]=(raw,0,cc)
-                  if tables[famid] is None:return ('missing_family',None,None)
-                  bb,ee,cc=tables[famid]
-              if idx>=cc:return ('missing_index',None,None)
-              off=ee+16*idx
-              ref,typ=struct.unpack_from('<II',bb,off)
-              size=(Q(bb,off+8)>>28)&0x3fffffff
-              return (f'{ref:08x}',f'{typ&255}:{typ>>24}',size)
-          total_bytes=0;marker_hits=0
+          assert len(targets)==int(os.environ['EXPECTED_TABLES'])
+          assert int(os.environ['EXPECTED_BLOCKS'])<0 or len(needed)==int(os.environ['EXPECTED_BLOCKS'])
+          assert not fail
           for i,sp in targets:
-              data=payload(sp)
-              if data is None:missing+=1;continue
-              total_bytes+=len(data)
-              tag=0x80800000+(family<<13)+i;ref,typ=struct.unpack_from('<II',b,eo+i*16)
-              class_counts[f'{typ&255}:{typ>>24}']+=1
+              data=b''.join(cache[k][o:o+n] for k,o,n in sp)
+              ref,typ,info=struct.unpack_from('<IIQ',b,eo+i*16)
+              assert len(data)==(info>>28)&0x3fffffff
+              assert hashlib.sha256(data).hexdigest()=='641e1ef4363c1d5020896709e6ea58cf540c4837e43948a1f844d064d083c378'
+              import re
               for m in re.finditer(b'\x1bLua',data):
-                  hdr=data[m.start():m.start()+24]
-                  magic_hits.append(dict(tag=f'{tag:08x}',ref=f'{ref:08x}',type=f'{typ&255}:{typ>>24}',offset=m.start(),header=hdr.hex(),size=len(data),sha256=hashlib.sha256(data).hexdigest(),after_header=data[m.start():m.start()+256].hex()))
-              for m in re.finditer(rb'(?i)(?:\.lua\b|lua_[a-z]+|havokscript|script_state|script_event|activity_script|mission_script|scriptable_auth|\bfunction\s+[a-z_][a-z_0-9.]*\s*\(|\blocal\s+function\s+|\bcoroutine\.[a-z]+)',data):
-                  marker_hits+=1
-                  if len(text_hits)<30:text_hits.append([f'{tag:08x}',f'{ref:08x}',m.start(),m.group().decode('ascii')])
-              if tag in (0x80cc1722,0x80cc1735,0x80cc43c6):
-                  out=dict(tag=f'{tag:08x}',ref=f'{ref:08x}',type=f'{typ&255}:{typ>>24}',size=len(data),sha256=hashlib.sha256(data).hexdigest())
-                  if tag==0x80cc1722:
-                      out.update(header_hex=data.hex(),data_size=U(data,0),magic=f'{U(data,0x24):08x}',width=H(data,0x28),height=H(data,0x2a),depth=H(data,0x2c),array=H(data,0x2e),gcn_format=(H(data,6)>>4)&0x3f)
-                  if tag==0x80cc1735:
-                      out.update(signature_ranges=[[m.start(),len(data)-m.start()] for m in re.finditer(b'\x1bLua',data)],matching_header_bytes=next((n for n in range(9376) if data[80144+n]!=data[89520+n]),80) if False else sum(a==b for a,b in zip(data[80144:80224],data[89520:89600])))
-                  print('EXACT_RESOURCE',json.dumps(out,sort_keys=True),flush=True)
-          print('TYPE_INVENTORY',json.dumps(dict(collections.Counter(f'{t&255}:{t>>24}' for i,s,r,t in all_entries if s))),flush=True)
-          result=dict(family=f'{family:04x}',target_tables=len(targets),decoded_tables=len(targets)-missing,structurally_valid_tables=0,spawn_records=0,layout_errors=0,decoded_blocks=len(cache),failed_blocks=len(fail),entry_bytes=total_bytes,selected_type_counts=dict(class_counts),lua_magic_hits=len(magic_hits),magic_hits=magic_hits,script_text_hits=marker_hits,text_hit_sample=text_hits,d912_ref10_target_types=dict(ref10),d912_ref10_unique_targets=len(ref_targets))
-          print('RESULT',json.dumps(result,sort_keys=True),flush=True)
-          pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(result))
-          assert missing==0 and not fail,result
+                  pos=m.start()
+                  print('CANDIDATE',json.dumps(dict(offset=pos,remaining=len(data)-pos,header=data[pos:pos+24].hex(),candidate_sha256=hashlib.sha256(data[pos:]).hexdigest())),flush=True)
+                  # Retain only bounded candidate region on ephemeral worker; report metadata, not scripts.
+                  chunk=data[pos:];o=14;types=[]
+                  def take(n):
+                      global o
+                      if n<0 or o+n>len(chunk):raise ValueError(f'bounds at {o} need {n}')
+                      v=chunk[o:o+n];o+=n;return v
+                  def be():return int.from_bytes(take(4),'big')
+                  def count(limit):
+                      n=be()
+                      if n>limit:raise ValueError(f'count {n} at {o-4}')
+                      return n
+                  def st():
+                      n=count(4096)
+                      return take(n).rstrip(b'\x00').decode('utf8','strict')
+                  result=dict(offset=pos,types=[],functions=[],strings=[])
+                  try:
+                      n=count(64)
+                      for j in range(n):types.append([be(),st()])
+                      result['types']=types
+                      def proto(depth):
+                          global o
+                          if depth>16:raise ValueError('depth')
+                          start=o
+                          if depth:
+                              unknown=be();up=be();params=be();var=take(1)[0];ic=count(100000)
+                          else:
+                              up=be();params=be();var=take(1)[0];slots=be();ic=count(100000)
+                          if var not in (1,2,3,4) or up>255 or params>255:raise ValueError(f'prototype header {up} {params} {var}')
+                          take((-o)%4)
+                          ops=[be()>>25 for j in range(ic)]
+                          nc=count(100000)
+                          for j in range(nc):
+                              typ=take(1)[0]
+                              if typ==0:pass
+                              elif typ==1:take(1)
+                              elif typ in (2,11):take(8)
+                              elif typ==3:take(4)
+                              elif typ==4:
+                                  s=st();result['strings'].append(dict(length=len(s),lua_path=s.endswith('.lua'),sha256=hashlib.sha256(s.encode()).hexdigest()))
+                              else:raise ValueError(f'constant type {typ} at {o-1}')
+                          debug=be()
+                          if debug not in (0,1):raise ValueError(f'debug flag {debug}')
+                          if debug:
+                              lc=count(100000);locals=count(4096);ups=count(4096);line1=be();line2=be();path=st();name=st()
+                              result['debug_path']=path[-100:] if path.endswith('.lua') else None
+                              take(lc*4)
+                              for j in range(locals):st();take(8)
+                              for j in range(ups):st()
+                          kids=count(4096)
+                          result['functions'].append(dict(offset=start,depth=depth,instructions=ic,constants=nc,opcodes=dict(collections.Counter(ops)),children=kids))
+                          for j in range(kids):proto(depth+1)
+                      proto(0)
+                      result['parsed']=True;result['extent']=o;result['remaining']=len(chunk)-o
+                  except (ValueError,UnicodeError) as e:
+                      result['parsed']=False;result['error']=str(e);result['cursor']=o;result['types']=types
+                  print('ALPHA_PARSE',json.dumps(result),flush=True)
           PY
           python - <<'PY'
           import json,os,subprocess,sys
           rows=json.loads(os.environ['GROUP_ROWS'])
           failed=[]
-          for fam,stem,patch,pin,n,k in rows:
-              env=os.environ|{'FAMILY':fam,'STEM':stem,'PATCH':str(patch),'PIN':pin,'EXPECTED_TABLES':str(n),'EXPECTED_BLOCKS':str(k)}
+          for fam,stem,patch,pin,n,k,entry in rows:
+              env=os.environ|{'FAMILY':fam,'STEM':stem,'PATCH':str(patch),'PIN':pin,'EXPECTED_TABLES':str(n),'EXPECTED_BLOCKS':str(k),'ENTRY':json.dumps(entry)}
               p=subprocess.run([sys.executable,'scan.py'],env=env)
               if p.returncode:failed.append(fam)
           print('GROUP_FAILURES',failed,flush=True)
           sys.exit(bool(failed))
           PY
-      - name: Publish research status (no raw package uploads)
+      - name: Publish incident research status (no raw data uploads)
         if: always()
         run: |
           state=success
           if [ "${{ job.status }}" != success ]; then state=failure; fi
-          desc=$(python -c 'import glob,json; a=[json.load(open(x)) for x in glob.glob("result_*.json")]; print("{} tables; {} records; {} layout errors".format(sum(x["decoded_tables"] for x in a),sum(x["spawn_records"] for x in a),sum(x["layout_errors"] for x in a)))')
-          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-full-oodle/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="$desc"
+          gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-incident-catalogue/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="Incident catalogue extraction audit"
+
