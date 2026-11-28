@@ -1,4 +1,4 @@
-name: D1 alpha Venus host script structured prototype and binding recovery
+name: D1 research verified typed script reference joins with optional named-table guard
 on:
   push:
     branches: [research/d1-oodle-activity-canary-20261127]
@@ -8,13 +8,27 @@ permissions:
 jobs:
   scan:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         include:
-          - group: "alpha-hostonly"
-            rows: '[]'
+          - group: "025c"
+            rows: '[["025c","ps4_cosmo_activities_activity_025c",5,"c6424371d5e675263a949184f48a936328294ee51b9f15d17c78744b9ad79e05",336,17]]'
+          - group: "0260"
+            rows: '[["0260","ps4_cosmo_activities_activity_0260",5,"08c7858b4432ca2dba6f848a81698564c8e9957edbcb950f14e188b8ebe9b529",463,31]]'
+          - group: "0261"
+            rows: '[["0261","ps4_cosmo_activities_activity_0261",5,"2ac1b8471c355d4a79ba18671934428f31916715d5947ca603dc57d9081e8590",345,28]]'
+          - group: "0262"
+            rows: '[["0262","ps4_cosmo_activities_activity_0262",5,"1310a07cc31f2615ad999976feb66b6b132c6329b56aa63a1e1decd61dbd7b62",420,12]]'
+          - group: "02ac"
+            rows: '[["02ac","ps4_moon_activities_activityo_02ac",5,"0d460d2947b9190bf8c043b6e157aa79d44d9268aaa6afe3f9a9ca2b8ac969e6",154,6]]'
+          - group: "03f3"
+            rows: '[["03f3","ps4_venus_activities_activity_03f3",6,"9ef75ca71d152210a290f888b78e8561af8da2ede857519a0c8d79cb0cccb3eb",326,29]]'
+          - group: "07e1"
+            rows: '[["07e1","ps4_cosmo_plaguelands_ambient_07e1",3,"2b052bceaff03321ea92f4cbcc240599a64e7badd615e907ebd9553e9573f00d",133,5]]'
+          - group: "053d"
+            rows: '[["053d","ps4_hiveship_activities_activ_053d",4,"a81268ae79622465a9f41aeb14597dec4469bd5c2e14210747c9f5eafcbbe6b9",201,11]]'
     env:
       GH_TOKEN: ${{ github.token }}
       GROUP_ID: ${{ matrix.group }}
@@ -31,6 +45,10 @@ jobs:
           curl -fsSL --retry 3 https://raw.githubusercontent.com/v4nguard/tiger-pkg/657f41c0851001b2d371592b2f7a5cb9c686ddb4/liblinoodle3.so -o liblinoodle3.so
           echo '682c0aad216fae443e0f9561876cfabfddaeffcd48e5990613ad2cf47c49fa62  oo2core_3_win64.dll' | sha256sum -c
           echo '0167cfd2b31623ce15afd129c3ad568776d63af223824ab085254b7ea0730e35  liblinoodle3.so' | sha256sum -c
+      - name: Recover archive index once per worker
+        run: |
+          curl -fsSL --retry 3 https://github.com/lizardpeter/destiny-1/releases/download/d1-global-activity-index-r1/D1_CURRENT_ACTIVITY_INDEX.json -o activity-index.json
+          curl -fsSL --retry 3 https://crypt.cohae.dev/destiny/ps4/packages/latest/packages.txt -o packages.txt
       - name: Decompress exact source activity blocks and validate tables
         run: |
           set -euo pipefail
@@ -55,7 +73,7 @@ jobs:
               fn.argtypes=[ctypes.c_void_p,ctypes.c_int64,ctypes.c_void_p,ctypes.c_int64,ctypes.c_int,ctypes.c_int,ctypes.c_int]+[ctypes.c_void_p]*6+[ctypes.c_int]
               src=ctypes.create_string_buffer(source)
               start=max(0x4000,(used+0x3fff)&~0x3fff)
-              sizes=list(dict.fromkeys([B,used]+[((used+a-1)//a)*a for a in (16,128,512,4096,16384)]+list(range(start,B+1,0x4000))))
+              sizes=list(dict.fromkeys([B,start]+list(range(start,B+1,0x4000))))
               for size in sizes:
                   if size<used or size>B:continue
                   for fuzz,verb in [(1,0),(0,0),(1,1)]:
@@ -64,184 +82,160 @@ jobs:
                       if n==size:
                           dest.write_bytes(dst.raw[:n]);print('DECODE',n);sys.exit(0)
               sys.exit(2)
-          import re, tarfile
-          url='https://crypt.cohae.dev/destiny/360_internal_alpha/packages.tar'
-          def readat(o,n):
+          stem=os.environ['STEM'];patch=int(os.environ['PATCH']);family=int(os.environ['FAMILY'],16)
+          import bisect,re
+          base='https://crypt.cohae.dev/destiny/ps4/packages/latest'
+          def http(url,off=None,n=None):
               for attempt in range(3):
                   try:
-                      req=urllib.request.Request(url,headers={'Range':f'bytes={o}-{o+n-1}','User-Agent':'d1-package-research/1.0'})
-                      with urllib.request.urlopen(req,timeout=90) as res:
-                          assert res.status==206 and res.headers['Content-Range'].startswith(f'bytes {o}-{o+n-1}/')
-                          v=res.read()
-                      assert len(v)==n
+                      headers={'User-Agent':'d1-package-research/1.0'}
+                      if off is not None:headers['Range']=f'bytes={off}-{off+n-1}'
+                      with urllib.request.urlopen(urllib.request.Request(url,headers=headers),timeout=60) as r:
+                          if off is not None:
+                              assert r.status==206,(r.status,'expected range response')
+                              assert r.headers['Content-Range'].startswith(f'bytes {off}-{off+n-1}/')
+                          v=r.read()
+                      if n is not None:assert len(v)==n
                       return v
                   except Exception:
                       if attempt==2:raise
                       time.sleep(1)
-          listing=subprocess.check_output(['curl','-fsSL','--retry','2',url.rsplit('/',1)[0]+'/packages.txt'])
-          print('ALPHA_MANIFEST_OK',len(listing),hashlib.sha256(listing).hexdigest(),flush=True)
-          names={s.strip() for s in listing.decode().splitlines() if s.strip()}
-          assert len(names)==133
-          # Tar header-only census; each valid header verifies its own checksum.
-          members={};o=0
-          while o<1904760832:
-              h=readat(o,512)
-              if h==bytes(512):break
-              t=tarfile.TarInfo.frombuf(h,'utf-8','strict')
-              if t.isfile():members[pathlib.PurePosixPath(t.name).name]=(o+512,t.size)
-              o+=512+((t.size+511)//512)*512
-          assert set(members)==names,(len(members),len(names),list(names-set(members))[:10])
-          print('ALPHA_INDEX',json.dumps(dict(entries=len(members),archive_bytes=1904760832,manifest_sha256=hashlib.sha256(listing).hexdigest(),headers_end=o,hostonly=[n for n in members if 'hostonly' in n])),flush=True)
-          be16=lambda b,o:struct.unpack_from('>H',b,o)[0]
-          be32=lambda b,o:struct.unpack_from('>I',b,o)[0]
-          be64=lambda b,o:struct.unpack_from('>Q',b,o)[0]
-          targets=[n for n in members if n=='360_hostonly_venus_0cdc_0.pkg']
-          print('ALPHA_TARGETS',json.dumps([[n,members[n][1]] for n in targets]),flush=True)
-          for name in targets:
-              off,size=members[name]
-              b=readat(off,size)
-              ver=be16(b,0);fam=be16(b,4);patch=be16(b,6)
-              if ver!=11:
-                  print('ALPHA_UNSUPPORTED',name,ver,flush=True);continue
-              ec,eo,bc,bo=be32(b,0x100),be32(b,0x104),be32(b,0x11c),be32(b,0x120)
-              assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
-              etok=hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0x108:0x11c]
-              btok=hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0x124:0x138]
-              used=[0]*bc;owners=collections.defaultdict(list)
-              for i in range(ec):
-                  ref,typ,info=struct.unpack_from('>IIQ',b,eo+i*16);s=(info>>28)&0x3fffffff;k=info&0x3fff;z=((info>>14)&0x3fff)*16
-                  while s:
-                      assert k<bc
-                      n=min(s,B-z);used[k]=max(used[k],z+n);owners[k].append((z,z+n,i,ref,typ));s-=n;k+=1;z=0
-              def block(k):
-                  p=bo+k*32;ofs,n,flags,owner=struct.unpack_from('>IIHH',b,p)
-                  raw=b[ofs:ofs+n]
-                  if len(raw)!=n:return k,None,'short',False
-                  ok=hashlib.sha1(raw).digest()==b[p+12:p+32]
-                  if not flags&1:return k,raw,None,ok
-                  with tempfile.TemporaryDirectory() as d:
-                      a=pathlib.Path(d)/'in';z=pathlib.Path(d)/'out';a.write_bytes(raw)
-                      r=subprocess.run([sys.executable,__file__,'decode',str(a),str(z),str(used[k])],capture_output=True,timeout=60)
-                      if r.returncode or not z.exists():return k,None,'decode',ok
-                      return k,z.read_bytes(),None,ok
-              assert hashlib.sha256(b).hexdigest()=='c11d1e12ac873cd7d0c1b30a7ce3d072767965cb99a6b42387ff647b218fa6b0'
-              print('ALPHA_BLOCK_METADATA',json.dumps(dict(entry_sha1=b[0x108:0x11c].hex(),block_sha1=b[0x124:0x138].hex(),rows=[dict(index=k,offset=be32(b,bo+k*32),stored_size=be32(b,bo+k*32+4),flags=be16(b,bo+k*32+8),owner=be16(b,bo+k*32+10),sha1=b[bo+k*32+12:bo+k*32+32].hex(),used=used[k]) for k in range(bc)])),flush=True)
-              cache={};fail=[]
-              with ThreadPoolExecutor(max_workers=3) as ex:
-                  for k,data,error,ok in ex.map(block,range(bc)):
-                      if error:fail.append([k,error])
-                      else:cache[k]=data
-              print('ALPHA_BLOCK_DECODE',json.dumps(dict(decoded={str(k):len(v) for k,v in cache.items()},failed=fail)),flush=True)
-              class Bad(Exception):pass
-              def parse(chunk):
-                  o=0;out=[];const_total=0
-                  def take(n):
-                      nonlocal o
-                      if n<0 or o+n>len(chunk):raise Bad(f'bounds@{o}:{n}')
-                      v=chunk[o:o+n];o+=n;return v
-                  def be():return int.from_bytes(take(4),'big')
-                  def count(n):
-                      v=be()
-                      if v>n:raise Bad(f'count@{o-4}:{v}>{n}')
-                      return v
-                  def st():
-                      n=count(65536);v=take(n)
-                      if n and v[-1]!=0:raise Bad(f'string terminator@{o-1}')
-                      return v.rstrip(b'\x00').decode('utf8','strict')
-                  if take(14)[:6]!=b'\x1bLua\x51\x0e':raise Bad('header')
-                  if count(64)!=13:raise Bad('type count')
-                  for j in range(13):
-                      if be()!=j:raise Bad('type index')
-                      n=st()
-                      if not re.fullmatch(r'T[A-Z0-9_]+',n):raise Bad('type name')
-                  def proto(depth):
-                      nonlocal o,const_total
-                      if depth>32 or len(out)>10000:raise Bad('depth')
-                      start=o;unknown=None
-                      if depth:unknown=be();up=count(256);params=count(256);var=take(1)[0];ic=count(100000)
-                      else:up=count(256);params=count(256);var=take(1)[0];slots=count(1024);ic=count(100000)
-                      if var not in (0,1,2,3,4):raise Bad(f'vararg@{start}:{var}')
-                      take((-o)%4)
-                      words=[be() for j in range(ic)];ops=[w>>25 for w in words]
-                      if any(op>91 for op in ops):raise Bad(f'opcode@{start}:{max(ops)}')
-                      nc=count(100000);const_total+=nc;strings={};consts=[]
-                      for j in range(nc):
-                          t=take(1)[0];v=None
-                          if t==0:pass
-                          elif t==1:v=take(1)[0]
-                          elif t in (2,11):v=take(8).hex()
-                          elif t==3:v=struct.unpack('>f',take(4))[0]
-                          elif t==4:
-                              v=st()
-                              if re.fullmatch(r'[A-Za-z_@][A-Za-z_0-9./\\:@ -]{0,180}',v):strings[j]=v
-                          else:raise Bad(f'constant@{o-1}:{t}')
-                          consts.append([t,v])
-                      debug=be()
-                      if debug not in (0,1):raise Bad(f'debug@{o-4}:{debug}')
-                      path=name='';local=[];uv=[];lines=[];first=last=0
-                      if debug:
-                          lc=count(100000);ln=count(8192);un=count(8192);first=be();last=be()
-                          path=st();name=st();lines=[be() for j in range(lc)]
-                          if lc!=ic:raise Bad(f'line mismatch@{start}:{lc}!={ic}')
-                          for j in range(ln):
-                              n=st();a=be();z=be()
-                              if a>z or z>ic+1:raise Bad(f'local range@{start}:{a},{z}')
-                              local.append(n)
-                          uv=[st() for j in range(un)]
-                      kids=count(10000)
-                      bindings=[]
-                      for j,w in enumerate(words):
-                          if w>>25!=66:continue
-                          child=(w>>8)&0x1ffff
-                          for z in range(j+1,min(j+10,len(words))):
-                              v=words[z];op=v>>25
-                              if op==76:continue
-                              if op in (15,74):
-                                  k=(v>>17)&255
-                                  if k in strings:bindings.append([child,strings[k],j,z])
-                              break
-                      idx=len(out);out.append(dict(index=idx,start=start,end=o,depth=depth,unknown=unknown,up=up,params=params,var=var,instructions=ic,constants=nc,debug=debug,path=path,name=name,lines=[first,last],locals=local,upvalues=uv,children=kids,bindings=bindings,identifiers=list(strings.values()),opcodes=dict(collections.Counter(ops))))
-                      for j in range(kids):proto(depth+1)
-                  err=None
-                  try:proto(0)
-                  except (Bad,UnicodeError,struct.error) as e:err=str(e)
-                  return dict(ok=err is None,error=err,cursor=o,functions=out,constants=const_total)
-              programs=[];coverage=collections.Counter();all_entries=[]
-              for i in range(ec):
-                  ref,typ,info=struct.unpack_from('>IIQ',b,eo+i*16);size=(info>>28)&0x3fffffff;k=info&0x3fff;z=((info>>14)&0x3fff)*16
-                  s=size;parts=[]
-                  while s:
-                      n=min(s,B-z)
-                      if k not in cache or z+n>len(cache[k]):parts=None;break
-                      parts.append(cache[k][z:z+n]);s-=n;k+=1;z=0
-                  if parts is None:
-                      coverage['unavailable_entries']+=1;continue
-                  data=b''.join(parts);coverage['entries']+=1;coverage['entry_bytes']+=len(data)
-                  for m in re.finditer(rb'\x1bLua\x51\x0e',data):
-                      q=m.start();res=parse(data[q:]);fs=res.pop('functions');root=fs[0] if fs else {}
-                      n=dict(entry=i,ref=f'{ref:08x}',size=size,offset=q,entry_sha256=hashlib.sha256(data).hexdigest(),**res,prototype_count=len(fs),instruction_words=sum(f['instructions'] for f in fs),path=root.get('path',''),root_bindings=root.get('bindings',[]),functions=[{k:v for k,v in f.items() if k not in ('opcodes',)} for f in fs])
-                      coverage['candidates']+=1;coverage['complete']+=res['ok'];coverage['prototypes']+=len(fs);coverage['instruction_words']+=n['instruction_words']
-                      programs.append(n)
-                      summary={k:v for k,v in n.items() if k!='functions'}
-                      print('ALPHA_SCRIPT',json.dumps(summary,separators=(',',':')),flush=True)
-                      for f in fs:
-                          if not f['depth'] or f['bindings']:print('ALPHA_PROTOTYPE',json.dumps(dict(entry=i,**f),separators=(',',':')),flush=True)
-              print('ALPHA_PARSE_SUMMARY',json.dumps(dict(package_sha256=hashlib.sha256(b).hexdigest(),coverage=coverage,errors=collections.Counter(n['error'] for n in programs if n['error']),paths=[n['path'] for n in programs if n['ok']],failed_blocks=fail)),flush=True)
-              pathlib.Path('alpha-script-research.json').write_text(json.dumps(programs,separators=(',',':')))
-          print('ALPHA_COMPLETE',len(targets),flush=True)
+          index=json.loads(pathlib.Path('activity-index.json').read_bytes())
+          assert index['status']=='D1_REMOTE_ACTIVITY_INDEX_COMPLETE'
+          source=index['source']
+          sizes=list(map(int,source['part_sizes']))
+          starts=[0]
+          for n in sizes:starts.append(starts[-1]+n)
+          assert hashlib.sha256(pathlib.Path('packages.txt').read_bytes()).hexdigest()==source['package_list_sha256']
+          fam=index['package_families']
+          members=fam.get(f'{family:04X}') or fam.get(f'{family:04x}')
+          assert members
+          byname={pathlib.Path(x['name']).name:x for x in members}
+          def readat(off,n):
+              chunks=[]
+              while n:
+                  part=bisect.bisect_right(starts,off)-1
+                  assert 0<=part<len(sizes)
+                  local=off-starts[part];take=min(n,sizes[part]-local)
+                  chunks.append(http(f'{base}/packages.tar.{part+1:03d}',local,take))
+                  off+=take;n-=take
+              return b''.join(chunks)
+          def get(p,off=None,n=None):
+              name=stem+'_'+str(p)+'.pkg'
+              row=byname[name];start=int(row['data_offset']);size=int(row['size'])
+              if off is None:off=0;n=size
+              assert 0<=off<=off+n<=size
+              return readat(start+off,n)
+          b=get(patch)
+          pin=os.environ['PIN']
+          assert hashlib.sha256(b).hexdigest()==pin,('R2 logical snapshot mismatch',hashlib.sha256(b).hexdigest())
+          print('R2_LOGICAL_SNAPSHOT_MATCH',hashlib.sha256(b).hexdigest(),flush=True)
+          assert H(b,0)==24 and H(b,4)==family and H(b,0x20)==patch
+          ec,eo,bc,bo=U(b,0xb4),U(b,0xb8),U(b,0xd0),U(b,0xd4)
+          assert eo+16*ec<=len(b) and bo+32*bc<=len(b)
+          assert hashlib.sha1(b[eo:eo+16*ec]).digest()==b[0xbc:0xd0]
+          assert hashlib.sha1(b[bo:bo+32*bc]).digest()==b[0xd8:0xec]
+          used=[0]*bc;targets=[];needed=set();d912=[];all_entries=[]
+          def spans(i):
+              p=eo+i*16;q=Q(b,p+8);sz=(q>>28)&0x3fffffff;k=q&0x3fff;o=((q>>14)&0x3fff)*16
+              while sz:
+                  assert k<bc
+                  n=min(sz,B-o);yield k,o,n;sz-=n;k+=1;o=0
+          for i in range(ec):
+              s=list(spans(i))
+              for k,o,n in s:used[k]=max(used[k],o+n)
+              ref,typ=struct.unpack_from('<II',b,eo+i*16)
+              all_entries.append((i,s,ref,typ))
+              if ref==0x808012d9 and typ&255==16 and s:d912.append((i,s))
+              if s and (typ&255) in (0,16,128):
+                  targets.append((i,s));needed.update(k for k,o,n in s)
+          print('TARGETS',len(targets),'BLOCKS',len(needed),flush=True)
+          def block(k):
+              p=bo+k*32;off,n,owner,flags=struct.unpack_from('<IIHH',b,p)
+              raw=get(owner,off,n) if owner!=patch else b[off:off+n]
+              assert hashlib.sha1(raw).digest()==b[p+12:p+32],('SHA1',k)
+              if flags==0:
+                  assert len(raw)>=used[k]
+                  return k,raw,None
+              if flags!=1:return k,None,('flags',flags)
+              with tempfile.TemporaryDirectory() as d:
+                  a=pathlib.Path(d)/'stored';z=pathlib.Path(d)/'raw';a.write_bytes(raw)
+                  r=subprocess.run([sys.executable,__file__,'decode',str(a),str(z),str(used[k])],capture_output=True,timeout=60)
+                  if r.returncode or not z.exists():return k,None,('decode',r.returncode)
+                  data=z.read_bytes()
+                  assert used[k]<=len(data)<=B
+                  return k,data,None
+          cache={};fail={}
+          with ThreadPoolExecutor(max_workers=4) as ex:
+              for k,data,error in ex.map(block,sorted(needed)):
+                  if error:fail[k]=error
+                  else:cache[k]=data
+          print('BLOCK_RESULT',len(cache),len(fail),fail,flush=True)
+          assert len(d912)==int(os.environ['EXPECTED_TABLES'])
+          assert not fail
+          names='cosmo_portal2_mission02 o_auto_door02 sc_create_auto_door02 sc_open_auto_door02 cosmo_m01_d60 phase_infidel_graveyard phase_infidel_breach phase_infidel_highway phase_infidel_highway_end phase_scissors_northerntides_goto phase_scissors_northerntides_track phase_scissors_northerntides_kill phase_scissors_northerntides_gate phase_rocketyard_intro phase_foundry_arrival phase_trenches_infiltrate phase_trenches_destroy phase_touchdown_goto_breech phase_touchdown_secure_breech phase_touchdown_outro trigger_volume_objective generic_objective interactable_objective interactable_placement one_life_to_give handle_resurrection sc_monitor_player_res sc_monitor_player_deaths sc_ui_impending_doom_feedback'.split()
+          def fnv(name):
+              h=0x811c9dc5
+              for v in name.encode():h=((h*0x01000193)&0xffffffff)^v
+              return h
+          hash_names={fnv(n):n for n in names};assert len(hash_names)==len(names)
+          hp=re.compile(b'|'.join(re.escape(struct.pack('<I',h)) for h in hash_names))
+          np=re.compile(b'|'.join(re.escape(n.encode()) for n in sorted(names,key=len,reverse=True)),re.I)
+          results=[];counts=collections.Counter();catalogue=0;refs=0;named=[];errors=[]
+          nt,no=U(b,0xec),U(b,0xf0)
+          assert no+68*nt<=len(b)
+          named_hash_valid=not nt or hashlib.sha1(b[no:no+68*nt]).digest()==b[0xf4:0x108]
+          for j in range(nt if named_hash_valid else 0):
+              q=no+68*j
+              n=b[q+8:q+68].split(b'\x00')[0].decode('ascii','replace')
+              if any(k in n.lower() for k in names):
+                  named.append([f'{U(b,q):08x}',f'{U(b,q+4):08x}',n])
+          for i,sp in targets:
+              data=b''.join(cache[k][o:o+n] for k,o,n in sp)
+              ref,typ=struct.unpack_from('<II',b,eo+i*16);tag=f'{0x80800000+(family<<13)+i:08x}'
+              for m in hp.finditer(data):
+                  p=m.start()
+                  if p%4:continue
+                  n=hash_names[U(data,p)];counts['aligned_hash']+=1
+                  results.append(dict(kind='aligned_hash',tag=tag,ref=f'{ref:08x}',offset=p,name=n))
+              for m in np.finditer(data):
+                  p=m.start();n=m.group().decode('ascii');counts['text']+=1
+                  results.append(dict(kind='text',tag=tag,ref=f'{ref:08x}',offset=p,name=n))
+              if ref==0x8080076e and typ&255==16:
+                  catalogue+=1
+                  try:
+                      n=Q(data,0x18);p=0x20+L(data,0x20)+16
+                      assert 0<=n<=100000 and (not n or 0<=p<=p+n*16<=len(data))
+                      for j in range(n):
+                          q=p+16*j;z=q+8+L(data,q+8)
+                          assert 0<=z<len(data)
+                          end=data.find(b'\x00',z,min(len(data),z+4096));assert end>=z
+                          name=data[z:end].decode('ascii')
+                          refs+=1
+                          if any(k in name.lower() for k in names):
+                              counts['typed_reference']+=1
+                              results.append(dict(kind='typed_reference',tag=tag,group=f'{U(data,0xc):08x}',index=j,reference_kind=data[q],name=name,hash=f'{fnv(name):08x}'))
+                  except (AssertionError,struct.error,UnicodeError) as e:errors.append([tag,str(e)])
+          result=dict(family=f'{family:04x}',entries=len(targets),blocks=len(cache),catalogues=catalogue,reference_rows=refs,named_rows=nt,named_hash_valid=named_hash_valid,named_matches=named,counts=counts,errors=errors,results=results[:200],truncated=len(results)>200)
+          print('SCRIPT_REFERENCE_JOIN',json.dumps(result),flush=True)
+          pathlib.Path(f'result_{family:04x}.json').write_text(json.dumps(result))
+          assert not errors
           PY
-          python scan.py
+          python - <<'PY'
+          import json,os,subprocess,sys
+          rows=json.loads(os.environ['GROUP_ROWS'])
+          failed=[]
+          for fam,stem,patch,pin,n,k in rows:
+              env=os.environ|{'FAMILY':fam,'STEM':stem,'PATCH':str(patch),'PIN':pin,'EXPECTED_TABLES':str(n),'EXPECTED_BLOCKS':str(k)}
+              p=subprocess.run([sys.executable,'scan.py'],env=env)
+              if p.returncode:failed.append(fam)
+          print('GROUP_FAILURES',failed,flush=True)
+          sys.exit(bool(failed))
+          PY
       - name: Publish research status (no raw package uploads)
         if: always()
         run: |
           state=success
           if [ "${{ job.status }}" != success ]; then state=failure; fi
-          desc="Full logical block script census"
+          desc="Exact script name reference census"
           gh api -X POST repos/$GITHUB_REPOSITORY/statuses/$GITHUB_SHA -f state="$state" -f context="d1-full-oodle/$GROUP_ID" -f target_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" -f description="$desc"
-
-      - name: Upload normalized script metadata only
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: alpha-host-script-research
-          path: alpha-script-research.json
